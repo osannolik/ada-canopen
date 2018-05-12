@@ -1,0 +1,7 @@
+*.ali
+*.a
+*.o
+*.s
+obj
+bin
+adalib
