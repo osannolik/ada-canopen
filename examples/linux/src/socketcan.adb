@@ -7,8 +7,6 @@ pragma Warnings (On);
 
 with Interfaces;
 
-with Ada.Text_IO;
-
 package body SocketCAN is
 
    use type C.int;
@@ -94,8 +92,6 @@ package body SocketCAN is
      (Socket : in Socket_Type;
       Frame  : in Can_Frame)
    is
-      use Ada.Text_IO; use Interfaces;
-
       Msg : aliased Can_Defs.C_Can_Frame := Convert (Frame);
       Mtu : constant C.int := Msg'Size / 8;
    begin
