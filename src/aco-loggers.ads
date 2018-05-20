@@ -41,7 +41,7 @@ package ACO.Loggers is
 private
 
    type Logger is tagged limited record
-      Level : Log_Level := Off;
+      Level : Log_Level := Debug;
       Stream : access Root_Stream_Type'Class := null;
    end record;
 

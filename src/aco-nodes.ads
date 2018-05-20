@@ -4,17 +4,17 @@ with ACO.Messages;
 
 private with ACO.Loggers;
 private with ACO.Protocols.Network_Management;
-private with ACO.Protocols.Synchronization;
-private with ACO.Protocols.Emergency;
 
 package ACO.Nodes is
    use ACO.Messages;
 
-   type Node is tagged limited private;
+   type Node
+      (Id     : Node_Nr;
+       Driver : not null access ACO.Drivers.Driver'Class)
+   is tagged limited private;
 
    procedure Initialize
      (This          : in out Node;
-      Driver        : in     ACO.Drivers.Driver_Access;
       Logger_Stream : access Ada.Streams.Root_Stream_Type'Class := null);
 
    procedure Dispatch
@@ -25,13 +25,13 @@ package ACO.Nodes is
 
 private
 
-   type Node is tagged limited record
-      Driver    : ACO.Drivers.Driver_Access;
+   type Node
+      (Id     : Node_Nr;
+       Driver : not null access ACO.Drivers.Driver'Class)
+   is tagged limited record
       Log       : ACO.Loggers.Logger;
       Log_Level : ACO.Loggers.Log_Level := ACO.Loggers.Debug;
-      NMT       : ACO.Protocols.Network_Management.NMT;
-      SYNC      : ACO.Protocols.Synchronization.Sync;
-      EMCY      : ACO.Protocols.Emergency.Emcy;
+      NMT       : ACO.Protocols.Network_Management.NMT (Driver);
    end record;
 
 end ACO.Nodes;
