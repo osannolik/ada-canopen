@@ -7,7 +7,7 @@ package SocketCAN is
    --  https://www.kernel.org/doc/Documentation/networking/can.txt
    --
    --  Note: This binding is incomplete!
-   --  Interfaces CAN_RAW socket with CAN 2.0B standard frame format.
+   --  Interfaces CAN_RAW socket with CAN 2.0A standard frame format.
    --  The other protocols (and FD) should be easy to add though.
    --
    --  Adding e.g. a virtual CAN interface (vcan):
