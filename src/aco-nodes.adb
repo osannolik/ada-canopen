@@ -5,12 +5,35 @@ package body ACO.Nodes is
       Logger_Stream : access Ada.Streams.Root_Stream_Type'Class := null)
    is
       use ACO.Loggers;
+      use ACO.States;
    begin
+      This.Set_State (Initializing);
+
       This.Log.Set_Level (This.Log_Level);
       This.Log.Set_Stream (Logger_Stream);
 
+      This.Set_State (Pre_Operational);
+
       This.Log.Put_Line (Info, "Initialized CANopen");
    end Initialize;
+
+   procedure Set_State
+     (This  : in out Node;
+      State : in     ACO.States.State)
+   is
+      use type ACO.States.State;
+   begin
+      if State /= This.Od.Get_Node_State then
+--           case State is
+--              when Initializing =>
+--              when Pre_Operational =>
+--              when Operational =>
+--              when Stopped =>
+--              when Unknown_State =>
+--           end case;
+         This.NMT.Set_State (This.Id, State);
+      end if;
+   end Set_State;
 
    procedure Dispatch
      (This : in out Node;

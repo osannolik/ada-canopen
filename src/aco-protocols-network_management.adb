@@ -33,24 +33,40 @@ package body ACO.Protocols.Network_Management is
            Raw    => Msg.Data (0 .. 1)));
    end Commands;
 
+   procedure Send_Bootup
+     (This    : in out NMT;
+      Node_Id : in     Node_Nr)
+   is
+      Msg : constant Message := Create (Code => NMT_Error_Code,
+                                        Node => Node_Id,
+                                        RTR  => False,
+                                        Data => (Msg_Data'First => 0));
+   begin
+      This.Driver.Send_Message (Msg);
+   end Send_Bootup;
+
    procedure Set_State
-     (This  : in out NMT;
-      State : in     ACO.States.State)
+     (This    : in out NMT;
+      Node_Id : in     Node_Nr;
+      State   : in     ACO.States.State)
    is
       use ACO.States;
+
+      Current : constant ACO.States.State := This.Od.Get_Node_State;
    begin
-      case This.State is
+      case Current is
          when Pre_Operational | Operational | Stopped =>
-            This.State := State;
+            This.Od.Set_Node_State (State);
 
          when Initializing =>
             if State = Pre_Operational then
-               This.State := State;
+               Send_Bootup (This, Node_Id);
+               This.Od.Set_Node_State (State);
             end if;
 
          when Unknown_State =>
             --  ?
-            This.State := State;
+            This.Od.Set_Node_State (State);
       end case;
    end Set_State;
 
@@ -64,7 +80,7 @@ package body ACO.Protocols.Network_Management is
 
       Cmd : constant NMT_Command := To_NMT_Command (Msg);
    begin
-      case This.State is
+      case This.Od.Get_Node_State is
          when Pre_Operational | Operational | Stopped =>
             null;
 
@@ -77,19 +93,19 @@ package body ACO.Protocols.Network_Management is
       then
          case Cmd.Command_Specifier is
             when Start =>
-               Set_State (This, Operational);
+               Set_State (This, Node_Id, Operational);
 
             when Stop =>
-               Set_State (This, Stopped);
+               Set_State (This, Node_Id, Stopped);
 
             when Pre_Op =>
-               Set_State (This, Pre_Operational);
+               Set_State (This, Node_Id, Pre_Operational);
 
             when Reset_Node =>
-               Set_State (This, Initializing);
+               Set_State (This, Node_Id, Initializing);
 
             when Reset_Communication =>
-               Set_State (This, Initializing);
+               Set_State (This, Node_Id, Initializing);
 
             when others =>
                null;

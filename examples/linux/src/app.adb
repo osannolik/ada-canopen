@@ -2,14 +2,17 @@ with Ada.Real_Time; use Ada.Real_Time;
 with ACO.Drivers.Socket;
 with ACO.Messages;
 with ACO.Nodes;
+with ACO.OD;
 with Ada.Text_IO.Text_Streams;
 
 package body App is
    use Ada.Text_IO;
 
+   O : aliased ACO.OD.Object_Dict;
+
    D : aliased ACO.Drivers.Socket.CAN_Driver;
 
-   N : aliased ACO.Nodes.Node;
+   N : aliased ACO.Nodes.Node (Id => 1, Od => O'Access, Driver => D'Access);
 
    T : ACO.Nodes.Receiver_Task (N'Access);
 
@@ -30,12 +33,10 @@ package body App is
    begin
       D.Initialize;
 
-      N.Initialize
-         (Driver        => D'Access,
-          Logger_Stream => Text_Streams.Stream (Current_Output));
+      N.Initialize (Logger_Stream => Text_Streams.Stream (Current_Output));
 
       loop
-         D.Send_Message (Msg_Tx);
+         --  D.Send_Message (Msg_Tx);
 
          if X >= 20 then
             X := 10;
