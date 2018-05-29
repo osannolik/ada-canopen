@@ -1,20 +1,20 @@
+with ACO.Log;
+
 package body ACO.Nodes is
 
    procedure Initialize
-     (This          : in out Node;
-      Logger_Stream : access Ada.Streams.Root_Stream_Type'Class := null)
+     (This : in out Node)
    is
-      use ACO.Loggers;
       use ACO.States;
+      use ACO.Log;
    begin
       This.Set_State (Initializing);
 
-      This.Log.Set_Level (This.Log_Level);
-      This.Log.Set_Stream (Logger_Stream);
+      ACO.Log.Set_Level (Debug);
 
       This.Set_State (Pre_Operational);
 
-      This.Log.Put_Line (Info, "Initialized CANopen");
+      ACO.Log.Put_Line (Info, "Initialized CANopen");
    end Initialize;
 
    procedure Set_State
@@ -41,8 +41,6 @@ package body ACO.Nodes is
    is
 --        Func : constant Function_Code := Func_Code (Msg);
       use ACO.Protocols;
-      use ACO.Loggers;
-
    begin
 
       if CAN_Id (Msg) = Network_Management.NMT_CAN_Id then
@@ -66,13 +64,14 @@ package body ACO.Nodes is
 
    task body Receiver_Task
    is
-      use ACO.Loggers;
+      use ACO.Log;
+
       Msg : Message;
    begin
       loop
          This.Driver.Await_Message (Msg);
 
-         This.Log.Put_Line (Debug, "Received message " & Image (Msg));
+         ACO.Log.Put_Line (Debug, "Received message " & Image (Msg));
 
          if Node_Id (Msg) = This.Id or else
             Node_Id (Msg) = Broadcast_Id

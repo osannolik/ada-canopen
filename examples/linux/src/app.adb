@@ -3,6 +3,7 @@ with ACO.Drivers.Socket;
 with ACO.Messages;
 with ACO.Nodes;
 with ACO.OD;
+with ACO.Log;
 with Ada.Text_IO.Text_Streams;
 
 package body App is
@@ -31,9 +32,11 @@ package body App is
       use type ACO.Messages.Data_Type;
 
    begin
+      ACO.Log.Set_Stream (Text_Streams.Stream (Current_Output));
+
       D.Initialize;
 
-      N.Initialize (Logger_Stream => Text_Streams.Stream (Current_Output));
+      N.Initialize;
 
       loop
          --  D.Send_Message (Msg_Tx);
