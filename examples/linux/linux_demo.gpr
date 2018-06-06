@@ -9,9 +9,9 @@ project Linux_Demo is
    for Exec_Dir use "bin/";
    for Create_Missing_Dirs use "true";
 
---     package Linker is
---        for Default_Switches ("Ada") use Linker'Default_Switches ("Ada") &
---          ("-lsocket");
---     end Linker;
+   package Compiler is
+      for Default_Switches ("Ada") use CANopen.Compiler'Default_Switches ("Ada") &
+        ("-g", "-O0");
+   end Compiler;
 
 end Linux_Demo;
