@@ -5,8 +5,7 @@ with GNAT.Sockets.Thin;
 with GNAT.Sockets.Thin_Common;
 pragma Warnings (On);
 
-with Interfaces;
-
+with ACO.Log;
 package body SocketCAN is
 
    use type C.int;
@@ -21,6 +20,7 @@ package body SocketCAN is
    package Can_Defs is
       --  can.h
       CAN_RAW : constant := 1;
+      pragma Unreferenced (CAN_RAW);
 
       type C_Raw_Sockaddr_In is record
          Family : C.unsigned_short;
@@ -57,6 +57,8 @@ package body SocketCAN is
       SFF_Mask : constant := 16#000007FF#;
       EFF_Mask : constant := 16#1FFFFFFF#;
       ERR_Mask : constant := 16#1FFFFFFF#;
+
+      pragma Unreferenced (EFF_Flag, ERR_Flag, EFF_Mask, ERR_Mask);
 
    end Can_Defs;
 
@@ -109,8 +111,12 @@ package body SocketCAN is
 
       Msg : aliased Can_Defs.C_Can_Frame;
       Mtu : constant C.int := Msg'Size / 8;
-      Res : constant C.int := C_Read (C.int (Socket), Msg'Address, Mtu);
+      Res : C.int;
    begin
+      ACO.Log.Put_Line (ACO.Log.Debug, "Mtu=" & Mtu'Img);
+
+      Res := C_Read (C.int (Socket), Msg'Address, Mtu);
+
       if Res = Failure then
          raise SocketCAN_Error with "Failed to read message";
       elsif Res /= Mtu then
@@ -135,11 +141,17 @@ package body SocketCAN is
       use GNAT.Sockets.Thin;
       use GNAT.Sockets.Thin_Common;
 
-      Res : constant C.int :=
-         C_Socket (Domain   => Socket_Defs.PF_CAN,
-                   Typ      => Socket_Defs.SOCK_RAW,
-                   Protocol => Protocols (Protocol));
+      Res : C.int;
+
    begin
+      ACO.Log.Put_Line (ACO.Log.Debug, "Create_Socket " & Protocol'Img);
+
+      Res := C_Socket (Domain   => Socket_Defs.PF_CAN,
+                       Typ      => Socket_Defs.SOCK_RAW,
+                       Protocol => Protocols (Protocol));
+
+      ACO.Log.Put_Line (ACO.Log.Debug, "Create_Socket Res=" & Res'Img);
+
       if Res = Failure then
          raise SocketCAN_Error with "Failed to create socket";
       end if;
@@ -156,7 +168,10 @@ package body SocketCAN is
 
       Index : constant C.int := C_Name_To_Index (C.To_C (Name));
    begin
+      ACO.Log.Put_Line (ACO.Log.Debug, "Bind_Socket " & Name & " index" & Index'Img);
+
       if Index = 0 then
+         ACO.Log.Put_Line (ACO.Log.Error, "Failed to bind " & Name & " index" & Index'Img);
          raise SocketCAN_Error with "Could not get interface index of " & Name;
       end if;
 
@@ -165,8 +180,13 @@ package body SocketCAN is
             (Family => Socket_Defs.AF_CAN,
              Index  => Index,
              Fill   => (others => C.char'First));
+         Res : C.int;
       begin
-         if C_Bind (C.int (Socket), Sin'Address, Sin'Size / 8) = Failure then
+         Res := C_Bind (C.int (Socket), Sin'Address, Sin'Size / 8);
+
+         ACO.Log.Put_Line (ACO.Log.Debug, "Bind_Socket Res=" & Res'Img);
+
+         if Res = Failure then
             raise SocketCAN_Error with "Failed to bind " & Name;
          end if;
       end;
