@@ -1,4 +1,5 @@
 with ACO.States;
+with ACO.Utils.Generic_Pubsub;
 
 package ACO.OD is
 
@@ -13,6 +14,14 @@ package ACO.OD is
       Node_State : in     ACO.States.State);
 
    function Get_Node_State (This : Object_Dict) return ACO.States.State;
+
+   package Node_State_Pubsub is new ACO.Utils.Generic_Pubsub
+     (Item_Type           => ACO.States.State,
+      Max_Nof_Subscribers => 1);
+
+   type Node_State_Change_Publisher is new Node_State_Pubsub.Pub with null record;
+
+   Node_State_Change_Indication : Node_State_Change_Publisher;
 
 private
 

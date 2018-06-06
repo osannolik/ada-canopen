@@ -12,10 +12,26 @@ package body ACO.Nodes is
 
       ACO.Log.Set_Level (Debug);
 
+      ACO.OD.Node_State_Change_Indication.Attach
+         (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
+
       This.Set_State (Pre_Operational);
 
       ACO.Log.Put_Line (Info, "Initialized CANopen");
+
+      Ada.Synchronous_Task_Control.Set_True (This.Start_Receiver_Task);
    end Initialize;
+
+   overriding
+   procedure Update
+     (This : access Node_State_Change_Subscriber;
+      Data : in     ACO.States.State)
+   is
+      use ACO.Log;
+   begin
+      ACO.Log.Put_Line
+         (Debug, "Update: " & Data'Img & ", Id=" & This.Node_Ref.Id'Img);
+   end Update;
 
    procedure Set_State
      (This  : in out Node;
@@ -68,6 +84,9 @@ package body ACO.Nodes is
 
       Msg : Message;
    begin
+      Ada.Synchronous_Task_Control.Suspend_Until_True (This.Start_Receiver_Task);
+      ACO.Log.Put_Line (Debug, "Starting receiver task...");
+
       loop
          This.Driver.Await_Message (Msg);
 

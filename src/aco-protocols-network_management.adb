@@ -1,4 +1,5 @@
 with Interfaces;
+with ACO.Log;
 
 package body ACO.Protocols.Network_Management is
 
@@ -51,23 +52,30 @@ package body ACO.Protocols.Network_Management is
       State   : in     ACO.States.State)
    is
       use ACO.States;
+      use ACO.Log;
 
       Current : constant ACO.States.State := This.Od.Get_Node_State;
+      Next    : ACO.States.State := Current;
    begin
       case Current is
          when Pre_Operational | Operational | Stopped =>
-            This.Od.Set_Node_State (State);
+            Next := State;
 
          when Initializing =>
             if State = Pre_Operational then
                Send_Bootup (This, Node_Id);
-               This.Od.Set_Node_State (State);
+               Next := State;
             end if;
 
          when Unknown_State =>
             --  ?
-            This.Od.Set_Node_State (State);
+            Next := State;
       end case;
+
+      if Next /= Current then
+         ACO.Log.Put_Line (Debug, "State " & Current'Img & " => " & Next'Img);
+         This.Od.Set_Node_State (Next);
+      end if;
    end Set_State;
 
    procedure Message_Received

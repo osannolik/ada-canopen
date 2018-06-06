@@ -14,13 +14,13 @@ package body ACO.Utils.Generic_Pubsub is
 
    procedure Attach
      (This       : in out Pub;
-      Subscriber : access Sub'Class)
+      Subscriber : in     Sub_Access)
    is
       Found : Boolean := False;
    begin
       for I in This.Subscribers'Range loop
          if This.Subscribers (I) = null then
-            This.Subscribers (I) := Ref (Subscriber);
+            This.Subscribers (I) := Subscriber;
             Found := True;
          elsif This.Subscribers (I) = Subscriber then
             Found := True;
@@ -35,7 +35,7 @@ package body ACO.Utils.Generic_Pubsub is
 
    procedure Detach
      (This       : in out Pub;
-      Subscriber : access Sub'Class)
+      Subscriber : in     Sub_Access)
    is
    begin
       for I in This.Subscribers'Range loop

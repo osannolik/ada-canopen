@@ -8,7 +8,7 @@ package ACO.Utils.Generic_Pubsub is
 
    type Sub is abstract tagged null record;
 
-   type Ref is access all Sub'Class;
+   type Sub_Access is access all Sub'Class;
 
    procedure Update
      (This : access Sub;
@@ -22,17 +22,17 @@ package ACO.Utils.Generic_Pubsub is
 
    procedure Attach
      (This       : in out Pub;
-      Subscriber : access Sub'Class);
+      Subscriber : in     Sub_Access);
 
    Already_Maximum_Nof_Subscribers : Exception;
 
    procedure Detach
      (This       : in out Pub;
-      Subscriber : access Sub'Class);
+      Subscriber : in     Sub_Access);
 
 private
 
-   type Subscriber_List is array (1 .. Max_Nof_Subscribers) of Ref;
+   type Subscriber_List is array (1 .. Max_Nof_Subscribers) of Sub_Access;
 
    type Pub is abstract tagged record
       Subscribers : Subscriber_List := (others => null);
