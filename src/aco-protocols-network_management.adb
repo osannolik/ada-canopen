@@ -6,10 +6,12 @@ package body ACO.Protocols.Network_Management is
    package Commands is
       type Cmd_Spec_Type is new Interfaces.Unsigned_8;
 
+      Cmd_Spec_Length : constant := 2;
+
       type NMT_Command (As_Raw : Boolean := False) is record
          case As_Raw is
             when True =>
-               Raw : Data_Array (0 .. 1);
+               Raw : Data_Array (0 .. Cmd_Spec_Length - 1);
             when False =>
                Command_Specifier : Cmd_Spec_Type;
                Node_Id           : Node_Nr;
@@ -29,9 +31,12 @@ package body ACO.Protocols.Network_Management is
       Reset_Node          : constant := 129;
       Reset_Communication : constant := 130;
 
+      function Is_Valid_Command (Msg : Message) return Boolean is
+        (Msg.Length = Cmd_Spec_Length);
+
       function To_NMT_Command (Msg : Message) return NMT_Command is
-         ((As_Raw => True,
-           Raw    => Msg.Data (0 .. 1)));
+        ((As_Raw => True,
+          Raw    => Msg.Data (0 .. 1)));
    end Commands;
 
    procedure Send_Bootup
@@ -43,6 +48,7 @@ package body ACO.Protocols.Network_Management is
                                         RTR  => False,
                                         Data => (Msg_Data'First => 0));
    begin
+      ACO.Log.Put_Line (ACO.Log.Debug, "Sending bootup message");
       This.Driver.Send_Message (Msg);
    end Send_Bootup;
 
@@ -52,7 +58,6 @@ package body ACO.Protocols.Network_Management is
       State   : in     ACO.States.State)
    is
       use ACO.States;
-      use ACO.Log;
 
       Current : constant ACO.States.State := This.Od.Get_Node_State;
       Next    : ACO.States.State := Current;
@@ -73,7 +78,6 @@ package body ACO.Protocols.Network_Management is
       end case;
 
       if Next /= Current then
-         ACO.Log.Put_Line (Debug, "State " & Current'Img & " => " & Next'Img);
          This.Od.Set_Node_State (Next);
       end if;
    end Set_State;
@@ -86,15 +90,21 @@ package body ACO.Protocols.Network_Management is
       use Commands;
       use ACO.States;
 
-      Cmd : constant NMT_Command := To_NMT_Command (Msg);
+      Cmd : NMT_Command;
    begin
-      case This.Od.Get_Node_State is
-         when Pre_Operational | Operational | Stopped =>
-            null;
+      if not Is_Valid_Command (Msg) then
+         return;
+      end if;
 
+      case This.Od.Get_Node_State is
          when Initializing | Unknown_State =>
             return;
+
+         when Pre_Operational | Operational | Stopped =>
+            null;
       end case;
+
+      Cmd := To_NMT_Command (Msg);
 
       if Cmd.Node_Id = Node_Id or else
          Cmd.Node_Id = Broadcast_Id
