@@ -5,6 +5,7 @@ with ACO.OD;
 
 private with Ada.Synchronous_Task_Control;
 private with ACO.Protocols.Network_Management;
+private with ACO.Log;
 
 package ACO.Nodes is
    use ACO.Messages;
@@ -15,7 +16,8 @@ package ACO.Nodes is
        Driver : not null access ACO.Drivers.Driver'Class)
    is tagged limited private;
 
-   procedure Initialize (This : in out Node);
+   procedure Initialize
+     (This : in out Node);
 
    procedure Set_State
      (This  : in out Node;
@@ -46,5 +48,10 @@ private
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Node'Access);
       Start_Receiver_Task : Ada.Synchronous_Task_Control.Suspension_Object;
    end record;
+
+   procedure Node_Log
+     (This    : in out Node;
+      Level   : in     ACO.Log.Log_Level;
+      Message : in     String);
 
 end ACO.Nodes;

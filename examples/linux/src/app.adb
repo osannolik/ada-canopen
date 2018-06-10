@@ -2,6 +2,7 @@ with Ada.Real_Time; use Ada.Real_Time;
 with ACO.Drivers.Socket;
 with ACO.Messages;
 with ACO.Nodes;
+with ACO.States;
 with ACO.OD;
 with ACO.Log;
 with Ada.Text_IO.Text_Streams;
@@ -33,10 +34,12 @@ package body App is
 
    begin
       ACO.Log.Set_Stream (Text_Streams.Stream (Current_Output));
+      ACO.Log.Set_Level (ACO.Log.Debug);
 
       D.Initialize;
 
-      N.Initialize;
+      --  N.Initialize;
+      N.Set_State (ACO.States.Initializing);
 
       loop
          --  D.Send_Message (Msg_Tx);

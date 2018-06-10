@@ -26,7 +26,7 @@ package ACO.OD is
 private
 
    type Object_Dict is tagged limited record
-      Node_State : ACO.States.State := ACO.States.Initializing;
+      Node_State : ACO.States.State := ACO.States.Unknown_State;
    end record;
 
 end ACO.OD;

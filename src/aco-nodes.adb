@@ -1,5 +1,3 @@
-with ACO.Log;
-
 package body ACO.Nodes is
 
    procedure Initialize
@@ -8,18 +6,16 @@ package body ACO.Nodes is
       use ACO.States;
       use ACO.Log;
    begin
-      This.Set_State (Initializing);
+      This.NMT.Set_State (This.Id, Initializing);
 
-      ACO.Log.Set_Level (Debug);
+      This.Node_Log (Debug, "Initializing...");
 
       ACO.OD.Node_State_Change_Indication.Attach
          (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
 
-      This.Set_State (Pre_Operational);
-
-      ACO.Log.Put_Line (Info, "Initialized CANopen");
-
       Ada.Synchronous_Task_Control.Set_True (This.Start_Receiver_Task);
+
+      This.NMT.Set_State (This.Id, Pre_Operational);
    end Initialize;
 
    overriding
@@ -27,28 +23,35 @@ package body ACO.Nodes is
      (This : access Node_State_Change_Subscriber;
       Data : in     ACO.States.State)
    is
+      use ACO.States;
       use ACO.Log;
+
    begin
-      ACO.Log.Put_Line
-         (Debug, "Update: " & Data'Img & ", Id=" & This.Node_Ref.Id'Img);
+      This.Node_Ref.Node_Log (Info, Data'Img);
+
+      case Data is
+         when Initializing =>
+            Initialize (This.Node_Ref.all);
+
+         when Pre_Operational | Operational | Stopped | Unknown_State =>
+            --  Put protocol handlers into correct state?
+            null;
+      end case;
    end Update;
 
    procedure Set_State
      (This  : in out Node;
       State : in     ACO.States.State)
    is
-      use type ACO.States.State;
+      use ACO.States;
    begin
-      if State /= This.Od.Get_Node_State then
---           case State is
---              when Initializing =>
---              when Pre_Operational =>
---              when Operational =>
---              when Stopped =>
---              when Unknown_State =>
---           end case;
-         This.NMT.Set_State (This.Id, State);
-      end if;
+      case State is
+         when Initializing =>
+            Initialize (This);
+
+         when Pre_Operational | Operational | Stopped | Unknown_State =>
+            This.NMT.Set_State (This.Id, State);
+      end case;
    end Set_State;
 
    procedure Dispatch
@@ -85,12 +88,12 @@ package body ACO.Nodes is
       Msg : Message;
    begin
       Ada.Synchronous_Task_Control.Suspend_Until_True (This.Start_Receiver_Task);
-      ACO.Log.Put_Line (Debug, "Starting receiver task...");
+      This.Node_Log (Debug, "Starting receiver task...");
 
       loop
          This.Driver.Await_Message (Msg);
 
-         ACO.Log.Put_Line (Debug, "Received message " & Image (Msg));
+         This.Node_Log (Debug, "Received message " & Image (Msg));
 
          if Node_Id (Msg) = This.Id or else
             Node_Id (Msg) = Broadcast_Id
@@ -99,5 +102,14 @@ package body ACO.Nodes is
          end if;
       end loop;
    end Receiver_Task;
+
+   procedure Node_Log
+     (This    : in out Node;
+      Level   : in     ACO.Log.Log_Level;
+      Message : in     String)
+   is
+   begin
+      ACO.Log.Put_Line (Level, "Node" & This.Id'Img & ": " & Message);
+   end Node_Log;
 
 end ACO.Nodes;
