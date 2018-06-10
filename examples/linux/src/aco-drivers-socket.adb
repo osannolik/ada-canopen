@@ -1,4 +1,8 @@
+with Ada.Exceptions;
+with ACO.Log;
+
 package body ACO.Drivers.Socket is
+   use ACO.Log;
 
    overriding
    procedure Await_Message
@@ -15,6 +19,10 @@ package body ACO.Drivers.Socket is
               RTR    => Frame.Rtr,
               Length => Frame.Dlc,
               Data   => Data_Array (Frame.Data));
+   exception
+      when E: others =>
+         Put_Line (Warning, Ada.Exceptions.Exception_Information (E));
+
    end Await_Message;
 
    overriding
@@ -31,6 +39,10 @@ package body ACO.Drivers.Socket is
           Data   => Frame_Data (Msg.Data));
    begin
       Send_Socket (This.Socket, Frame);
+   exception
+      when E: others =>
+         Put_Line (Warning, Ada.Exceptions.Exception_Information (E));
+
    end Send_Message;
 
    overriding
@@ -41,6 +53,10 @@ package body ACO.Drivers.Socket is
       This.Socket := Create_Socket (RAW);
 
       Bind_Socket (This.Socket, CAN_If_Name);
+   exception
+      when E: others =>
+         Put_Line (Error, Ada.Exceptions.Exception_Information (E));
+
    end Initialize;
 
 end ACO.Drivers.Socket;
