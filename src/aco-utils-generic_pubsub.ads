@@ -35,7 +35,7 @@ private
    type Subscriber_List is array (1 .. Max_Nof_Subscribers) of Sub_Access;
 
    type Pub is abstract tagged record
-      Subscribers : Subscriber_List := (others => null);
+      Subscribers : Subscriber_List := (others => null); --  Protect?
    end record;
 
 end ACO.Utils.Generic_Pubsub;
