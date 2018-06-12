@@ -38,7 +38,6 @@ package body App is
 
       D.Initialize;
 
-      --  N.Initialize;
       N.Set_State (ACO.States.Initializing);
 
       loop

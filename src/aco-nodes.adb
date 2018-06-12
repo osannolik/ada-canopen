@@ -1,17 +1,20 @@
 package body ACO.Nodes is
 
+   procedure Setup_Internal_Callbacks
+     (This : in out Node)
+   is
+   begin
+      ACO.OD.Node_State_Change_Indication.Attach
+         (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
+   end Setup_Internal_Callbacks;
+
    procedure Initialize
      (This : in out Node)
    is
       use ACO.States;
       use ACO.Log;
    begin
-      This.NMT.Set_State (This.Id, Initializing);
-
       This.Node_Log (Debug, "Initializing...");
-
-      ACO.OD.Node_State_Change_Indication.Attach
-         (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
 
       Ada.Synchronous_Task_Control.Set_True (This.Start_Receiver_Task);
 
@@ -47,11 +50,13 @@ package body ACO.Nodes is
    begin
       case State is
          when Initializing =>
-            Initialize (This);
+            Setup_Internal_Callbacks (This);
 
          when Pre_Operational | Operational | Stopped | Unknown_State =>
-            This.NMT.Set_State (This.Id, State);
+            null;
       end case;
+
+      This.NMT.Set_State (This.Id, State);
    end Set_State;
 
    procedure Dispatch

@@ -16,9 +16,6 @@ package ACO.Nodes is
        Driver : not null access ACO.Drivers.Driver'Class)
    is tagged limited private;
 
-   procedure Initialize
-     (This : in out Node);
-
    procedure Set_State
      (This  : in out Node;
       State : in     ACO.States.State);
@@ -53,5 +50,8 @@ private
      (This    : in out Node;
       Level   : in     ACO.Log.Log_Level;
       Message : in     String);
+
+   procedure Initialize
+     (This : in out Node);
 
 end ACO.Nodes;
