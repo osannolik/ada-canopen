@@ -6,12 +6,10 @@ package body ACO.Protocols.Network_Management is
    package Commands is
       type Cmd_Spec_Type is new Interfaces.Unsigned_8;
 
-      Cmd_Spec_Length : constant := 2;
-
       type NMT_Command (As_Raw : Boolean := False) is record
          case As_Raw is
             when True =>
-               Raw : Data_Array (0 .. Cmd_Spec_Length - 1);
+               Raw : Data_Array (0 .. 1);
             when False =>
                Command_Specifier : Cmd_Spec_Type;
                Node_Id           : Node_Nr;
@@ -32,7 +30,7 @@ package body ACO.Protocols.Network_Management is
       Reset_Communication : constant := 130;
 
       function Is_Valid_Command (Msg : Message) return Boolean is
-        (Msg.Length = Cmd_Spec_Length);
+        (Msg.Length = NMT_Command'Size / 8);
 
       function To_NMT_Command (Msg : Message) return NMT_Command is
         ((As_Raw => True,
