@@ -36,23 +36,9 @@ package body ACO.Protocols.Network_Management is
           Raw    => Msg.Data (0 .. 1)));
    end Commands;
 
-   procedure Send_Bootup
-     (This    : in out NMT;
-      Node_Id : in     Node_Nr)
-   is
-      Msg : constant Message := Create (Code => NMT_Error_Code,
-                                        Node => Node_Id,
-                                        RTR  => False,
-                                        Data => (Msg_Data'First => 0));
-   begin
-      This.NMT_Log (ACO.Log.Debug, "Sending bootup message");
-      This.Driver.Send_Message (Msg);
-   end Send_Bootup;
-
    procedure Set_State
-     (This    : in out NMT;
-      Node_Id : in     Node_Nr;
-      State   : in     ACO.States.State)
+     (This  : in out NMT;
+      State : in     ACO.States.State)
    is
       use ACO.States;
 
@@ -65,7 +51,6 @@ package body ACO.Protocols.Network_Management is
 
          when Initializing =>
             if State = Pre_Operational then
-               Send_Bootup (This, Node_Id);
                Next := State;
             end if;
 
@@ -126,19 +111,16 @@ package body ACO.Protocols.Network_Management is
       then
          case Cmd.Command_Specifier is
             when Start =>
-               Set_State (This, Node_Id, Operational);
+               This.Set_State (Operational);
 
             when Stop =>
-               Set_State (This, Node_Id, Stopped);
+               This.Set_State (Stopped);
 
             when Pre_Op =>
-               Set_State (This, Node_Id, Pre_Operational);
+               This.Set_State (Pre_Operational);
 
-            when Reset_Node =>
-               Set_State (This, Node_Id, Initializing);
-
-            when Reset_Communication =>
-               Set_State (This, Node_Id, Initializing);
+            when Reset_Node | Reset_Communication =>
+               This.Set_State (Initializing);
 
             when others =>
                null;

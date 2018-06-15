@@ -8,6 +8,7 @@ package body ACO.Nodes is
          (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
 
       This.NMT.Setup_Internal_Callbacks;
+      This.EC.Setup_Internal_Callbacks;
    end Setup_Internal_Callbacks;
 
    procedure Initialize
@@ -51,19 +52,19 @@ package body ACO.Nodes is
             null;
       end case;
 
-      This.NMT.Set_State (This.Id, State);
+      This.NMT.Set_State (State);
    end Set_State;
 
    procedure Dispatch
      (This : in out Node;
       Msg  : in     Message)
    is
---        Func : constant Function_Code := Func_Code (Msg);
       use ACO.Protocols;
    begin
-
       if CAN_Id (Msg) = Network_Management.NMT_CAN_Id then
          This.NMT.Message_Received (Msg, This.Id);
+      elsif Func_Code (Msg) = Error_Control.EC_Id then
+         This.EC.Message_Received (Msg);
       end if;
 
 --        if Func = This.NMT.Code then

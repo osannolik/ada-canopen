@@ -24,17 +24,10 @@ package ACO.Protocols.Network_Management is
       Node_Id : in     Node_Nr);
 
    procedure Set_State
-     (This    : in out NMT;
-      Node_Id : in     Node_Nr;
-      State   : in     ACO.States.State);
-
-   procedure Send_Bootup
-     (This    : in out NMT;
-      Node_Id : in     Node_Nr);
+     (This  : in out NMT;
+      State : in     ACO.States.State);
 
 private
-
-   NMT_Error_Code : constant Function_Code := 16#E#;
 
    overriding
    procedure On_State_Change
