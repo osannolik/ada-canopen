@@ -6,6 +6,8 @@ package body ACO.Nodes is
    begin
       ACO.OD.Node_State_Change_Indication.Attach
          (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
+
+      This.NMT.Setup_Internal_Callbacks;
    end Setup_Internal_Callbacks;
 
    procedure Initialize
@@ -14,25 +16,18 @@ package body ACO.Nodes is
       use ACO.States;
       use ACO.Log;
    begin
-      This.Node_Log (Debug, "Initializing...");
-
       Ada.Synchronous_Task_Control.Set_True (This.Start_Receiver_Task);
-
-      This.NMT.Set_State (This.Id, Pre_Operational);
    end Initialize;
 
    overriding
    procedure Update
      (This : access Node_State_Change_Subscriber;
-      Data : in     ACO.States.State)
+      Data : in     ACO.OD.State_Transition)
    is
       use ACO.States;
       use ACO.Log;
-
    begin
-      This.Node_Ref.Node_Log (Info, Data'Img);
-
-      case Data is
+      case Data.Current is
          when Initializing =>
             Initialize (This.Node_Ref.all);
 
@@ -114,7 +109,7 @@ package body ACO.Nodes is
       Message : in     String)
    is
    begin
-      ACO.Log.Put_Line (Level, "Node" & This.Id'Img & ": " & Message);
+      ACO.Log.Put_Line (Level, "(Node" & This.Id'Img & ") " & Message);
    end Node_Log;
 
 end ACO.Nodes;

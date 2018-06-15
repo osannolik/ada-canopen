@@ -15,9 +15,14 @@ package ACO.OD is
 
    function Get_Node_State (This : Object_Dict) return ACO.States.State;
 
+   type State_Transition is record
+      Previous : ACO.States.State := ACO.States.Unknown_State;
+      Current  : ACO.STates.State := ACO.States.Unknown_State;
+   end record;
+
    package Node_State_Pubsub is new ACO.Utils.Generic_Pubsub
-     (Item_Type           => ACO.States.State,
-      Max_Nof_Subscribers => 1);
+     (Item_Type           => State_Transition,
+      Max_Nof_Subscribers => 5);
 
    type Node_State_Change_Publisher is new Node_State_Pubsub.Pub with null record;
 

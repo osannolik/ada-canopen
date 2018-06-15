@@ -1,5 +1,4 @@
 with Interfaces;
-with ACO.Log;
 
 package body ACO.Protocols.Network_Management is
 
@@ -46,7 +45,7 @@ package body ACO.Protocols.Network_Management is
                                         RTR  => False,
                                         Data => (Msg_Data'First => 0));
    begin
-      ACO.Log.Put_Line (ACO.Log.Debug, "Sending bootup message");
+      This.NMT_Log (ACO.Log.Debug, "Sending bootup message");
       This.Driver.Send_Message (Msg);
    end Send_Bootup;
 
@@ -78,7 +77,25 @@ package body ACO.Protocols.Network_Management is
       if Next /= Current then
          This.Od.Set_Node_State (Next);
       end if;
+
+      case Next is
+         when Initializing =>
+            This.Od.Set_Node_State (Pre_Operational);
+
+         when Pre_Operational | Operational | Stopped | Unknown_State =>
+            null;
+      end case;
    end Set_State;
+
+   overriding
+   procedure On_State_Change
+     (This     : in out NMT;
+      Previous : in     ACO.States.State;
+      Current  : in     ACO.States.State)
+   is
+   begin
+      This.NMT_Log (ACO.Log.Info, Previous'Img & " => " & Current'Img);
+   end On_State_Change;
 
    procedure Message_Received
      (This    : in out NMT;
@@ -129,5 +146,15 @@ package body ACO.Protocols.Network_Management is
       end if;
 
    end Message_Received;
+
+   procedure NMT_Log
+     (This    : in out NMT;
+      Level   : in     ACO.Log.Log_Level;
+      Message : in     String)
+   is
+      pragma Unreferenced (This);
+   begin
+      ACO.Log.Put_Line (Level, "(NMT) " & Message);
+   end NMT_Log;
 
 end ACO.Protocols.Network_Management;

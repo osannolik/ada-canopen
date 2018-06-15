@@ -34,7 +34,7 @@ private
    overriding
    procedure Update
      (This : access Node_State_Change_Subscriber;
-      Data : in     ACO.States.State);
+      Data : in     ACO.OD.State_Transition);
 
    type Node
       (Id     : Node_Nr;
