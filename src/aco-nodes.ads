@@ -27,6 +27,8 @@ package ACO.Nodes is
 
    task type Receiver_Task (This : not null access Node'Class);
 
+   task type Periodic_Task (This : not null access Node'Class);
+
 private
 
    type Node_State_Change_Subscriber (Node_Ref : not null access Node'Class) is
@@ -46,6 +48,7 @@ private
       EC  : ACO.Protocols.Error_Control.EC (Id, Od, Driver);
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Node'Access);
       Start_Receiver_Task : Ada.Synchronous_Task_Control.Suspension_Object;
+      Start_Periodic_Task : Ada.Synchronous_Task_Control.Suspension_Object;
    end record;
 
    procedure Node_Log

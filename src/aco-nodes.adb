@@ -1,3 +1,5 @@
+with Ada.Real_Time;
+
 package body ACO.Nodes is
 
    procedure Setup_Internal_Callbacks
@@ -18,6 +20,7 @@ package body ACO.Nodes is
       use ACO.Log;
    begin
       Ada.Synchronous_Task_Control.Set_True (This.Start_Receiver_Task);
+      Ada.Synchronous_Task_Control.Set_True (This.Start_Periodic_Task);
    end Initialize;
 
    overriding
@@ -103,6 +106,25 @@ package body ACO.Nodes is
          end if;
       end loop;
    end Receiver_Task;
+
+   task body Periodic_Task
+   is
+      use ACO.Log;
+      use Ada.Real_Time;
+
+      Next_Release : Time := Clock;
+      Period : constant Time_Span := Milliseconds (1);  --  EC alarm resolution
+   begin
+      Ada.Synchronous_Task_Control.Suspend_Until_True (This.Start_Periodic_Task);
+      This.Node_Log (Debug, "Starting periodic worker task...");
+
+      loop
+         This.EC.Update_Alarms;
+
+         Next_Release := Next_Release + Period;
+         delay until Next_Release;
+      end loop;
+   end Periodic_Task;
 
    procedure Node_Log
      (This    : in out Node;

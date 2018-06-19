@@ -18,6 +18,8 @@ package body App is
 
    T : ACO.Nodes.Receiver_Task (N'Access);
 
+   W : ACO.Nodes.Periodic_Task (N'Access);
+
    procedure Run
    is
 
