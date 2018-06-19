@@ -1,4 +1,5 @@
 with Interfaces;
+with Ada.Real_Time;
 
 package body ACO.Protocols.Error_Control is
 
@@ -33,15 +34,29 @@ package body ACO.Protocols.Error_Control is
    end Send_Bootup;
 
    overriding
+   procedure Signal (This : access Heartbeat_Producer_Alarm)
+   is
+      use Ada.Real_Time;
+   begin
+      This.EC_Ref.EC_Log (ACO.Log.Debug, "HBT producer signal");
+      This.EC_Ref.Event_Manager.Set
+         (ACO.Utils.Alarms.Alarm_Access (This), Clock + Milliseconds (500));
+   end Signal;
+
+   overriding
    procedure On_State_Change
      (This     : in out EC;
       Previous : in     ACO.States.State;
       Current  : in     ACO.States.State)
    is
       use ACO.States;
+      use Ada.Real_Time;
    begin
       if Previous = Initializing and Current = Pre_Operational then
          This.Send_Bootup;
+         This.Event_Manager.Set
+            (Alarm       => This.Producer_Alarm'Unchecked_Access,
+             Signal_Time => Clock + Milliseconds (500));
       end if;
    end On_State_Change;
 
@@ -58,6 +73,13 @@ package body ACO.Protocols.Error_Control is
 
 
    end Message_Received;
+
+   procedure Update_Alarms
+     (This : in out EC)
+   is
+   begin
+      This.Event_Manager.Process;
+   end Update_Alarms;
 
    procedure EC_Log
      (This    : in out EC;
