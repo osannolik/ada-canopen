@@ -15,4 +15,7 @@ package body ACO.OD is
    function Get_Node_State (This : Object_Dict) return ACO.States.State is
      (This.Node_State);
 
+   function Get_Heartbeat_Producer_Period (This : Object_Dict) return Natural is
+     (Heartbeat_Producer_Period);
+
 end ACO.OD;

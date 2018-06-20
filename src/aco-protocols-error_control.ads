@@ -44,6 +44,10 @@ private
 
    procedure Send_Bootup (This : in out EC);
 
+   procedure Heartbeat_Producer_Start (This : in out EC);
+
+   procedure Heartbeat_Producer_Stop (This : in out EC);
+
    overriding
    procedure On_State_Change
      (This     : in out EC;

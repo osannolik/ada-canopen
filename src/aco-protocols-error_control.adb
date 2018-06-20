@@ -4,30 +4,45 @@ with Ada.Real_Time;
 package body ACO.Protocols.Error_Control is
 
    package Commands is
-      type EC_State is new Interfaces.Unsigned_8;
+      use ACO.States;
 
-      Bootup  : constant := 0;
-      Stopped : constant := 4;
-      Op      : constant := 5;
-      Pre_Op  : constant := 127;
+      subtype EC_State is Interfaces.Unsigned_8;
+
+      Bootup : constant := 0;
+      Stop   : constant := 4;
+      Op     : constant := 5;
+      Pre_Op : constant := 127;
+
+      To_EC_State : constant array (ACO.States.State) of EC_State :=
+         (Unknown_State | Initializing => Bootup,
+          Pre_Operational              => Pre_Op,
+          Operational                  => Op,
+          Stopped                      => Stop);
 
       function Is_Valid_Command (Msg : Message) return Boolean is
         (Msg.Length = EC_State'Size / 8);
 
-      function To_EC_State (Msg : Message) return EC_State is
+      function Get_EC_State (Msg : Message) return EC_State is
         (EC_State (Msg.Data (0)));
 
-      pragma Unreferenced (Stopped, Op, Pre_Op, To_EC_State);
+      pragma Unreferenced (Get_EC_State);
    end Commands;
+
+   function Create_Heartbeat
+     (Node_State : ACO.States.State;
+      Node_Id    : Node_Nr)
+      return Message
+   is
+      (Create (Code => EC_Id,
+               Node => Node_Id,
+               RTR  => False,
+               Data => (Msg_Data'First => Commands.To_EC_State (Node_State))));
 
    procedure Send_Bootup
      (This : in out EC)
    is
       Msg : constant Message :=
-         Create (Code => EC_Id,
-                 Node => This.Id,
-                 RTR  => False,
-                 Data => (Msg_Data'First => Commands.Bootup));
+         Create_Heartbeat (ACO.States.Initializing, This.Id);
    begin
       This.EC_Log (ACO.Log.Debug, "Sending bootup for node" & This.Id'Img);
       This.Driver.Send_Message (Msg);
@@ -37,11 +52,39 @@ package body ACO.Protocols.Error_Control is
    procedure Signal (This : access Heartbeat_Producer_Alarm)
    is
       use Ada.Real_Time;
+      use ACO.Utils.Alarms;
+
+      EC_Ref : access EC renames This.EC_Ref;
+
+      Signal_Time : constant Time :=
+         Clock + Milliseconds (EC_Ref.Od.Get_Heartbeat_Producer_Period);
+
+      Msg : constant Message :=
+         Create_Heartbeat (EC_Ref.Od.Get_Node_State, EC_Ref.Id);
    begin
-      This.EC_Ref.EC_Log (ACO.Log.Debug, "HBT producer signal");
-      This.EC_Ref.Event_Manager.Set
-         (ACO.Utils.Alarms.Alarm_Access (This), Clock + Milliseconds (500));
+      EC_Ref.Event_Manager.Set (Alarm_Access (This), Signal_Time);
+
+      EC_Ref.Driver.Send_Message (Msg);
    end Signal;
+
+   procedure Heartbeat_Producer_Start (This : in out EC)
+   is
+      use Ada.Real_Time;
+
+      Signal_Time : constant Time :=
+         Clock + Milliseconds (This.Od.Get_Heartbeat_Producer_Period);
+   begin
+      This.Send_Bootup;
+      This.Event_Manager.Set
+         (Alarm       => This.Producer_Alarm'Unchecked_Access,
+          Signal_Time => Signal_Time);
+   end Heartbeat_Producer_Start;
+
+   procedure Heartbeat_Producer_Stop (This : in out EC)
+   is
+   begin
+      This.Event_Manager.Cancel (This.Producer_Alarm'Unchecked_Access);
+   end Heartbeat_Producer_Stop;
 
    overriding
    procedure On_State_Change
@@ -52,12 +95,18 @@ package body ACO.Protocols.Error_Control is
       use ACO.States;
       use Ada.Real_Time;
    begin
-      if Previous = Initializing and Current = Pre_Operational then
-         This.Send_Bootup;
-         This.Event_Manager.Set
-            (Alarm       => This.Producer_Alarm'Unchecked_Access,
-             Signal_Time => Clock + Milliseconds (500));
-      end if;
+      case Current is
+         when Initializing | Unknown_State =>
+            This.Heartbeat_Producer_Stop;
+
+         when Pre_Operational =>
+            if Previous = Initializing then
+               This.Heartbeat_Producer_Start;
+            end if;
+
+         when Operational | Stopped =>
+            null;
+      end case;
    end On_State_Change;
 
    procedure Message_Received

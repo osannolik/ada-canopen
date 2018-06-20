@@ -2,6 +2,7 @@ with ACO.States;
 with ACO.Utils.Generic_Pubsub;
 
 package ACO.OD is
+   --  This package (or a child package of it) will eventually be generated
 
    pragma Preelaborate;
 
@@ -14,6 +15,8 @@ package ACO.OD is
       Node_State : in     ACO.States.State);
 
    function Get_Node_State (This : Object_Dict) return ACO.States.State;
+
+   function Get_Heartbeat_Producer_Period (This : Object_Dict) return Natural;
 
    type State_Transition is record
       Previous : ACO.States.State := ACO.States.Unknown_State;
@@ -33,5 +36,7 @@ private
    type Object_Dict is tagged limited record
       Node_State : ACO.States.State := ACO.States.Unknown_State;
    end record;
+
+   Heartbeat_Producer_Period : constant := 500;
 
 end ACO.OD;
