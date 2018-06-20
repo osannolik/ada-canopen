@@ -38,14 +38,20 @@ package body ACO.Protocols.Error_Control is
                RTR  => False,
                Data => (Msg_Data'First => Commands.To_EC_State (Node_State))));
 
+   procedure Send_Heartbeat
+      (This       : in out EC;
+       Node_State : in     ACO.States.State)
+   is
+   begin
+      This.Driver.Send_Message (Create_Heartbeat (Node_State, This.Id));
+   end Send_Heartbeat;
+
    procedure Send_Bootup
      (This : in out EC)
    is
-      Msg : constant Message :=
-         Create_Heartbeat (ACO.States.Initializing, This.Id);
    begin
       This.EC_Log (ACO.Log.Debug, "Sending bootup for node" & This.Id'Img);
-      This.Driver.Send_Message (Msg);
+      This.Send_Heartbeat (ACO.States.Initializing);
    end Send_Bootup;
 
    overriding
@@ -56,28 +62,25 @@ package body ACO.Protocols.Error_Control is
 
       EC_Ref : access EC renames This.EC_Ref;
 
-      Signal_Time : constant Time :=
-         Clock + Milliseconds (EC_Ref.Od.Get_Heartbeat_Producer_Period);
-
-      Msg : constant Message :=
-         Create_Heartbeat (EC_Ref.Od.Get_Node_State, EC_Ref.Id);
+      Period : constant Natural := EC_Ref.Od.Get_Heartbeat_Producer_Period;
    begin
-      EC_Ref.Event_Manager.Set (Alarm_Access (This), Signal_Time);
+      EC_Ref.Event_Manager.Set (Alarm_Access (This), Clock + Milliseconds (Period));
 
-      EC_Ref.Driver.Send_Message (Msg);
+      EC_Ref.Send_Heartbeat (EC_Ref.Od.Get_Node_State);
    end Signal;
 
    procedure Heartbeat_Producer_Start (This : in out EC)
    is
       use Ada.Real_Time;
 
-      Signal_Time : constant Time :=
-         Clock + Milliseconds (This.Od.Get_Heartbeat_Producer_Period);
+      Period : constant Natural := This.Od.Get_Heartbeat_Producer_Period;
    begin
       This.Send_Bootup;
-      This.Event_Manager.Set
-         (Alarm       => This.Producer_Alarm'Unchecked_Access,
-          Signal_Time => Signal_Time);
+      if Period > 0 then
+         This.Event_Manager.Set
+            (Alarm       => This.Producer_Alarm'Unchecked_Access,
+             Signal_Time => Clock + Milliseconds (Period));
+      end if;
    end Heartbeat_Producer_Start;
 
    procedure Heartbeat_Producer_Stop (This : in out EC)
