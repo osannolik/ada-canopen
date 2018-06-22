@@ -99,11 +99,7 @@ package body ACO.Nodes is
 
          This.Node_Log (Debug, "Received message " & Image (Msg));
 
-         if Node_Id (Msg) = This.Id or else
-            Node_Id (Msg) = Broadcast_Id
-         then
-            This.Dispatch (Msg);
-         end if;
+         This.Dispatch (Msg);
       end loop;
    end Receiver_Task;
 

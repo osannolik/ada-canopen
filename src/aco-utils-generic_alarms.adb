@@ -1,4 +1,4 @@
-package body ACO.Utils.Alarms is
+package body ACO.Utils.Generic_Alarms is
 
    protected body List is
 
@@ -40,7 +40,7 @@ package body ACO.Utils.Alarms is
          return;
       end if;
 
-      if Next.Signal_Time <= Ada.Real_Time.Clock then
+      if Next.Signal_Time <= Clock then
          This.Alarm_List.Remove (Next.Alarm_Ref);
          Next.Alarm_Ref.Signal;
       end if;
@@ -76,4 +76,4 @@ package body ACO.Utils.Alarms is
       return Left.Alarm_Ref = Right.Alarm_Ref;
    end "=";
 
-end ACO.Utils.Alarms;
+end ACO.Utils.Generic_Alarms;

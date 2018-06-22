@@ -1,7 +1,9 @@
 with Ada.Real_Time;
 private with ACO.Utils.Generic_Sorted_List;
 
-package ACO.Utils.Alarms is
+generic
+   Maximum_Nof_Alarms : Positive;
+package ACO.Utils.Generic_Alarms is
 
    type Alarm_Type is abstract tagged limited null record;
 
@@ -40,7 +42,7 @@ private
       (Item_Type            => Alarm_Data,
        "<"                  => "<",
        "="                  => "=",
-       Maximum_Nof_Elements => 8);
+       Maximum_Nof_Elements => Maximum_Nof_Alarms);
 
    protected type List is
 
@@ -58,4 +60,4 @@ private
       Alarm_List : List;
    end record;
 
-end ACO.Utils.Alarms;
+end ACO.Utils.Generic_Alarms;

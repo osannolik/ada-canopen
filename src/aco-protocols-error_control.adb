@@ -5,6 +5,7 @@ package body ACO.Protocols.Error_Control is
 
    package Commands is
       use ACO.States;
+      use Interfaces;
 
       subtype EC_State is Interfaces.Unsigned_8;
 
@@ -20,12 +21,11 @@ package body ACO.Protocols.Error_Control is
           Stopped                      => Stop);
 
       function Is_Valid_Command (Msg : Message) return Boolean is
-        (Msg.Length = EC_State'Size / 8);
+        (Msg.Length = EC_State'Size / 8 and then Node_Id (Msg) /= 0);
 
-      function Get_EC_State (Msg : Message) return EC_State is
-        (EC_State (Msg.Data (0)));
+      function Is_Bootup (Msg : Message) return Boolean is
+        (EC_State (Msg.Data (0)) = Bootup);
 
-      pragma Unreferenced (Get_EC_State);
    end Commands;
 
    function Create_Heartbeat
@@ -58,15 +58,16 @@ package body ACO.Protocols.Error_Control is
    procedure Signal (This : access Heartbeat_Producer_Alarm)
    is
       use Ada.Real_Time;
-      use ACO.Utils.Alarms;
+      use Alarms;
 
       EC_Ref : access EC renames This.EC_Ref;
 
       Period : constant Natural := EC_Ref.Od.Get_Heartbeat_Producer_Period;
    begin
-      EC_Ref.Event_Manager.Set (Alarm_Access (This), Clock + Milliseconds (Period));
-
-      EC_Ref.Send_Heartbeat (EC_Ref.Od.Get_Node_State);
+      if Period > 0 then
+         EC_Ref.Event_Manager.Set (Alarm_Access (This), Clock + Milliseconds (Period));
+         EC_Ref.Send_Heartbeat (EC_Ref.Od.Get_Node_State);
+      end if;
    end Signal;
 
    procedure Heartbeat_Producer_Start (This : in out EC)
@@ -74,12 +75,12 @@ package body ACO.Protocols.Error_Control is
       use Ada.Real_Time;
 
       Period : constant Natural := This.Od.Get_Heartbeat_Producer_Period;
+      Immediately : constant Time := Clock;
    begin
-      This.Send_Bootup;
       if Period > 0 then
          This.Event_Manager.Set
             (Alarm       => This.Producer_Alarm'Unchecked_Access,
-             Signal_Time => Clock + Milliseconds (Period));
+             Signal_Time => Immediately);
       end if;
    end Heartbeat_Producer_Start;
 
@@ -104,6 +105,7 @@ package body ACO.Protocols.Error_Control is
 
          when Pre_Operational =>
             if Previous = Initializing then
+               This.Send_Bootup;
                This.Heartbeat_Producer_Start;
             end if;
 
@@ -112,19 +114,151 @@ package body ACO.Protocols.Error_Control is
       end case;
    end On_State_Change;
 
+   overriding
+   procedure Signal (This : access Heartbeat_Consumer_Alarm)
+   is
+      use ACO.Log;
+   begin
+      --  Ada.Text_IO.Put_Line ("Signal CONSUMER" & This.Slave_Id'Img);
+
+      This.Slave_Id := 0;
+
+      --  TODO: Set node state disconnected
+   end Signal;
+
+   procedure Consumer_Alarm_Reset
+     (Event_Manager : in out Alarms.Alarm_Manager;
+      Alarm         : in out Heartbeat_Consumer_Alarm;
+      Period        : in     Natural)
+   is
+      use Ada.Real_Time;
+   begin
+      Event_Manager.Cancel (Alarm'Unchecked_Access);
+
+      if Period = 0 then
+         Alarm.Slave_Id := 0;
+      elsif Alarm.Slave_Id /= 0 then
+         Event_Manager.Set
+            (Alarm'Unchecked_Access, Clock + Milliseconds (Period));
+      end if;
+   end Consumer_Alarm_Reset;
+
+   procedure Heartbeat_Consumer_Reset
+     (This     : in out EC;
+      Slave_Id : in     Node_Nr)
+   is
+      use Ada.Real_Time;
+
+      Period : constant Natural :=
+         This.Od.Get_Heartbeat_Consumer_Period (Slave_Id);
+   begin
+      This.EC_Log (ACO.Log.Debug, "Heartbeat consumer reset for slave" & Slave_Id'Img);
+      for Alarm of This.Consumer_Alarms loop
+         if Alarm.Slave_Id = Slave_Id then
+            Consumer_Alarm_Reset
+               (Event_Manager => This.Event_Manager,
+                Alarm         => Alarm,
+                Period        => Period);
+            exit;
+         end if;
+      end loop;
+   end Heartbeat_Consumer_Reset;
+
+   procedure Heartbeat_Consumer_Start
+     (This     : in out EC;
+      Slave_Id : in     Node_Nr)
+   is
+      use Ada.Real_Time;
+
+      Period : constant Natural :=
+         This.Od.Get_Heartbeat_Consumer_Period (Slave_Id);
+   begin
+      if Period = 0 then
+         return;
+      end if;
+
+      This.EC_Log (ACO.Log.Debug, "Heartbeat consumer start for slave" & Slave_Id'Img);
+      for Alarm of This.Consumer_Alarms loop
+         if Alarm.Slave_Id = 0 then
+            Alarm.Slave_Id := Slave_Id;
+            This.Event_Manager.Set
+               (Alarm'Unchecked_Access, Clock + Milliseconds (Period));
+
+            exit;
+         end if;
+      end loop;
+   end Heartbeat_Consumer_Start;
+
+   function Is_Heartbeat_Monitored_Slave
+     (This     : in out EC;
+      Slave_Id : in     Node_Nr)
+      return Boolean
+   is
+   begin
+      for Alarm of This.Consumer_Alarms loop
+         if Alarm.Slave_Id = Slave_Id then
+            return True;
+         end if;
+      end loop;
+
+      return False;
+   end Is_Heartbeat_Monitored_Slave;
+
    procedure Message_Received
      (This : in out EC;
       Msg  : in     Message)
    is
-      pragma Unreferenced (This);
       use Commands;
+
+      Id : Node_Nr;
    begin
       if not Is_Valid_Command (Msg) then
          return;
       end if;
 
+      Id := Node_Id (Msg);
 
+      --  TODO: Update slave node state in OD
+
+      if This.Is_Heartbeat_Monitored_Slave (Id) then
+         This.Heartbeat_Consumer_Reset (Id);
+      elsif Is_Bootup (Msg) then
+         This.Heartbeat_Consumer_Start (Id);
+      end if;
    end Message_Received;
+
+   overriding
+   procedure Update
+     (This : access Heartbeat_Producer_Change_Subscriber;
+      Data : in     Natural)
+   is
+      pragma Unreferenced (Data);
+   begin
+      This.EC_Ref.Heartbeat_Producer_Stop;
+      This.EC_Ref.Heartbeat_Producer_Start;
+   end Update;
+
+   overriding
+   procedure Update
+     (This : access Heartbeat_Consumer_Change_Subscriber;
+      Data : in     Natural)
+   is
+      pragma Unreferenced (Data);
+   begin
+      for Alarm of This.EC_Ref.Consumer_Alarms loop
+         if Alarm.Slave_Id /= 0 then
+            declare
+               Period : constant Natural :=
+                  This.EC_Ref.Od.Get_Heartbeat_Consumer_Period (Alarm.Slave_Id);
+            begin
+               Consumer_Alarm_Reset
+                  (Event_Manager => This.EC_Ref.Event_Manager,
+                   Alarm         => Alarm,
+                   Period        => Period);
+            end;
+         end if;
+      end loop;
+   end Update;
 
    procedure Update_Alarms
      (This : in out EC)
@@ -132,6 +266,19 @@ package body ACO.Protocols.Error_Control is
    begin
       This.Event_Manager.Process;
    end Update_Alarms;
+
+   overriding
+   procedure Setup_Internal_Callbacks (This : in out EC)
+   is
+      use Ada.Real_Time;
+   begin
+      Protocols.Setup_Internal_Callbacks (Protocol (This));
+
+      ACO.OD.Heartbeat_Producer_Change_Indication.Attach
+         (Subscriber => This.Heartbeat_Producer_Change_Indication'Unchecked_Access);
+      ACO.OD.Heartbeat_Consumer_Change_Indication.Attach
+         (Subscriber => This.Heartbeat_Consumer_Change_Indication'Unchecked_Access);
+   end Setup_Internal_Callbacks;
 
    procedure EC_Log
      (This    : in out EC;

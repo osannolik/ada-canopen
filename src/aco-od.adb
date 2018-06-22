@@ -18,4 +18,21 @@ package body ACO.OD is
    function Get_Heartbeat_Producer_Period (This : Object_Dict) return Natural is
      (Heartbeat_Producer_Period);
 
+   function Get_Heartbeat_Consumer_Period
+     (This    : Object_Dict;
+      Node_Id : ACO.Messages.Node_Nr)
+      return Natural
+   is
+      pragma Unreferenced (This);
+
+      use ACO.Messages;
+   begin
+      --  Temporary for test
+      if Node_Id = 2 then
+         return 0;
+      else
+         return 600;
+      end if;
+   end Get_Heartbeat_Consumer_Period;
+
 end ACO.OD;

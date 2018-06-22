@@ -23,22 +23,22 @@ package body ACO.Utils.Generic_Sorted_List is
       Item : in     Item_Type)
    is
       subtype Idx is Positive range
-         This.Items'First .. This.Items'First + This.Length - 1;
+         This.Items'First .. This.Items'First + This.Nof_Items - 1;
    begin
-      if This.Is_Empty then
-         This.Items (Idx'First) := Item;
-         This.Nof_Items := This.Nof_Items + 1;
-         return;
-      end if;
-
+      --  Insert
       for I in Idx'Range loop
          if Item < This.Items (I) then
             This.Items (I + 1 .. Idx'Last + 1) := This.Items (I .. Idx'Last);
             This.Items (I) := Item;
             This.Nof_Items := This.Nof_Items + 1;
+
             return;
          end if;
       end loop;
+
+      --  Append at end
+      This.Items (Idx'Last + 1) := Item;
+      This.Nof_Items := This.Nof_Items + 1;
    end Add;
 
    procedure Remove
