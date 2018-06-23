@@ -60,6 +60,12 @@ package ACO.Messages is
 
    function Create (CAN_Id : Id_Type;
                     RTR    : Boolean;
+                    DLC    : Data_Length;
+                    Data   : Msg_Data)
+                    return Message;
+
+   function Create (CAN_Id : Id_Type;
+                    RTR    : Boolean;
                     Data   : Data_Array)
                     return Message
       with Pre => Data'Length <= Msg_Data'Length;

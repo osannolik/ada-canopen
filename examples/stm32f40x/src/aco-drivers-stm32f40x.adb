@@ -38,6 +38,7 @@ package body ACO.Drivers.Stm32f40x is
 
       Msg := Create (CAN_Id => Id_Type (Rx_Msg.Std_ID),
                      RTR    => Rx_Msg.Rtr,
+                     DLC    => Data_Length (Rx_Msg.Dlc),
                      Data   => Convert (Rx_Msg.Data));
    end Await_Message;
 

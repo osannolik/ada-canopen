@@ -11,6 +11,19 @@ package body ACO.Messages is
 
    function Create (CAN_Id : Id_Type;
                     RTR    : Boolean;
+                    DLC    : Data_Length;
+                    Data   : Msg_Data)
+                    return Message
+   is
+   begin
+      return (CAN_Id => (True, CAN_Id),
+              RTR    => RTR,
+              Length => DLC,
+              Data   => Data);
+   end Create;
+
+   function Create (CAN_Id : Id_Type;
+                    RTR    : Boolean;
                     Data   : Data_Array)
                     return Message
    is
