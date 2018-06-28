@@ -71,10 +71,24 @@ package body ACO.Utils.Generic_Sorted_List is
       end loop;
    end Remove;
 
+   function Get_Item (This  : Sorted_List;
+                      Index : Item_Index)
+                      return Item_Type
+   is
+   begin
+      return This.Items (Index);
+   end Get_Item;
+
    function Get_First (This : Sorted_List) return Item_Type
    is
    begin
-      return This.Items (This.Items'First);
+      return This.Get_Item (1);
    end Get_First;
+
+   procedure Clear (This : in out Sorted_List)
+   is
+   begin
+      This.Nof_Items := 0;
+   end Clear;
 
 end ACO.Utils.Generic_Sorted_List;

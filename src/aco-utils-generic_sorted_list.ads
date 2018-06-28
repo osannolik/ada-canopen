@@ -11,6 +11,8 @@ package ACO.Utils.Generic_Sorted_List is
 
    type Sorted_List is tagged limited private;
 
+   subtype Item_Index is Positive range 1 .. Maximum_Nof_Elements;
+
    procedure Add
      (This : in out Sorted_List;
       Item : in     Item_Type)
@@ -28,16 +30,24 @@ package ACO.Utils.Generic_Sorted_List is
 
    function Is_Empty (This : Sorted_List) return Boolean;
 
+   function Get_Item (This  : Sorted_List;
+                      Index : Item_Index)
+                      return Item_Type
+      with
+         Pre => Index <= This.Length;
+
    function Get_First (This : Sorted_List) return Item_Type
       with
          Pre => not This.Is_Empty;
+
+   procedure Clear (This : in out Sorted_List);
 
 private
 
    type Item_Array is array (Positive range <>) of Item_Type;
 
    type Sorted_List is tagged limited record
-      Items : Item_Array (1 .. Maximum_Nof_Elements);
+      Items : Item_Array (Item_Index);
       Nof_Items : Natural := 0;
    end record;
 
