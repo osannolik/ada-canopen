@@ -1,6 +1,6 @@
 with Generic_Sorted_List_Test;
 
-package body Utils_Suite is
+package body Unit_Tests is
 
    function Suite return Access_Test_Suite is
       Ret : constant Access_Test_Suite := new Test_Suite;
@@ -9,4 +9,4 @@ package body Utils_Suite is
       return Ret;
    end Suite;
 
-end Utils_Suite;
+end Unit_Tests;
