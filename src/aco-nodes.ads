@@ -44,7 +44,7 @@ private
        Od     : not null access ACO.OD.Object_Dict'Class;
        Driver : not null access ACO.Drivers.Driver'Class)
    is tagged limited record
-      NMT : ACO.Protocols.Network_Management.NMT (Od, Driver);
+      NMT : ACO.Protocols.Network_Management.NMT (Od);
       EC  : ACO.Protocols.Error_Control.EC (Id, Od, Driver);
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Node'Access);
       Start_Receiver_Task : Ada.Synchronous_Task_Control.Suspension_Object;
