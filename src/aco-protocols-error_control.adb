@@ -1,32 +1,6 @@
-with Interfaces;
 with Ada.Real_Time;
 
 package body ACO.Protocols.Error_Control is
-
-   package Commands is
-      use ACO.States;
-      use Interfaces;
-
-      subtype EC_State is Interfaces.Unsigned_8;
-
-      Bootup : constant := 0;
-      Stop   : constant := 4;
-      Op     : constant := 5;
-      Pre_Op : constant := 127;
-
-      To_EC_State : constant array (ACO.States.State) of EC_State :=
-         (Unknown_State | Initializing => Bootup,
-          Pre_Operational              => Pre_Op,
-          Operational                  => Op,
-          Stopped                      => Stop);
-
-      function Is_Valid_Command (Msg : Message) return Boolean is
-        (Msg.Length = EC_State'Size / 8 and then Node_Id (Msg) /= 0);
-
-      function Is_Bootup (Msg : Message) return Boolean is
-        (EC_State (Msg.Data (0)) = Bootup);
-
-   end Commands;
 
    function Create_Heartbeat
      (Node_State : ACO.States.State;
@@ -36,7 +10,8 @@ package body ACO.Protocols.Error_Control is
       (Create (Code => EC_Id,
                Node => Node_Id,
                RTR  => False,
-               Data => (Msg_Data'First => Commands.To_EC_State (Node_State))));
+               Data => (Msg_Data'First =>
+                           Data_Type (Commands.To_EC_State (Node_State)))));
 
    procedure Send_Heartbeat
       (This       : in out EC;

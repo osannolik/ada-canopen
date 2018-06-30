@@ -5,6 +5,7 @@ with ACO.OD;
 private with ACO.States;
 private with ACO.Log;
 private with ACO.Utils.Generic_Alarms;
+private with Interfaces;
 
 package ACO.Protocols.Error_Control is
 
@@ -30,6 +31,34 @@ package ACO.Protocols.Error_Control is
      (This : in out EC);
 
 private
+
+   package Commands is
+      use ACO.States;
+      use Interfaces;
+
+      type EC_State is new Interfaces.Unsigned_8;
+
+      Bootup : constant := 0;
+      Stop   : constant := 4;
+      Op     : constant := 5;
+      Pre_Op : constant := 127;
+
+      To_EC_State : constant array (ACO.States.State) of EC_State :=
+         (Unknown_State | Initializing => Bootup,
+          Pre_Operational              => Pre_Op,
+          Operational                  => Op,
+          Stopped                      => Stop);
+
+      function Get_EC_State (Msg : Message) return EC_State is
+         (EC_State (Msg.Data (0)));
+
+      function Is_Valid_Command (Msg : Message) return Boolean is
+         (Msg.Length = EC_State'Size / 8 and then Node_Id (Msg) /= 0);
+
+      function Is_Bootup (Msg : Message) return Boolean is
+         (Get_EC_State (Msg) = Bootup);
+
+   end Commands;
 
    package Alarms is new ACO.Utils.Generic_Alarms (Max_Nof_Heartbeat_Slaves + 1);
 
