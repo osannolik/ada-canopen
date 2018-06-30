@@ -34,16 +34,16 @@ package body ACO.Utils.Generic_Alarms is
    is
       use Ada.Real_Time;
 
-      Next : constant Alarm_Data := This.Alarm_List.Get_Next_Up;
+      Next : Alarm_Data := This.Alarm_List.Get_Next_Up;
    begin
-      if Next.Alarm_Ref = No_Alarm then
-         return;
-      end if;
-
-      if Next.Signal_Time <= Clock then
+      while Next.Alarm_Ref /= No_Alarm and then
+            Next.Signal_Time <= Clock
+      loop
          This.Alarm_List.Remove (Next.Alarm_Ref);
          Next.Alarm_Ref.Signal;
-      end if;
+
+         Next := This.Alarm_List.Get_Next_Up;
+      end loop;
    end Process;
 
    procedure Set
