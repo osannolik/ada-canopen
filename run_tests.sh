@@ -1,5 +1,5 @@
 #!/bin/bash
 
 gprbuild -P tests.gpr -f
-./tests/test_main
+./tests/bin/test_main
 
