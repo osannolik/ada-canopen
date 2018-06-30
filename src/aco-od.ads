@@ -23,6 +23,10 @@ package ACO.OD is
 
    function Get_Heartbeat_Producer_Period (This : Object_Dict) return Natural;
 
+   procedure Set_Heartbeat_Producer_Period
+     (This   : in out Object_Dict;
+      Period : in     Natural);
+
    function Get_Heartbeat_Consumer_Period
      (This    : Object_Dict;
       Node_Id : ACO.Messages.Node_Nr)
@@ -61,10 +65,9 @@ private
 
    type Object_Dict is tagged limited record
       Node_State : ACO.States.State := ACO.States.Unknown_State;
+      Heartbeat_Producer_Period : Natural := 500;
       Slave_States : State_Array (1 .. Max_Nof_Heartbeat_Slaves) :=
          (others => ACO.States.Unknown_State);
    end record;
-
-   Heartbeat_Producer_Period : constant := 500;
 
 end ACO.OD;

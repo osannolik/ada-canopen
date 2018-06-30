@@ -16,7 +16,15 @@ package body ACO.OD is
      (This.Node_State);
 
    function Get_Heartbeat_Producer_Period (This : Object_Dict) return Natural is
-     (Heartbeat_Producer_Period);
+     (This.Heartbeat_Producer_Period);
+
+   procedure Set_Heartbeat_Producer_Period
+     (This   : in out Object_Dict;
+      Period : in     Natural)
+   is
+   begin
+      This.Heartbeat_Producer_Period := Period;
+   end Set_Heartbeat_Producer_Period;
 
    function Get_Heartbeat_Consumer_Period
      (This    : Object_Dict;
