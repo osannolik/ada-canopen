@@ -72,7 +72,6 @@ package body ACO.Protocols.Error_Control is
       Current  : in     ACO.States.State)
    is
       use ACO.States;
-      use Ada.Real_Time;
    begin
       case Current is
          when Initializing | Unknown_State =>
