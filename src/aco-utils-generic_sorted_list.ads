@@ -8,6 +8,7 @@ generic
 
 package ACO.Utils.Generic_Sorted_List is
    --  Simple, but not very efficient for large list and item sizes...
+   pragma Preelaborate;
 
    type Sorted_List is tagged limited private;
 

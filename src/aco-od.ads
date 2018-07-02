@@ -23,6 +23,12 @@ package ACO.OD is
 
    function Get_Heartbeat_Producer_Period (This : Object_Dict) return Natural;
 
+   function Get_Communication_Cycle_Period (This : Object_Dict) return Natural;
+
+   subtype Sync_Counter is Natural range 0 .. 240;
+
+   function Get_Sync_Counter_Overflow (This : Object_Dict) return Sync_Counter;
+
    procedure Set_Heartbeat_Producer_Period
      (This   : in out Object_Dict;
       Period : in     Natural);
@@ -65,6 +71,8 @@ private
 
    type Object_Dict is tagged limited record
       Node_State : ACO.States.State := ACO.States.Unknown_State;
+      Communication_Cycle_Period : Natural := 10_000; --  Multiples of 100us
+      Sync_Counter_Overflow_Value : Sync_Counter := 16;
       Heartbeat_Producer_Period : Natural := 500;
       Slave_States : State_Array (1 .. Max_Nof_Heartbeat_Slaves) :=
          (others => ACO.States.Unknown_State);

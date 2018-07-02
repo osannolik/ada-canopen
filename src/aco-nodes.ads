@@ -6,6 +6,7 @@ with ACO.OD;
 private with Ada.Synchronous_Task_Control;
 private with ACO.Protocols.Network_Management;
 private with ACO.Protocols.Error_Control;
+private with ACO.Protocols.Synchronization;
 private with ACO.Log;
 
 package ACO.Nodes is
@@ -46,6 +47,7 @@ private
    is tagged limited record
       NMT : ACO.Protocols.Network_Management.NMT (Od);
       EC  : ACO.Protocols.Error_Control.EC (Id, Od, Driver);
+      SYNC : ACO.Protocols.Synchronization.SYNC (Od, Driver);
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Node'Access);
       Start_Receiver_Task : Ada.Synchronous_Task_Control.Suspension_Object;
       Start_Periodic_Task : Ada.Synchronous_Task_Control.Suspension_Object;

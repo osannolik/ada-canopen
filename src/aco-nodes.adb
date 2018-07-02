@@ -11,6 +11,7 @@ package body ACO.Nodes is
 
       This.NMT.Setup_Internal_Callbacks;
       This.EC.Setup_Internal_Callbacks;
+      This.SYNC.Setup_Internal_Callbacks;
    end Setup_Internal_Callbacks;
 
    procedure Initialize
@@ -66,6 +67,8 @@ package body ACO.Nodes is
    begin
       if CAN_Id (Msg) = Network_Management.NMT_CAN_Id then
          This.NMT.Message_Received (Msg, This.Id);
+      elsif CAN_Id (Msg) = Synchronization.SYNC_CAN_Id then
+         This.SYNC.Message_Received (Msg, This.Id);
       elsif Func_Code (Msg) = Error_Control.EC_Id then
          This.EC.Message_Received (Msg);
       end if;
@@ -109,13 +112,14 @@ package body ACO.Nodes is
       use Ada.Real_Time;
 
       Next_Release : Time := Clock;
-      Period : constant Time_Span := Milliseconds (1);  --  EC alarm resolution
+      Period : constant Time_Span := Milliseconds (1);  --  alarm resolution
    begin
       Ada.Synchronous_Task_Control.Suspend_Until_True (This.Start_Periodic_Task);
       This.Node_Log (Debug, "Starting periodic worker task...");
 
       loop
          This.EC.Update_Alarms;
+         This.SYNC.Update_Alarms;
 
          Next_Release := Next_Release + Period;
          delay until Next_Release;
