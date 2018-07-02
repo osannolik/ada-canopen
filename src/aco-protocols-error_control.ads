@@ -80,7 +80,7 @@ private
    type Heartbeat_Consumer_Alarms is
       array (Positive range <>) of aliased Heartbeat_Consumer_Alarm;
 
-   type Heartbeat_Consumer_Change_Subscriber (EC_Ref : not null access EC'Class) is
+   type Heartbeat_Consumer_Change_Subscriber (EC_Ref : not null access EC) is
       new ACO.OD.Natural_Pubsub.Sub with null record;
 
    overriding
@@ -88,7 +88,7 @@ private
       (This : access Heartbeat_Consumer_Change_Subscriber;
        Data : in     Natural);
 
-   type Heartbeat_Producer_Change_Subscriber (EC_Ref : not null access EC'Class) is
+   type Heartbeat_Producer_Change_Subscriber (EC_Ref : not null access EC) is
       new ACO.OD.Natural_Pubsub.Sub with null record;
 
    overriding

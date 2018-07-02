@@ -21,6 +21,11 @@ package ACO.Utils.Generic_Alarms is
       Alarm       : in     Alarm_Access;
       Signal_Time : in     Ada.Real_Time.Time);
 
+   function Is_Pending
+     (This  : in out Alarm_Manager;
+      Alarm : in     Alarm_Access)
+      return Boolean;
+
    procedure Cancel
      (This  : in out Alarm_Manager;
       Alarm : in     Alarm_Access);
@@ -51,6 +56,8 @@ private
       procedure Remove (Alarm_Ref : in Alarm_Access);
 
       function Get_Next_Up return Alarm_Data;
+
+      function Is_Pending (Alarm_Ref : Alarm_Access) return Boolean;
 
    private
       Alarm_List : List_Pack.Sorted_List;

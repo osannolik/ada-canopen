@@ -184,12 +184,21 @@ package body ACO.Protocols.Error_Control is
       Msg  : in     Message)
    is
       use Commands;
+      use ACO.States;
 
       Id : Node_Nr;
    begin
       if not Is_Valid_Command (Msg) then
          return;
       end if;
+
+      case This.Od.Get_Node_State is
+         when Initializing | Unknown_State =>
+            return;
+
+         when Pre_Operational | Operational | Stopped =>
+            null;
+      end case;
 
       Id := Node_Id (Msg);
 
@@ -208,9 +217,12 @@ package body ACO.Protocols.Error_Control is
       Data : in     Natural)
    is
       pragma Unreferenced (Data);
+      EC_Ref : access EC renames This.EC_Ref;
    begin
-      This.EC_Ref.Heartbeat_Producer_Stop;
-      This.EC_Ref.Heartbeat_Producer_Start;
+      if EC_Ref.Event_Manager.Is_Pending (EC_Ref.Producer_Alarm'Access) then
+         EC_Ref.Heartbeat_Producer_Stop;
+         EC_Ref.Heartbeat_Producer_Start;
+      end if;
    end Update;
 
    overriding

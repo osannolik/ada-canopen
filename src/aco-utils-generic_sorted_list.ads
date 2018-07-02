@@ -30,6 +30,10 @@ package ACO.Utils.Generic_Sorted_List is
 
    function Is_Empty (This : Sorted_List) return Boolean;
 
+   function Is_Item_In_List
+     (This : Sorted_List;
+      Item : Item_Type) return Boolean;
+
    function Get_Item (This  : Sorted_List;
                       Index : Item_Index)
                       return Item_Type

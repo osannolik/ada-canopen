@@ -27,6 +27,14 @@ package body ACO.Utils.Generic_Alarms is
          end if;
       end Get_Next_Up;
 
+      function Is_Pending (Alarm_Ref : Alarm_Access) return Boolean
+      is
+      begin
+         return Alarm_List.Is_Item_In_List
+            ((Alarm_Ref   => Alarm_Ref,
+              Signal_Time => Ada.Real_Time.Time_Last));
+      end Is_Pending;
+
    end List;
 
    procedure Process
@@ -54,6 +62,15 @@ package body ACO.Utils.Generic_Alarms is
    begin
       This.Alarm_List.Add ((Alarm, Signal_Time));
    end Set;
+
+   function Is_Pending
+     (This  : in out Alarm_Manager;
+      Alarm : in     Alarm_Access)
+      return Boolean
+   is
+   begin
+      return This.Alarm_List.Is_Pending (Alarm);
+   end Is_Pending;
 
    procedure Cancel
      (This  : in out Alarm_Manager;

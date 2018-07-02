@@ -18,6 +18,22 @@ package body ACO.Utils.Generic_Sorted_List is
       return This.Nof_Items = 0;
    end Is_Empty;
 
+   function Is_Item_In_List
+     (This : Sorted_List;
+      Item : Item_Type) return Boolean
+   is
+      subtype Idx is Positive range
+         This.Items'First .. This.Items'First + This.Nof_Items - 1;
+   begin
+      for I in Idx'Range loop
+         if This.Items (I) = Item then
+            return True;
+         end if;
+      end loop;
+
+      return False;
+   end Is_Item_In_List;
+
    procedure Add
      (This : in out Sorted_List;
       Item : in     Item_Type)
