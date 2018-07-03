@@ -25,9 +25,17 @@ package ACO.OD is
 
    function Get_Communication_Cycle_Period (This : Object_Dict) return Natural;
 
+   procedure Set_Communication_Cycle_Period
+     (This   : in out Object_Dict;
+      Period : in     Natural);
+
    subtype Sync_Counter is Natural range 0 .. 240;
 
    function Get_Sync_Counter_Overflow (This : Object_Dict) return Sync_Counter;
+
+   procedure Set_Sync_Counter_Overflow
+     (This           : in out Object_Dict;
+      Overflow_Value : in     Sync_Counter);
 
    procedure Set_Heartbeat_Producer_Period
      (This   : in out Object_Dict;
@@ -64,6 +72,11 @@ package ACO.OD is
       new Natural_Pubsub.Pub with null record;
 
    Heartbeat_Producer_Change_Indication : Heartbeat_Producer_Change_Publisher;
+
+   type Sync_Producer_Change_Publisher is
+      new Natural_Pubsub.Pub with null record;
+
+   Sync_Producer_Change_Indication : Sync_Producer_Change_Publisher;
 
 private
 

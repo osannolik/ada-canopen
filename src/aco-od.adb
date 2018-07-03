@@ -32,6 +32,24 @@ package body ACO.OD is
       This.Heartbeat_Producer_Period := Period;
    end Set_Heartbeat_Producer_Period;
 
+   procedure Set_Communication_Cycle_Period
+     (This   : in out Object_Dict;
+      Period : in     Natural)
+   is
+   begin
+      This.Communication_Cycle_Period := Period;
+      Sync_Producer_Change_Indication.Update (Period);
+   end Set_Communication_Cycle_Period;
+
+   procedure Set_Sync_Counter_Overflow
+     (This           : in out Object_Dict;
+      Overflow_Value : in     Sync_Counter)
+   is
+   begin
+      This.Sync_Counter_Overflow_Value := Overflow_Value;
+      Sync_Producer_Change_Indication.Update (Overflow_Value);
+   end Set_Sync_Counter_Overflow;
+
    function Get_Heartbeat_Consumer_Period
      (This    : Object_Dict;
       Node_Id : ACO.Messages.Node_Nr)

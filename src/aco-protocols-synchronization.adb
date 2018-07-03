@@ -117,6 +117,22 @@ package body ACO.Protocols.Synchronization is
       end if;
    end On_State_Change;
 
+   overriding
+   procedure Update
+     (This : access Sync_Producer_Change_Subscriber;
+      Data : in     Natural)
+   is
+      pragma Unreferenced (Data);
+
+      SYNC_Ref : access SYNC renames This.SYNC_Ref;
+   begin
+      if SYNC_Ref.Event_Manager.Is_Pending (SYNC_Ref.Producer_Alarm'Access) then
+         SYNC_Ref.Sync_Producer_Stop;
+         SYNC_Ref.Counter_Reset;
+         SYNC_Ref.Sync_Producer_Start;
+      end if;
+   end Update;
+
    procedure Message_Received
      (This    : in out SYNC;
       Msg     : in     Message;
@@ -133,6 +149,16 @@ package body ACO.Protocols.Synchronization is
    begin
       This.Event_Manager.Process;
    end Update_Alarms;
+
+   overriding
+   procedure Setup_Internal_Callbacks (This : in out SYNC)
+   is
+   begin
+      Protocols.Setup_Internal_Callbacks (Protocol (This));
+
+      ACO.OD.Sync_Producer_Change_Indication.Attach
+         (Subscriber => This.Sync_Producer_Change_Indication'Unchecked_Access);
+   end Setup_Internal_Callbacks;
 
    procedure SYNC_Log
      (This    : in out SYNC;

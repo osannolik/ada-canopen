@@ -28,6 +28,9 @@ package ACO.Protocols.Synchronization is
 
 private
 
+   overriding
+   procedure Setup_Internal_Callbacks (This : in out SYNC);
+
    package Alarms is new ACO.Utils.Generic_Alarms (1);
 
    type Sync_Producer_Alarm (SYNC_Ref : not null access SYNC) is
@@ -39,12 +42,22 @@ private
    subtype Counter_Type is
       Interfaces.Unsigned_8 range 1 .. Interfaces.Unsigned_8'Last;
 
+   type Sync_Producer_Change_Subscriber (SYNC_Ref : not null access SYNC) is
+      new ACO.OD.Natural_Pubsub.Sub with null record;
+
+   overriding
+   procedure Update
+     (This : access Sync_Producer_Change_Subscriber;
+      Data : in     Natural);
+
    type SYNC
       (Od     : not null access ACO.OD.Object_Dict'Class;
        Driver : not null access ACO.Drivers.Driver'Class) is new Protocol with
-      record
+   record
       Event_Manager : Alarms.Alarm_Manager;
       Producer_Alarm : aliased Sync_Producer_Alarm (SYNC'Access);
+      Sync_Producer_Change_Indication :
+         aliased Sync_Producer_Change_Subscriber (SYNC'Access);
       Counter : Counter_Type := Counter_Type'First;
    end record;
 
