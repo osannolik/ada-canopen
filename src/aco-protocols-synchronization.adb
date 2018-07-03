@@ -24,6 +24,9 @@ package body ACO.Protocols.Synchronization is
       end if;
    end Counter_Increment;
 
+   function Is_Counter_Expected (This : in out SYNC) return Boolean is
+      (This.Od.Get_Sync_Counter_Overflow > 1);
+
    function Create_Sync
      (This           : in out SYNC;
       Overflow_Value : in     ACO.OD.Sync_Counter)
@@ -134,13 +137,15 @@ package body ACO.Protocols.Synchronization is
    end Update;
 
    procedure Message_Received
-     (This    : in out SYNC;
-      Msg     : in     Message;
-      Node_Id : in     Node_Nr)
+     (This : in out SYNC;
+      Msg  : in     Message)
    is
-      pragma Unreferenced (This, Msg, Node_Id);
    begin
-      null;
+      if This.Is_Counter_Expected and Msg.Length /= 1 then
+         return;
+      end if;
+
+      --  TODO: Trigger TPDO
    end Message_Received;
 
    procedure Update_Alarms

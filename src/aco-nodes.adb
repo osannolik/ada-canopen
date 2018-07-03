@@ -68,24 +68,10 @@ package body ACO.Nodes is
       if CAN_Id (Msg) = Network_Management.NMT_CAN_Id then
          This.NMT.Message_Received (Msg, This.Id);
       elsif CAN_Id (Msg) = Synchronization.SYNC_CAN_Id then
-         This.SYNC.Message_Received (Msg, This.Id);
+         This.SYNC.Message_Received (Msg);
       elsif Func_Code (Msg) = Error_Control.EC_Id then
          This.EC.Message_Received (Msg);
       end if;
-
---        if Func = This.NMT.Code then
---           This.NMT.Message_Received (Msg);
---
---        elsif Func = This.SYNC.Code or else
---              Func = This.EMCY.Code
---        then
---           if Node_Id (Msg) = Broadcast_Id then
---              This.SYNC.Message_Received (Msg);
---           else
---              This.NMT.Message_Received (Msg);
---           end if;
---        end if;
-
    end Dispatch;
 
    task body Receiver_Task

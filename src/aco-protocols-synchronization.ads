@@ -19,9 +19,8 @@ package ACO.Protocols.Synchronization is
       new Protocol with private;
 
    procedure Message_Received
-     (This    : in out SYNC;
-      Msg     : in     Message;
-      Node_Id : in     Node_Nr);
+     (This : in out SYNC;
+      Msg  : in     Message);
 
    procedure Update_Alarms
      (This : in out SYNC);
