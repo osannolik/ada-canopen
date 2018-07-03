@@ -20,9 +20,6 @@ package ACO.Protocols.Error_Control is
        Driver : not null access ACO.Drivers.Driver'Class) is
       new Protocol with private;
 
-   overriding
-   procedure Setup_Internal_Callbacks (This : in out EC);
-
    procedure Message_Received
      (This : in out EC;
       Msg  : in     Message);
@@ -59,6 +56,9 @@ private
          (Get_EC_State (Msg) = Bootup);
 
    end Commands;
+
+   overriding
+   procedure Setup_Internal_Callbacks (This : in out EC);
 
    package Alarms is new ACO.Utils.Generic_Alarms (Max_Nof_Heartbeat_Slaves + 1);
 

@@ -256,7 +256,6 @@ package body ACO.Protocols.Error_Control is
    overriding
    procedure Setup_Internal_Callbacks (This : in out EC)
    is
-      use Ada.Real_Time;
    begin
       Protocols.Setup_Internal_Callbacks (Protocol (This));
 
