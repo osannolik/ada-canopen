@@ -6,7 +6,7 @@ package body ACO.Nodes is
      (This : in out Node)
    is
    begin
-      ACO.OD.Node_State_Change_Indication.Attach
+      This.Od.Events.Node_State_Change.Attach
          (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
 
       This.NMT.Setup_Internal_Callbacks;
@@ -27,7 +27,7 @@ package body ACO.Nodes is
    overriding
    procedure Update
      (This : access Node_State_Change_Subscriber;
-      Data : in     ACO.OD.State_Transition)
+      Data : in     ACO.States.State_Transition)
    is
       use ACO.States;
       use ACO.Log;

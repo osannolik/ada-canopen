@@ -14,7 +14,7 @@ package ACO.Protocols.Network_Management is
    NMT_CAN_Id : constant Id_Type := 0;
 
    type NMT (Od : not null access ACO.OD.Object_Dict'Class) is
-      new Protocol with null record;
+      new Protocol (Od) with null record;
 
    procedure Message_Received
      (This    : in out NMT;

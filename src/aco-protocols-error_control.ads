@@ -81,7 +81,7 @@ private
       array (Positive range <>) of aliased Heartbeat_Consumer_Alarm;
 
    type Heartbeat_Consumer_Change_Subscriber (EC_Ref : not null access EC) is
-      new ACO.OD.Natural_Pubsub.Sub with null record;
+      new ACO.Events.Natural_Pubsub.Sub with null record;
 
    overriding
    procedure Update
@@ -89,7 +89,7 @@ private
        Data : in     Natural);
 
    type Heartbeat_Producer_Change_Subscriber (EC_Ref : not null access EC) is
-      new ACO.OD.Natural_Pubsub.Sub with null record;
+      new ACO.Events.Natural_Pubsub.Sub with null record;
 
    overriding
    procedure Update
@@ -99,7 +99,7 @@ private
    type EC
       (Id     : Node_Nr;
        Od     : not null access ACO.OD.Object_Dict'Class;
-       Driver : not null access ACO.Drivers.Driver'Class) is new Protocol with
+       Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
    record
       Event_Manager : Alarms.Alarm_Manager;
       Producer_Alarm : aliased Heartbeat_Producer_Alarm (EC'Access);

@@ -259,9 +259,9 @@ package body ACO.Protocols.Error_Control is
    begin
       Protocols.Setup_Internal_Callbacks (Protocol (This));
 
-      ACO.OD.Heartbeat_Producer_Change_Indication.Attach
+      This.Od.Events.Heartbeat_Producer_Change.Attach
          (Subscriber => This.Heartbeat_Producer_Change_Indication'Unchecked_Access);
-      ACO.OD.Heartbeat_Consumer_Change_Indication.Attach
+      This.Od.Events.Heartbeat_Consumer_Change.Attach
          (Subscriber => This.Heartbeat_Consumer_Change_Indication'Unchecked_Access);
    end Setup_Internal_Callbacks;
 

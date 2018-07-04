@@ -18,4 +18,9 @@ package ACO.States is
       Stopped,
       Unknown_State);
 
+   type State_Transition is record
+      Previous : ACO.States.State := ACO.States.Unknown_State;
+      Current  : ACO.States.State := ACO.States.Unknown_State;
+   end record;
+
 end ACO.States;

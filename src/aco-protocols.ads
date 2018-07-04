@@ -1,11 +1,13 @@
 with ACO.States;
-private with ACO.OD;
+with ACO.Events;
+with ACO.OD;
 
 package ACO.Protocols is
 
    pragma Preelaborate;
 
-   type Protocol is abstract tagged limited private;
+   type Protocol (Od : not null access ACO.OD.Object_Dict'Class) is
+      abstract tagged limited private;
 
    type Protocol_Access is access all Protocol'Class;
 
@@ -20,14 +22,16 @@ package ACO.Protocols is
 private
 
    type Node_State_Change_Subscriber (Protocol_Ref : not null access Protocol'Class) is
-      new ACO.OD.Node_State_Pubsub.Sub with null record;
+      new ACO.Events.Node_State_Pubsub.Sub with null record;
 
    overriding
    procedure Update
      (This : access Node_State_Change_Subscriber;
-      Data : in     ACO.OD.State_Transition);
+      Data : in     ACO.States.State_Transition);
 
-   type Protocol is abstract tagged limited record
+   type Protocol (Od : not null access ACO.OD.Object_Dict'Class) is
+      abstract tagged limited
+   record
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Protocol'Access);
    end record;
 

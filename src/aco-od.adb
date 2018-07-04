@@ -4,12 +4,12 @@ package body ACO.OD is
      (This       : in out Object_Dict;
       Node_State : in     ACO.States.State)
    is
-      Tmp : constant State_Transition :=
+      Tmp : constant ACO.States.State_Transition :=
          (Previous => This.Node_State,
           Current  => Node_State);
    begin
       This.Node_State := Node_State;
-      Node_State_Change_Indication.Update (Tmp);
+      This.Events.Node_State_Change.Update (Tmp);
    end Set_Node_State;
 
    function Get_Node_State (This : Object_Dict) return ACO.States.State is
@@ -30,6 +30,7 @@ package body ACO.OD is
    is
    begin
       This.Heartbeat_Producer_Period := Period;
+      This.Events.Heartbeat_Producer_Change.Update (Period);
    end Set_Heartbeat_Producer_Period;
 
    procedure Set_Communication_Cycle_Period
@@ -38,7 +39,7 @@ package body ACO.OD is
    is
    begin
       This.Communication_Cycle_Period := Period;
-      Sync_Producer_Change_Indication.Update (Period);
+      This.Events.Sync_Producer_Change.Update (Period);
    end Set_Communication_Cycle_Period;
 
    procedure Set_Sync_Counter_Overflow
@@ -47,7 +48,7 @@ package body ACO.OD is
    is
    begin
       This.Sync_Counter_Overflow_Value := Overflow_Value;
-      Sync_Producer_Change_Indication.Update (Overflow_Value);
+      This.Events.Sync_Producer_Change.Update (Overflow_Value);
    end Set_Sync_Counter_Overflow;
 
    function Get_Heartbeat_Consumer_Period

@@ -42,7 +42,7 @@ private
       Interfaces.Unsigned_8 range 1 .. Interfaces.Unsigned_8'Last;
 
    type Sync_Producer_Change_Subscriber (SYNC_Ref : not null access SYNC) is
-      new ACO.OD.Natural_Pubsub.Sub with null record;
+      new ACO.Events.Natural_Pubsub.Sub with null record;
 
    overriding
    procedure Update
@@ -51,7 +51,7 @@ private
 
    type SYNC
       (Od     : not null access ACO.OD.Object_Dict'Class;
-       Driver : not null access ACO.Drivers.Driver'Class) is new Protocol with
+       Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
    record
       Event_Manager : Alarms.Alarm_Manager;
       Producer_Alarm : aliased Sync_Producer_Alarm (SYNC'Access);

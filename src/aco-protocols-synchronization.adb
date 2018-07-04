@@ -161,7 +161,7 @@ package body ACO.Protocols.Synchronization is
    begin
       Protocols.Setup_Internal_Callbacks (Protocol (This));
 
-      ACO.OD.Sync_Producer_Change_Indication.Attach
+      This.Od.Events.Sync_Producer_Change.Attach
          (Subscriber => This.Sync_Producer_Change_Indication'Unchecked_Access);
    end Setup_Internal_Callbacks;
 

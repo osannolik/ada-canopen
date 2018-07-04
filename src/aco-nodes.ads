@@ -4,6 +4,7 @@ with ACO.States;
 with ACO.OD;
 
 private with Ada.Synchronous_Task_Control;
+private with ACO.Events;
 private with ACO.Protocols.Network_Management;
 private with ACO.Protocols.Error_Control;
 private with ACO.Protocols.Synchronization;
@@ -33,12 +34,12 @@ package ACO.Nodes is
 private
 
    type Node_State_Change_Subscriber (Node_Ref : not null access Node'Class) is
-      new ACO.OD.Node_State_Pubsub.Sub with null record;
+      new ACO.Events.Node_State_Pubsub.Sub with null record;
 
    overriding
    procedure Update
      (This : access Node_State_Change_Subscriber;
-      Data : in     ACO.OD.State_Transition);
+      Data : in     ACO.States.State_Transition);
 
    type Node
       (Id     : Node_Nr;
