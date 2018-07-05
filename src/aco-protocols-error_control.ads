@@ -58,7 +58,10 @@ private
    end Commands;
 
    overriding
-   procedure Setup_Internal_Callbacks (This : in out EC);
+   procedure Initialize (This : in out EC);
+
+   overriding
+   procedure Finalize (This : in out EC);
 
    package Alarms is new ACO.Utils.Generic_Alarms (Max_Nof_Heartbeat_Slaves + 1);
 

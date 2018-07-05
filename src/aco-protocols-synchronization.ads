@@ -28,7 +28,10 @@ package ACO.Protocols.Synchronization is
 private
 
    overriding
-   procedure Setup_Internal_Callbacks (This : in out SYNC);
+   procedure Initialize (This : in out SYNC);
+
+   overriding
+   procedure Finalize (This : in out SYNC);
 
    package Alarms is new ACO.Utils.Generic_Alarms (1);
 

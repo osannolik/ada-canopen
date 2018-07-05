@@ -2,27 +2,29 @@ with Ada.Real_Time;
 
 package body ACO.Nodes is
 
-   procedure Setup_Internal_Callbacks
+   procedure Init
      (This : in out Node)
+   is
+   begin
+      Ada.Synchronous_Task_Control.Set_True (This.Start_Receiver_Task);
+      Ada.Synchronous_Task_Control.Set_True (This.Start_Periodic_Task);
+   end Init;
+
+   overriding
+   procedure Initialize (This : in out Node)
    is
    begin
       This.Od.Events.Node_State_Change.Attach
          (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
-
-      This.NMT.Setup_Internal_Callbacks;
-      This.EC.Setup_Internal_Callbacks;
-      This.SYNC.Setup_Internal_Callbacks;
-   end Setup_Internal_Callbacks;
-
-   procedure Initialize
-     (This : in out Node)
-   is
-      use ACO.States;
-      use ACO.Log;
-   begin
-      Ada.Synchronous_Task_Control.Set_True (This.Start_Receiver_Task);
-      Ada.Synchronous_Task_Control.Set_True (This.Start_Periodic_Task);
    end Initialize;
+
+   overriding
+   procedure Finalize (This : in out Node)
+   is
+   begin
+      This.Od.Events.Node_State_Change.Detach
+         (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
+   end Finalize;
 
    overriding
    procedure Update
@@ -34,7 +36,7 @@ package body ACO.Nodes is
    begin
       case Data.Current is
          when Initializing =>
-            Initialize (This.Node_Ref.all);
+            Init (This.Node_Ref.all);
 
          when Pre_Operational | Operational | Stopped | Unknown_State =>
             --  Put protocol handlers into correct state?
@@ -46,16 +48,7 @@ package body ACO.Nodes is
      (This  : in out Node;
       State : in     ACO.States.State)
    is
-      use ACO.States;
    begin
-      case State is
-         when Initializing =>
-            Setup_Internal_Callbacks (This);
-
-         when Pre_Operational | Operational | Stopped | Unknown_State =>
-            null;
-      end case;
-
       This.NMT.Set_State (State);
    end Set_State;
 
@@ -63,7 +56,6 @@ package body ACO.Nodes is
      (This : in out Node;
       Msg  : in     Message)
    is
-      use ACO.Protocols;
    begin
       if CAN_Id (Msg) = Network_Management.NMT_CAN_Id then
          This.NMT.Message_Received (Msg, This.Id);

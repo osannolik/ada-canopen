@@ -66,7 +66,6 @@ package body ACO.Protocols.Error_Control.Test is
 
       Msg : Message;
    begin
-      E.Setup_Internal_Callbacks;
       E.Od.Set_Heartbeat_Producer_Period (Period);
 
       Let_Time_Pass (E, Period);

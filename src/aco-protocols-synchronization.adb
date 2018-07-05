@@ -156,14 +156,24 @@ package body ACO.Protocols.Synchronization is
    end Update_Alarms;
 
    overriding
-   procedure Setup_Internal_Callbacks (This : in out SYNC)
+   procedure Initialize (This : in out SYNC)
    is
    begin
-      Protocols.Setup_Internal_Callbacks (Protocol (This));
+      Protocol (This).Initialize;
 
       This.Od.Events.Sync_Producer_Change.Attach
          (Subscriber => This.Sync_Producer_Change_Indication'Unchecked_Access);
-   end Setup_Internal_Callbacks;
+   end Initialize;
+
+   overriding
+   procedure Finalize (This : in out SYNC)
+   is
+   begin
+      Protocol (This).Finalize;
+
+      This.Od.Events.Sync_Producer_Change.Detach
+         (Subscriber => This.Sync_Producer_Change_Indication'Unchecked_Access);
+   end Finalize;
 
    procedure SYNC_Log
      (This    : in out SYNC;

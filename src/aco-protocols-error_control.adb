@@ -254,16 +254,28 @@ package body ACO.Protocols.Error_Control is
    end Update_Alarms;
 
    overriding
-   procedure Setup_Internal_Callbacks (This : in out EC)
+   procedure Initialize (This : in out EC)
    is
    begin
-      Protocols.Setup_Internal_Callbacks (Protocol (This));
+      Protocol (This).Initialize;
 
       This.Od.Events.Heartbeat_Producer_Change.Attach
          (Subscriber => This.Heartbeat_Producer_Change_Indication'Unchecked_Access);
       This.Od.Events.Heartbeat_Consumer_Change.Attach
          (Subscriber => This.Heartbeat_Consumer_Change_Indication'Unchecked_Access);
-   end Setup_Internal_Callbacks;
+   end Initialize;
+
+   overriding
+   procedure Finalize (This : in out EC)
+   is
+   begin
+      Protocol (This).Finalize;
+
+      This.Od.Events.Heartbeat_Producer_Change.Detach
+         (Subscriber => This.Heartbeat_Producer_Change_Indication'Unchecked_Access);
+      This.Od.Events.Heartbeat_Consumer_Change.Detach
+         (Subscriber => This.Heartbeat_Consumer_Change_Indication'Unchecked_Access);
+   end Finalize;
 
    procedure EC_Log
      (This    : in out EC;

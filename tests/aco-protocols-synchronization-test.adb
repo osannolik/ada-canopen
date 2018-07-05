@@ -49,7 +49,6 @@ package body ACO.Protocols.Synchronization.Test is
 
       Msg : Message;
    begin
-      S.Setup_Internal_Callbacks;
       S.Od.Set_Communication_Cycle_Period (Period);
       S.Od.Set_Sync_Counter_Overflow (4);
 
@@ -95,7 +94,6 @@ package body ACO.Protocols.Synchronization.Test is
 
       Msg : Message;
    begin
-      S.Setup_Internal_Callbacks;
       S.Od.Set_Communication_Cycle_Period (Period);
       S.Od.Set_Sync_Counter_Overflow (Overflow);
 

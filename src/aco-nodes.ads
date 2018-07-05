@@ -1,3 +1,4 @@
+with Ada.Finalization;
 with ACO.Drivers;
 with ACO.Messages;
 with ACO.States;
@@ -17,7 +18,7 @@ package ACO.Nodes is
       (Id     : Node_Nr;
        Od     : not null access ACO.OD.Object_Dict'Class;
        Driver : not null access ACO.Drivers.Driver'Class)
-   is tagged limited private;
+   is new Ada.Finalization.Limited_Controlled with private;
 
    procedure Set_State
      (This  : in out Node;
@@ -32,6 +33,7 @@ package ACO.Nodes is
    task type Periodic_Task (This : not null access Node'Class);
 
 private
+   use ACO.Protocols;
 
    type Node_State_Change_Subscriber (Node_Ref : not null access Node'Class) is
       new ACO.Events.Node_State_Pubsub.Sub with null record;
@@ -45,10 +47,10 @@ private
       (Id     : Node_Nr;
        Od     : not null access ACO.OD.Object_Dict'Class;
        Driver : not null access ACO.Drivers.Driver'Class)
-   is tagged limited record
-      NMT : ACO.Protocols.Network_Management.NMT (Od);
-      EC  : ACO.Protocols.Error_Control.EC (Id, Od, Driver);
-      SYNC : ACO.Protocols.Synchronization.SYNC (Od, Driver);
+   is new Ada.Finalization.Limited_Controlled with record
+      NMT  : Network_Management.NMT (Od);
+      EC   : Error_Control.EC (Id, Od, Driver);
+      SYNC : Synchronization.SYNC (Od, Driver);
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Node'Access);
       Start_Receiver_Task : Ada.Synchronous_Task_Control.Suspension_Object;
       Start_Periodic_Task : Ada.Synchronous_Task_Control.Suspension_Object;
@@ -59,7 +61,13 @@ private
       Level   : in     ACO.Log.Log_Level;
       Message : in     String);
 
-   procedure Initialize
-     (This : in out Node);
+   overriding
+   procedure Initialize (This : in out Node);
+
+   overriding
+   procedure Finalize (This : in out Node);
+
+   procedure Init
+      (This : in out Node);
 
 end ACO.Nodes;

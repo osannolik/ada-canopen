@@ -12,12 +12,20 @@ package body ACO.Protocols is
           Current  => Data.Current);
    end Update;
 
-   procedure Setup_Internal_Callbacks
-     (This : in out Protocol)
+   overriding
+   procedure Initialize (This : in out Protocol)
    is
    begin
       This.Od.Events.Node_State_Change.Attach
          (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
-   end Setup_Internal_Callbacks;
+   end Initialize;
+
+   overriding
+   procedure Finalize (This : in out Protocol)
+   is
+   begin
+      This.Od.Events.Node_State_Change.Detach
+         (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
+   end Finalize;
 
 end ACO.Protocols;
