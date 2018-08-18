@@ -12,7 +12,7 @@ library project CANopen is
 
    package Compiler is
       for Default_Switches ("Ada") use Compiler'Default_Switches ("Ada") &
-        ("-g", "-O0", "-gnatwae", "-gnaty-s");
+        ("-g", "-O0", "-gnata", "-gnatwae", "-gnaty-s");
    end Compiler;
 
 end CANopen;
