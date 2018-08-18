@@ -1,5 +1,62 @@
 package body ACO.OD is
 
+   function Object_Exist
+      (This  : Object_Dict'Class;
+       Index : Object_Index) return Boolean
+   is (This.Index_Map (Index) /= No_Index);
+
+   function Entry_Exist
+      (This     : Object_Dict'Class;
+       Index    : Object_Index;
+       Subindex : Object_Subindex) return Boolean
+   is
+      Arr_Idx : constant Index_Type := This.Index_Map (Index);
+   begin
+      return Arr_Idx /= No_Index and then
+         Subindex in This.Objects (Arr_Idx).Entries'Range;
+   end Entry_Exist;
+
+   function Get_Object_Ref
+      (This  : Object_Dict'Class;
+       Index : Object_Index) return Object_Ref
+   is
+      Arr_Idx : constant Index_Type := This.Index_Map (Index);
+   begin
+      if Arr_Idx = No_Index then
+         return No_Object;
+      else
+         return This.Objects (Arr_Idx);
+      end if;
+   end Get_Object_Ref;
+
+   function Get_Object
+      (This  : Object_Dict'Class;
+       Index : Object_Index) return Object_Base'Class
+   is
+      (This.Objects (This.Index_Map (Index)).all);
+
+   function Get_Entry_Ref
+      (This     : Object_Dict'Class;
+       Index    : Object_Index;
+       Subindex : Object_Subindex) return Entry_Ref
+   is
+      Arr_Idx : constant Index_Type := This.Index_Map (Index);
+      Entry_Arr : constant access Entry_Array := This.Objects (Arr_Idx).Entries;
+   begin
+      if Subindex in Entry_Arr'Range then
+         return Entry_Arr (Subindex);
+      else
+         return No_Entry;
+      end if;
+   end Get_Entry_Ref;
+
+   function Get_Entry
+      (This     : Object_Dict'Class;
+       Index    : Object_Index;
+       Subindex : Object_Subindex) return Entry_Base'Class
+   is
+      (This.Objects (This.Index_Map (Index)).Entries (Subindex).all);
+
    procedure Set_Node_State
      (This       : in out Object_Dict;
       Node_State : in     ACO.States.State)
@@ -23,33 +80,6 @@ package body ACO.OD is
 
    function Get_Sync_Counter_Overflow (This : Object_Dict) return Sync_Counter is
       (This.Sync_Counter_Overflow_Value);
-
-   procedure Set_Heartbeat_Producer_Period
-     (This   : in out Object_Dict;
-      Period : in     Natural)
-   is
-   begin
-      This.Heartbeat_Producer_Period := Period;
-      This.Events.Heartbeat_Producer_Change.Update (Period);
-   end Set_Heartbeat_Producer_Period;
-
-   procedure Set_Communication_Cycle_Period
-     (This   : in out Object_Dict;
-      Period : in     Natural)
-   is
-   begin
-      This.Communication_Cycle_Period := Period;
-      This.Events.Sync_Producer_Change.Update (Period);
-   end Set_Communication_Cycle_Period;
-
-   procedure Set_Sync_Counter_Overflow
-     (This           : in out Object_Dict;
-      Overflow_Value : in     Sync_Counter)
-   is
-   begin
-      This.Sync_Counter_Overflow_Value := Overflow_Value;
-      This.Events.Sync_Producer_Change.Update (Overflow_Value);
-   end Set_Sync_Counter_Overflow;
 
    function Get_Heartbeat_Consumer_Period
      (This    : Object_Dict;
