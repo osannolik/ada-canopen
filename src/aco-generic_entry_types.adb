@@ -6,6 +6,20 @@ package body ACO.Generic_Entry_Types is
    function Read (This : Entry_Type) return Byte_Array is
       (Convert (This.Data));
 
+   procedure Write (This : in out Entry_Type;
+                    Data : in     Item_Type)
+   is
+   begin
+      This.Data := Data;
+   end Write;
+
+   procedure Write (This  : in out Entry_Type;
+                    Bytes : in     Byte_Array)
+   is
+   begin
+      This.Data := Convert (Bytes);
+   end Write;
+
    function Create
       (Accessability : Access_Mode;
        Data          : Item_Type) return Entry_Type
@@ -18,6 +32,15 @@ package body ACO.Generic_Entry_Types is
       pragma Import (Convention => Ada, Entity => Bytes);
    begin
       return Bytes;
+   end Convert;
+
+   function Convert (Bytes : Byte_Array) return Item_Type
+   is
+      Data : constant Item_Type;
+      for Data'Address use Bytes'Address;
+      pragma Import (Convention => Ada, Entity => Data);
+   begin
+      return Data;
    end Convert;
 
 end ACO.Generic_Entry_Types;

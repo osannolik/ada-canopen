@@ -77,8 +77,7 @@ package body ACO.OD is
           Subindex  : in Object_Subindex)
       is
       begin
-         Data.Objects (Data.Index_Map (Index)).Entries (Subindex).all :=
-            New_Entry;
+         Data.Objects (Data.Index_Map (Index)).Entries (Subindex).all := New_Entry;
       end Set_Entry;
 
       function Get_Node_State return ACO.States.State is

@@ -30,6 +30,9 @@ package ACO.OD_Types is
 
    function Read (This : Entry_Base) return Byte_Array is abstract;
 
+   procedure Write (This  : in out Entry_Base;
+                    Bytes : in     Byte_Array) is abstract;
+
 
    type Entry_Ref is not null access all Entry_Base'Class;
 
