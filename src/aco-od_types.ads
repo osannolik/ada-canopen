@@ -18,8 +18,6 @@ package ACO.OD_Types is
       Accessability : Access_Mode := RW;
    end record;
 
-   type Entry_Base_Ref is access all Entry_Base'Class;
-
    function Is_Readable (This : Entry_Base) return Boolean is
       (case This.Accessability is
           when RW | RO => True,

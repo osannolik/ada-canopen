@@ -30,11 +30,37 @@ package ACO.OD is
        Subindex : Object_Subindex)
        return Boolean;
 
+   function Is_Entry_Compatible
+      (This     : Object_Dictionary'Class;
+       An_Entry : Entry_Base'Class;
+       Index    : Object_Index;
+       Subindex : Object_Subindex)
+       return Boolean;
+
    function Get_Entry
       (This     : Object_Dictionary'Class;
        Index    : Object_Index;
        Subindex : Object_Subindex) return Entry_Base'Class
       with Pre => This.Entry_Exist (Index, Subindex);
+
+   procedure Set_Entry
+      (This      : in out Object_Dictionary'Class;
+       New_Entry : in     Entry_Base'Class;
+       Index     : in     Object_Index;
+       Subindex  : in     Object_Subindex)
+      with Pre => This.Entry_Exist (Index, Subindex) and then
+                  This.Is_Entry_Compatible (New_Entry, Index, Subindex);
+
+
+   procedure Set_Node_State
+      (This       : in out Object_Dictionary;
+       Node_State : in     ACO.States.State);
+
+   function Get_Node_State (This : Object_Dictionary) return ACO.States.State;
+
+
+
+
 
 
    Max_Nof_Heartbeat_Slaves : constant := 8;
@@ -45,11 +71,9 @@ package ACO.OD is
 
 
 
-   procedure Set_Node_State
-     (This       : in out Object_Dictionary;
-      Node_State : in     ACO.States.State);
 
-   function Get_Node_State (This : Object_Dictionary) return ACO.States.State;
+
+
 
    function Get_Heartbeat_Producer_Period (This : Object_Dictionary) return Natural;
 
@@ -64,6 +88,29 @@ package ACO.OD is
 
 private
 
+   protected type Barrier_Type (Data : not null access Object_Data_Base'Class)
+   is
+
+      function Get_Entry
+         (Index    : Object_Index;
+          Subindex : Object_Subindex)
+          return Entry_Base'Class;
+
+      procedure Set_Entry
+         (New_Entry : in Entry_Base'Class;
+          Index     : in Object_Index;
+          Subindex  : in Object_Subindex);
+
+      function Get_Node_State return ACO.States.State;
+
+      procedure Set_Node_State (New_State  : in     ACO.States.State;
+                                Prev_State :    out ACO.States.State);
+
+   private
+      Node_State : ACO.States.State := ACO.States.Unknown_State;
+   end Barrier_Type;
+
+
    type Object_Data_Base is abstract tagged limited null record;
 
    function Objects
@@ -74,8 +121,9 @@ private
 
    type Object_Dictionary (Data : not null access Object_Data_Base'Class) is
       tagged limited record
+      Protected_Data : Barrier_Type (Data);
       Events : ACO.Events.Event_Manager;
-      Node_State : ACO.States.State := ACO.States.Unknown_State;
+      --  Node_State : ACO.States.State := ACO.States.Unknown_State;
       Communication_Cycle_Period : Natural := 10_000; --  Multiples of 100us
       Sync_Counter_Overflow_Value : Sync_Counter := 16;
       Heartbeat_Producer_Period : Natural := 500;
