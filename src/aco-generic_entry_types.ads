@@ -2,7 +2,7 @@ with ACO.OD_Types;
 
 generic
    type Item_Type is private;
-   with function Convert (Data : Item_Type) return ACO.OD_Types.Byte_Array;
+--     with function Convert (Data : Item_Type) return ACO.OD_Types.Byte_Array;
 
 package ACO.Generic_Entry_Types is
 
@@ -16,14 +16,15 @@ package ACO.Generic_Entry_Types is
                     Data          : Item_Type)
                     return Entry_Type;
 
-   function Read (This : Entry_Type) return Item_Type
-      with Pre => This.Is_Readable;
+   function Read (This : Entry_Type) return Item_Type;
 
    overriding
    function Read (This : Entry_Type) return Byte_Array
       with Pre => This.Is_Readable;
 
 private
+
+   function Convert (Data : Item_Type) return Byte_Array;
 
    type Entry_Type is new ACO.OD_Types.Entry_Base with record
       Data : Item_Type;

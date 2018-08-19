@@ -1,38 +1,119 @@
 with ACO.OD_Types.Entries;
+with ACO.Generic_Entry_Types;
 
 package ACO.OD.Example is
    --  Shall be generated based on an EDS file
 
    type Example_Dict is new Object_Dict with private;
 
+   use ACO.OD_Types.Entries;
+
+   --  0x1008 Manufacturer Device Name VAR
+
+   Device_Name_Str : constant String := "A device name";
+
+   subtype Device_Name_String is Visible_String (Device_Name_Str'Range);
+
+   package Device_Name_Pack is new ACO.Generic_Entry_Types (Device_Name_String);
+
+   type Device_Name_Entry is new Device_Name_Pack.Entry_Type with null record;
+
 private
-
-
 
    use type ACO.OD_Types.Object_Subindex;
 
-   use ACO.OD_Types.Entries;
 
-   subtype Bulle_Subindex is Object_Subindex range 0 .. 2;
 
-   Bulle_Highest_Subindex : aliased Entry_U8  := Create (RW, Bulle_Subindex'Last);
-   Bulle_Russin           : aliased Entry_F32 := Create (WO, 13.0);
 
-   Bulle_Data : aliased Entry_Array :=
-      (Bulle_Subindex'First     => Bulle_Highest_Subindex'Access,
-       Bulle_Subindex'First + 1 => Bulle_Russin'Access,
-       Bulle_Subindex'Last      => No_Entry);
+   --  0x1000 Device Type VAR
 
-   Bulle : aliased Object_Base (Bulle_Data'Access);
+   Device_Type_Var : aliased Entry_U32 := Create (RO, 16#00000000#);
+
+   Device_Type_Data : aliased Entry_Array :=
+      (0 => Device_Type_Var'Access);
+
+   Device_Type : aliased Object_Base (Device_Type_Data'Access);
+
+   --  0x1001 Error Register VAR
+
+   Error_Register_Var : aliased Entry_U8 := Create (RO, 16#00#);
+
+   Error_Register_Data : aliased Entry_Array :=
+      (0 => Error_Register_Var'Access);
+
+   Error_Register : aliased Object_Base (Error_Register_Data'Access);
+
+   --  0x1003 Pre-defined Error Field ARRAY
+
+   Predef_Err_Field_Nof : aliased Entry_U8 := Create (RW, 16#00#);
+
+   Predef_Err_Field_1 : aliased Entry_U32 := Create (RO, 16#00000000#);
+
+   Predef_Err_Field_Data : aliased Entry_Array :=
+      (0 => Predef_Err_Field_Nof'Access,
+       1 => Predef_Err_Field_1'Access);
+
+   Predef_Err_Field : aliased Object_Base (Predef_Err_Field_Data'Access);
+
+   --  0x1005 Sync COB-ID VAR
+
+   Sync_COB_ID_Var : aliased Entry_U32 := Create (RW, 16#00000080#);
+
+   Sync_COB_ID_Data : aliased Entry_Array :=
+      (0 => Sync_COB_ID_Var'Access);
+
+   Sync_COB_ID : aliased Object_Base (Sync_COB_ID_Data'Access);
+
+   --  0x1006 Communication Cycle Period VAR
+
+   Comm_Cycle_Per_Var : aliased Entry_U32 := Create (RW, 16#00000000#);
+
+   Comm_Cycle_Per_Data : aliased Entry_Array :=
+      (0 => Comm_Cycle_Per_Var'Access);
+
+   Comm_Cycle_Per : aliased Object_Base (Comm_Cycle_Per_Data'Access);
+
+   --  0x1007 Synchronous Window Length VAR
+
+   Sync_Win_Length_Var : aliased Entry_U32 := Create (RW, 16#00000000#);
+
+   Sync_Win_Length_Data : aliased Entry_Array :=
+      (0 => Sync_Win_Length_Var'Access);
+
+   Sync_Win_Length : aliased Object_Base (Sync_Win_Length_Data'Access);
+
+   --  0x1008 Manufacturer Device Name VAR
+
+   Device_Name_Var : aliased Device_Name_Entry :=
+      Create (RO, Device_Name_Str);
+
+   Device_Name_Data : aliased Entry_Array :=
+      (0 => Device_Name_Var'Access);
+
+   Device_Name : aliased Object_Base (Device_Name_Data'Access);
+
+   --  Communication Profile Data
 
    Com_Profile : aliased Profile_Objects :=
-      (0 => Bulle'Access);
+      (0 => Device_Type'Access,
+       1 => Error_Register'Access,
+       2 => Predef_Err_Field'Access,
+       3 => Sync_COB_ID'Access,
+       4 => Comm_Cycle_Per'Access,
+       5 => Sync_Win_Length'Access,
+       6 => Device_Name'Access);
 
    overriding
    function Index_Map (This : Example_Dict; Index : Object_Index)
                        return Index_Type
    is (case Index is
-          when 16#1004# => 0,
+          when 16#1000# => 0,
+          when 16#1001# => 1,
+          when 16#1003# => 2,
+          when 16#1005# => 3,
+          when 16#1006# => 4,
+          when 16#1007# => 5,
+          when 16#1008# => 6,
           when others   => No_Index);
 
    overriding
