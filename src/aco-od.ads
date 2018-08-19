@@ -11,42 +11,27 @@ package ACO.OD is
 
    subtype Comm_Profile_Index is Object_Index range 16#1000# .. 16#1FFF#;
 
-   type Object_Dict is abstract tagged limited private;
+   type Object_Data_Base is abstract tagged limited private;
 
-   function Objects
-      (This : Object_Dict) return Profile_Objects_Ref is abstract;
 
-   function Index_Map
-      (This : Object_Dict; Index : Object_Index) return Index_Type is abstract;
+
+   type Object_Dictionary (Data : not null access Object_Data_Base'Class) is
+      tagged limited private;
+
 
    function Object_Exist
-      (This  : Object_Dict'Class;
+      (This  : Object_Dictionary'Class;
        Index : Object_Index)
        return Boolean;
 
    function Entry_Exist
-      (This     : Object_Dict'Class;
+      (This     : Object_Dictionary'Class;
        Index    : Object_Index;
        Subindex : Object_Subindex)
        return Boolean;
 
-   function Get_Object_Ref
-      (This  : Object_Dict'Class;
-       Index : Object_Index) return Object_Ref;
-
-   function Get_Object
-      (This  : Object_Dict'Class;
-       Index : Object_Index) return Object_Base'Class
-      with Pre => This.Object_Exist (Index);
-
-   function Get_Entry_Ref
-      (This     : Object_Dict'Class;
-       Index    : Object_Index;
-       Subindex : Object_Subindex) return Entry_Ref
-      with Pre => This.Object_Exist (Index);
-
    function Get_Entry
-      (This     : Object_Dict'Class;
+      (This     : Object_Dictionary'Class;
        Index    : Object_Index;
        Subindex : Object_Subindex) return Entry_Base'Class
       with Pre => This.Entry_Exist (Index, Subindex);
@@ -61,25 +46,34 @@ package ACO.OD is
 
 
    procedure Set_Node_State
-     (This       : in out Object_Dict;
+     (This       : in out Object_Dictionary;
       Node_State : in     ACO.States.State);
 
-   function Get_Node_State (This : Object_Dict) return ACO.States.State;
+   function Get_Node_State (This : Object_Dictionary) return ACO.States.State;
 
-   function Get_Heartbeat_Producer_Period (This : Object_Dict) return Natural;
+   function Get_Heartbeat_Producer_Period (This : Object_Dictionary) return Natural;
 
-   function Get_Communication_Cycle_Period (This : Object_Dict) return Natural;
+   function Get_Communication_Cycle_Period (This : Object_Dictionary) return Natural;
 
-   function Get_Sync_Counter_Overflow (This : Object_Dict) return Sync_Counter;
+   function Get_Sync_Counter_Overflow (This : Object_Dictionary) return Sync_Counter;
 
    function Get_Heartbeat_Consumer_Period
-     (This    : Object_Dict;
+     (This    : Object_Dictionary;
       Node_Id : ACO.Messages.Node_Nr)
       return Natural;
 
 private
 
-   type Object_Dict is abstract tagged limited record
+   type Object_Data_Base is abstract tagged limited null record;
+
+   function Objects
+      (This : Object_Data_Base) return Profile_Objects_Ref is (null);
+
+   function Index_Map
+      (This : Object_Data_Base; Index : Object_Index) return Index_Type is (No_Index);
+
+   type Object_Dictionary (Data : not null access Object_Data_Base'Class) is
+      tagged limited record
       Events : ACO.Events.Event_Manager;
       Node_State : ACO.States.State := ACO.States.Unknown_State;
       Communication_Cycle_Period : Natural := 10_000; --  Multiples of 100us

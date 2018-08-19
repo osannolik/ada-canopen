@@ -4,7 +4,7 @@ with ACO.Generic_Entry_Types;
 package ACO.OD.Example is
    --  Shall be generated based on an EDS file
 
-   type Example_Dict is new Object_Dict with private;
+   type Dictionary_Data is new Object_Data_Base with private;
 
    use ACO.OD_Types.Entries;
 
@@ -103,8 +103,8 @@ private
        5 => Sync_Win_Length'Access,
        6 => Device_Name'Access);
 
-   overriding
-   function Index_Map (This : Example_Dict; Index : Object_Index)
+   --  overriding
+   function Index_Map (This : Dictionary_Data; Index : Object_Index)
                        return Index_Type
    is (case Index is
           when 16#1000# => 0,
@@ -116,10 +116,10 @@ private
           when 16#1008# => 6,
           when others   => No_Index);
 
-   overriding
-   function Objects (This : Example_Dict) return Profile_Objects_Ref is
+   --  overriding
+   function Objects (This : Dictionary_Data) return Profile_Objects_Ref is
       (Com_Profile'Access);
 
-   type Example_Dict is new Object_Dict with null record;
+   type Dictionary_Data is new Object_Data_Base with null record;
 
 end ACO.OD.Example;

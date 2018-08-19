@@ -33,11 +33,9 @@ package ACO.OD_Types is
    function Read (This : Entry_Base) return Byte_Array is abstract;
 
 
-   type Entry_Ref is access all Entry_Base'Class;
+   type Entry_Ref is not null access all Entry_Base'Class;
 
    type Entry_Array is array (Object_Subindex range <>) of Entry_Ref;
-
-   No_Entry : constant Entry_Ref := null;
 
    type Object_Base (Entries : not null access Entry_Array) is tagged null record;
 
@@ -53,6 +51,6 @@ package ACO.OD_Types is
 
    type Profile_Objects is array (Profile_Index_Type range <>) of Object_Ref;
 
-   type Profile_Objects_Ref is not null access all Profile_Objects;
+   type Profile_Objects_Ref is access all Profile_Objects;
 
 end ACO.OD_Types;
