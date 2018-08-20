@@ -44,10 +44,14 @@ package body ACO.OD is
       (This      : in out Object_Dictionary'Class;
        New_Entry : in     Entry_Base'Class;
        Index     : in     Object_Index;
-       Subindex  : in     Object_Subindex)
+       Subindex  : in     Object_Subindex;
+       Silently  : in     Boolean := False)
    is
    begin
       This.Protected_Data.Set_Entry (New_Entry, Index, Subindex);
+      if not Silently then
+         This.Events.Entry_Updated.Update ((Index, Subindex));
+      end if;
    end Set_Entry;
 
    procedure Set_Node_State
@@ -83,8 +87,9 @@ package body ACO.OD is
       function Get_Node_State return ACO.States.State is
          (Node_State);
 
-      procedure Set_Node_State (New_State  : in     ACO.States.State;
-                                Prev_State :    out ACO.States.State)
+      procedure Set_Node_State
+         (New_State  : in     ACO.States.State;
+          Prev_State :    out ACO.States.State)
       is
       begin
          Prev_State := Node_State;

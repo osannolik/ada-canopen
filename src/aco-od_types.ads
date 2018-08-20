@@ -8,6 +8,11 @@ package ACO.OD_Types is
 
    subtype Object_Subindex is Interfaces.Unsigned_8;
 
+   type Entry_Index is record
+      Index    : Object_Index;
+      Subindex : Object_Subindex;
+   end record;
+
    type Byte_Array is array (Natural range <>) of Interfaces.Unsigned_8;
 
    Empty : Byte_Array (1 .. 0);

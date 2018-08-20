@@ -11,12 +11,14 @@ package ACO.OD is
 
    subtype Comm_Profile_Index is Object_Index range 16#1000# .. 16#1FFF#;
 
+   type Object_Dictionary_Base is abstract tagged limited record
+      Events : ACO.Events.Event_Manager;
+   end record;
+
    type Object_Data_Base is abstract tagged limited private;
 
-
-
    type Object_Dictionary (Data : not null access Object_Data_Base'Class) is
-      tagged limited private;
+      new Object_Dictionary_Base with private;
 
 
    function Object_Exist
@@ -47,17 +49,16 @@ package ACO.OD is
       (This      : in out Object_Dictionary'Class;
        New_Entry : in     Entry_Base'Class;
        Index     : in     Object_Index;
-       Subindex  : in     Object_Subindex)
+       Subindex  : in     Object_Subindex;
+       Silently  : in     Boolean := False)
       with Pre => This.Entry_Exist (Index, Subindex) and then
                   This.Is_Entry_Compatible (New_Entry, Index, Subindex);
-
 
    procedure Set_Node_State
       (This       : in out Object_Dictionary;
        Node_State : in     ACO.States.State);
 
    function Get_Node_State (This : Object_Dictionary) return ACO.States.State;
-
 
 
 
@@ -103,8 +104,9 @@ private
 
       function Get_Node_State return ACO.States.State;
 
-      procedure Set_Node_State (New_State  : in     ACO.States.State;
-                                Prev_State :    out ACO.States.State);
+      procedure Set_Node_State
+         (New_State  : in     ACO.States.State;
+          Prev_State :    out ACO.States.State);
 
    private
       Node_State : ACO.States.State := ACO.States.Unknown_State;
@@ -120,10 +122,9 @@ private
       (This : Object_Data_Base; Index : Object_Index) return Index_Type is (No_Index);
 
    type Object_Dictionary (Data : not null access Object_Data_Base'Class) is
-      tagged limited record
+      new Object_Dictionary_Base with
+   record
       Protected_Data : Barrier_Type (Data);
-      Events : ACO.Events.Event_Manager;
-      --  Node_State : ACO.States.State := ACO.States.Unknown_State;
       Communication_Cycle_Period : Natural := 10_000; --  Multiples of 100us
       Sync_Counter_Overflow_Value : Sync_Counter := 16;
       Heartbeat_Producer_Period : Natural := 500;
