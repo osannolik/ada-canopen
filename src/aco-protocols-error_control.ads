@@ -6,6 +6,7 @@ private with ACO.States;
 private with ACO.Log;
 private with ACO.Utils.Generic_Alarms;
 private with Interfaces;
+private with ACO.OD_Types;
 
 package ACO.Protocols.Error_Control is
 
@@ -16,7 +17,7 @@ package ACO.Protocols.Error_Control is
 
    type EC
       (Id     : Node_Nr;
-       Od     : not null access ACO.OD.Object_Dict'Class;
+       Od     : not null access ACO.OD.Object_Dictionary'Class;
        Driver : not null access ACO.Drivers.Driver'Class) is
       new Protocol with private;
 
@@ -83,34 +84,23 @@ private
    type Heartbeat_Consumer_Alarms is
       array (Positive range <>) of aliased Heartbeat_Consumer_Alarm;
 
-   type Heartbeat_Consumer_Change_Subscriber (EC_Ref : not null access EC) is
-      new ACO.Events.Natural_Pubsub.Sub with null record;
+   type Entry_Update_Subscriber (EC_Ref : not null access EC) is
+      new ACO.Events.Entry_Update_Pack.Sub with null record;
 
    overriding
    procedure Update
-      (This : access Heartbeat_Consumer_Change_Subscriber;
-       Data : in     Natural);
-
-   type Heartbeat_Producer_Change_Subscriber (EC_Ref : not null access EC) is
-      new ACO.Events.Natural_Pubsub.Sub with null record;
-
-   overriding
-   procedure Update
-      (This : access Heartbeat_Producer_Change_Subscriber;
-       Data : in     Natural);
+      (This : access Entry_Update_Subscriber;
+       Data : in     ACO.OD_Types.Entry_Index);
 
    type EC
       (Id     : Node_Nr;
-       Od     : not null access ACO.OD.Object_Dict'Class;
+       Od     : not null access ACO.OD.Object_Dictionary'Class;
        Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
    record
       Event_Manager : Alarms.Alarm_Manager;
       Producer_Alarm : aliased Heartbeat_Producer_Alarm (EC'Access);
       Consumer_Alarms : Heartbeat_Consumer_Alarms (1 .. Max_Nof_Heartbeat_Slaves);
-      Heartbeat_Consumer_Change_Indication :
-         aliased Heartbeat_Consumer_Change_Subscriber (EC'Access);
-      Heartbeat_Producer_Change_Indication :
-         aliased Heartbeat_Producer_Change_Subscriber (EC'Access);
+      Entry_Update : aliased Entry_Update_Subscriber (EC'Access);
    end record;
 
    procedure Send_Bootup (This : in out EC);

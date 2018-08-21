@@ -212,38 +212,36 @@ package body ACO.Protocols.Error_Control is
 
    overriding
    procedure Update
-     (This : access Heartbeat_Producer_Change_Subscriber;
-      Data : in     Natural)
+      (This : access Entry_Update_Subscriber;
+       Data : in     ACO.OD_Types.Entry_Index)
    is
-      pragma Unreferenced (Data);
+      use type ACO.OD_Types.Object_Index;
       EC_Ref : access EC renames This.EC_Ref;
    begin
-      if EC_Ref.Event_Manager.Is_Pending (EC_Ref.Producer_Alarm'Access) then
-         EC_Ref.Heartbeat_Producer_Stop;
-         EC_Ref.Heartbeat_Producer_Start;
-      end if;
-   end Update;
+      case Data.Index is
+         when Heartbeat_Consumer_Index =>
+            for Alarm of EC_Ref.Consumer_Alarms loop
+               if Alarm.Slave_Id /= 0 then
+                  declare
+                     Period : constant Natural :=
+                        EC_Ref.Od.Get_Heartbeat_Consumer_Period (Alarm.Slave_Id);
+                  begin
+                     Consumer_Alarm_Reset
+                        (Event_Manager => EC_Ref.Event_Manager,
+                         Alarm         => Alarm,
+                         Period        => Period);
+                  end;
+               end if;
+            end loop;
 
-   overriding
-   procedure Update
-     (This : access Heartbeat_Consumer_Change_Subscriber;
-      Data : in     Natural)
-   is
-      pragma Unreferenced (Data);
-   begin
-      for Alarm of This.EC_Ref.Consumer_Alarms loop
-         if Alarm.Slave_Id /= 0 then
-            declare
-               Period : constant Natural :=
-                  This.EC_Ref.Od.Get_Heartbeat_Consumer_Period (Alarm.Slave_Id);
-            begin
-               Consumer_Alarm_Reset
-                  (Event_Manager => This.EC_Ref.Event_Manager,
-                   Alarm         => Alarm,
-                   Period        => Period);
-            end;
-         end if;
-      end loop;
+         when Heartbeat_Producer_Index =>
+            if EC_Ref.Event_Manager.Is_Pending (EC_Ref.Producer_Alarm'Access) then
+               EC_Ref.Heartbeat_Producer_Stop;
+               EC_Ref.Heartbeat_Producer_Start;
+            end if;
+
+         when others => null;
+      end case;
    end Update;
 
    procedure Update_Alarms
@@ -259,10 +257,7 @@ package body ACO.Protocols.Error_Control is
    begin
       Protocol (This).Initialize;
 
-      This.Od.Events.Heartbeat_Producer_Change.Attach
-         (Subscriber => This.Heartbeat_Producer_Change_Indication'Unchecked_Access);
-      This.Od.Events.Heartbeat_Consumer_Change.Attach
-         (Subscriber => This.Heartbeat_Consumer_Change_Indication'Unchecked_Access);
+      This.Od.Events.Entry_Updated.Attach (This.Entry_Update'Unchecked_Access);
    end Initialize;
 
    overriding
@@ -271,10 +266,7 @@ package body ACO.Protocols.Error_Control is
    begin
       Protocol (This).Finalize;
 
-      This.Od.Events.Heartbeat_Producer_Change.Detach
-         (Subscriber => This.Heartbeat_Producer_Change_Indication'Unchecked_Access);
-      This.Od.Events.Heartbeat_Consumer_Change.Detach
-         (Subscriber => This.Heartbeat_Consumer_Change_Indication'Unchecked_Access);
+      This.Od.Events.Entry_Updated.Detach (This.Entry_Update'Unchecked_Access);
    end Finalize;
 
    procedure EC_Log

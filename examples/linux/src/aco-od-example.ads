@@ -92,6 +92,29 @@ private
 
    Device_Name : aliased Object_Base (Device_Name_Data'Access);
 
+   --  0x1016 Consumer Heartbeat Time ARRAY
+
+   Consumer_Hbt_Nof : aliased Entry_U8 := Create (RO, 16#01#);
+
+   Consumer_Hbt_1 : aliased Entry_U32 := Create (RW, 16#00000000#);
+
+   Consumer_Hbt_Data : aliased Entry_Array :=
+      (0 => Consumer_Hbt_Nof'Access,
+       1 => Consumer_Hbt_1'Access);
+
+   Consumer_Hbt : aliased Object_Base (Consumer_Hbt_Data'Access);
+
+   --  0x1017 Producer Heartbeat Time
+
+   Producer_Hbt_Var : aliased Entry_U16 := Create (RW, 500);
+
+   Producer_Hbt_Data : aliased Entry_Array :=
+      (0 => Producer_Hbt_Var'Access);
+
+   Producer_Hbt : aliased Object_Base (Producer_Hbt_Data'Access);
+
+
+
    --  Communication Profile Data
 
    Com_Profile : aliased Profile_Objects :=
@@ -101,9 +124,11 @@ private
        3 => Sync_COB_ID'Access,
        4 => Comm_Cycle_Per'Access,
        5 => Sync_Win_Length'Access,
-       6 => Device_Name'Access);
+       6 => Device_Name'Access,
+       7 => Consumer_Hbt'Access,
+       8 => Producer_Hbt'Access);
 
-   --  overriding
+
    function Index_Map (This : Dictionary_Data; Index : Object_Index)
                        return Index_Type
    is (case Index is
@@ -114,9 +139,11 @@ private
           when 16#1006# => 4,
           when 16#1007# => 5,
           when 16#1008# => 6,
+          when 16#1016# => 7,
+          when 16#1017# => 8,
           when others   => No_Index);
 
-   --  overriding
+
    function Objects (This : Dictionary_Data) return Profile_Objects_Ref is
       (Com_Profile'Access);
 

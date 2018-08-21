@@ -1,6 +1,10 @@
 with Ada.Tags;
+with ACO.OD_Types.Entries;
+with Interfaces;
 
 package body ACO.OD is
+
+   use ACO.OD_Types.Entries;
 
    function Object_Exist
       (This  : Object_Dictionary'Class;
@@ -67,6 +71,35 @@ package body ACO.OD is
    function Get_Node_State (This : Object_Dictionary) return ACO.States.State is
       (This.Protected_Data.Get_Node_State);
 
+   function Get_Heartbeat_Consumer_Period
+      (This    : Object_Dictionary;
+       Node_Id : ACO.Messages.Node_Nr)
+       return Natural
+   is
+   begin
+      if This.Object_Exist (Heartbeat_Consumer_Index) then
+         return This.Protected_Data.Get_Heartbeat_Consumer_Period (Node_Id);
+      else
+         return 0;
+      end if;
+   end Get_Heartbeat_Consumer_Period;
+
+   function Get_Heartbeat_Producer_Period
+      (This : Object_Dictionary)
+       return Natural
+   is
+      Period : U16 := 0;
+   begin
+      if This.Object_Exist (Heartbeat_Producer_Index) then
+         Period := Entry_U16
+            (This.Protected_Data.Get_Entry (Heartbeat_Producer_Index, 0)).Read;
+      end if;
+      return Natural (Period);
+   end Get_Heartbeat_Producer_Period;
+
+
+
+
    protected body Barrier_Type is
 
       function Get_Entry
@@ -96,12 +129,38 @@ package body ACO.OD is
          Node_State := New_State;
       end Set_Node_State;
 
+      function Get_Heartbeat_Consumer_Period
+         (Node_Id : ACO.Messages.Node_Nr) return Natural
+      is
+         use Interfaces;
+
+         Object_Ref : constant access Object_Base :=
+            Data.Objects (Data.Index_Map (Heartbeat_Consumer_Index));
+
+         function Get_Node_Id (Reg : U32) return ACO.Messages.Node_Nr is
+            (ACO.Messages.Node_Nr (Shift_Right (Reg, 16) and 16#FF#));
+
+         function Get_Period (Reg : U32) return Natural is
+            (Natural (Reg and 16#FF#));
+      begin
+         for I in 1 .. Object_Ref.Entries'Last loop
+            declare
+               E : constant U32 := Entry_U32 (Object_Ref.Entries (I).all).Read;
+               use type ACO.Messages.Node_Nr;
+            begin
+               if Get_Node_Id (E) = Node_Id then
+                  return Get_Period (E);
+               end if;
+            end;
+         end loop;
+
+         return 0;
+      end Get_Heartbeat_Consumer_Period;
+
    end Barrier_Type;
 
 
 
-   function Get_Heartbeat_Producer_Period (This : Object_Dictionary) return Natural is
-      (This.Heartbeat_Producer_Period);
 
    function Get_Communication_Cycle_Period (This : Object_Dictionary) return Natural is
       (This.Communication_Cycle_Period);
@@ -109,21 +168,6 @@ package body ACO.OD is
    function Get_Sync_Counter_Overflow (This : Object_Dictionary) return Sync_Counter is
       (This.Sync_Counter_Overflow_Value);
 
-   function Get_Heartbeat_Consumer_Period
-     (This    : Object_Dictionary;
-      Node_Id : ACO.Messages.Node_Nr)
-      return Natural
-   is
-      pragma Unreferenced (This);
 
-      use ACO.Messages;
-   begin
-      --  Temporary for test
-      if Node_Id = 2 then
-         return 0;
-      else
-         return 600;
-      end if;
-   end Get_Heartbeat_Consumer_Period;
 
 end ACO.OD;

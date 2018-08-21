@@ -29,6 +29,12 @@ package ACO.Generic_Entry_Types is
                     Bytes : in     Byte_Array)
       with Pre => Bytes'Length = Item_Type'Size / 8;
 
+   function "=" (L : Entry_Type; R : Item_Type) return Boolean
+      with Inline;
+
+   function "=" (L : Item_Type;  R : Entry_Type) return Boolean
+      with Inline;
+
 private
 
    function Convert (Data : Item_Type) return Byte_Array;

@@ -43,4 +43,10 @@ package body ACO.Generic_Entry_Types is
       return Data;
    end Convert;
 
+   function "=" (L : Entry_Type; R : Item_Type) return Boolean is
+      (L.Data = R);
+
+   function "=" (L : Item_Type;  R : Entry_Type) return Boolean is
+      (L = R.Data);
+
 end ACO.Generic_Entry_Types;

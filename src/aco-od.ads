@@ -11,6 +11,9 @@ package ACO.OD is
 
    subtype Comm_Profile_Index is Object_Index range 16#1000# .. 16#1FFF#;
 
+   Heartbeat_Producer_Index : constant := 16#1017#;
+   Heartbeat_Consumer_Index : constant := 16#1016#;
+
    type Object_Dictionary_Base is abstract tagged limited record
       Events : ACO.Events.Event_Manager;
    end record;
@@ -60,6 +63,16 @@ package ACO.OD is
 
    function Get_Node_State (This : Object_Dictionary) return ACO.States.State;
 
+   function Get_Heartbeat_Consumer_Period
+      (This    : Object_Dictionary;
+       Node_Id : ACO.Messages.Node_Nr)
+       return Natural;
+
+   function Get_Heartbeat_Producer_Period
+      (This : Object_Dictionary)
+       return Natural;
+
+
 
 
 
@@ -76,16 +89,13 @@ package ACO.OD is
 
 
 
-   function Get_Heartbeat_Producer_Period (This : Object_Dictionary) return Natural;
+
 
    function Get_Communication_Cycle_Period (This : Object_Dictionary) return Natural;
 
    function Get_Sync_Counter_Overflow (This : Object_Dictionary) return Sync_Counter;
 
-   function Get_Heartbeat_Consumer_Period
-     (This    : Object_Dictionary;
-      Node_Id : ACO.Messages.Node_Nr)
-      return Natural;
+
 
 private
 
@@ -108,6 +118,9 @@ private
          (New_State  : in     ACO.States.State;
           Prev_State :    out ACO.States.State);
 
+      function Get_Heartbeat_Consumer_Period
+         (Node_Id : ACO.Messages.Node_Nr) return Natural;
+
    private
       Node_State : ACO.States.State := ACO.States.Unknown_State;
    end Barrier_Type;
@@ -127,7 +140,6 @@ private
       Protected_Data : Barrier_Type (Data);
       Communication_Cycle_Period : Natural := 10_000; --  Multiples of 100us
       Sync_Counter_Overflow_Value : Sync_Counter := 16;
-      Heartbeat_Producer_Period : Natural := 500;
       Slave_States : State_Array (1 .. Max_Nof_Heartbeat_Slaves) :=
          (others => ACO.States.Unknown_State);
    end record;
