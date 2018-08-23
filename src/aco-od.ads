@@ -11,8 +11,10 @@ package ACO.OD is
 
    subtype Comm_Profile_Index is Object_Index range 16#1000# .. 16#1FFF#;
 
-   Heartbeat_Producer_Index : constant := 16#1017#;
-   Heartbeat_Consumer_Index : constant := 16#1016#;
+   Comm_Cycle_Period_Index     : constant := 16#1006#;
+   Heartbeat_Producer_Index    : constant := 16#1017#;
+   Heartbeat_Consumer_Index    : constant := 16#1016#;
+   Sync_Counter_Overflow_Index : constant := 16#1019#;
 
    type Object_Dictionary_Base is abstract tagged limited record
       Events : ACO.Events.Event_Manager;
@@ -61,43 +63,60 @@ package ACO.OD is
       (This       : in out Object_Dictionary;
        Node_State : in     ACO.States.State);
 
-   function Get_Node_State (This : Object_Dictionary) return ACO.States.State;
+   function Get_Node_State
+      (This : Object_Dictionary)
+       return ACO.States.State;
+
+   procedure Set_Heartbeat_Consumer_Period
+      (This    : in out Object_Dictionary;
+       Node_Id : in     ACO.Messages.Node_Nr;
+       Period  : in     Natural);
 
    function Get_Heartbeat_Consumer_Period
       (This    : Object_Dictionary;
        Node_Id : ACO.Messages.Node_Nr)
        return Natural;
 
+   procedure Set_Heartbeat_Producer_Period
+      (This    : in out Object_Dictionary;
+       Period  : in     Natural);
+
    function Get_Heartbeat_Producer_Period
       (This : Object_Dictionary)
        return Natural;
 
+   procedure Set_Communication_Cycle_Period
+      (This    : in out Object_Dictionary;
+       Period  : in     Natural);
 
+   function Get_Communication_Cycle_Period
+      (This : Object_Dictionary)
+       return Natural;
 
+   procedure Set_Sync_Counter_Overflow
+      (This    : in out Object_Dictionary;
+       Period  : in     Natural);
 
-
-
-   Max_Nof_Heartbeat_Slaves : constant := 8;
-
-   type State_Array is array (Positive range <>) of ACO.States.State;
-
-   subtype Sync_Counter is Natural range 0 .. 240;
-
-
-
-
-
-
-
-
-
-   function Get_Communication_Cycle_Period (This : Object_Dictionary) return Natural;
-
-   function Get_Sync_Counter_Overflow (This : Object_Dictionary) return Sync_Counter;
-
-
+   function Get_Sync_Counter_Overflow
+      (This : Object_Dictionary)
+       return Natural;
 
 private
+
+   type Object_Data_Base is abstract tagged limited null record;
+
+   function Objects
+      (This : Object_Data_Base)
+       return Profile_Objects_Ref
+   is
+      (null);
+
+   function Index_Map
+      (This  : Object_Data_Base;
+       Index : Object_Index)
+       return Index_Type
+   is
+      (No_Index);
 
    protected type Barrier_Type (Data : not null access Object_Data_Base'Class)
    is
@@ -118,30 +137,22 @@ private
          (New_State  : in     ACO.States.State;
           Prev_State :    out ACO.States.State);
 
+      procedure Set_Heartbeat_Consumer_Period
+         (Node_Id  : in     ACO.Messages.Node_Nr;
+          Period   : in     Natural;
+          Subindex :    out Object_Subindex);
+
       function Get_Heartbeat_Consumer_Period
          (Node_Id : ACO.Messages.Node_Nr) return Natural;
 
    private
-      Node_State : ACO.States.State := ACO.States.Unknown_State;
+      Node_State   : ACO.States.State := ACO.States.Unknown_State;
    end Barrier_Type;
-
-
-   type Object_Data_Base is abstract tagged limited null record;
-
-   function Objects
-      (This : Object_Data_Base) return Profile_Objects_Ref is (null);
-
-   function Index_Map
-      (This : Object_Data_Base; Index : Object_Index) return Index_Type is (No_Index);
 
    type Object_Dictionary (Data : not null access Object_Data_Base'Class) is
       new Object_Dictionary_Base with
    record
       Protected_Data : Barrier_Type (Data);
-      Communication_Cycle_Period : Natural := 10_000; --  Multiples of 100us
-      Sync_Counter_Overflow_Value : Sync_Counter := 16;
-      Slave_States : State_Array (1 .. Max_Nof_Heartbeat_Slaves) :=
-         (others => ACO.States.Unknown_State);
    end record;
 
 end ACO.OD;

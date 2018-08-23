@@ -14,7 +14,7 @@ package body ACO.Protocols.Synchronization is
 
    procedure Counter_Increment
      (This           : in out SYNC;
-      Overflow_Value : in     ACO.OD.Sync_Counter)
+      Overflow_Value : in     Sync_Counter)
    is
    begin
       if Natural (This.Counter) >= Overflow_Value then
@@ -29,7 +29,7 @@ package body ACO.Protocols.Synchronization is
 
    function Create_Sync
      (This           : in out SYNC;
-      Overflow_Value : in     ACO.OD.Sync_Counter)
+      Overflow_Value : in     Sync_Counter)
       return Message
    is
       Data : constant Data_Array :=
@@ -45,7 +45,7 @@ package body ACO.Protocols.Synchronization is
 
    procedure Send_Sync (This : in out SYNC)
    is
-      Overflow_Value : constant ACO.OD.Sync_Counter :=
+      Overflow_Value : constant Sync_Counter :=
          This.Od.Get_Sync_Counter_Overflow;
    begin
       This.Driver.Send_Message (This.Create_Sync (Overflow_Value));
@@ -122,8 +122,8 @@ package body ACO.Protocols.Synchronization is
 
    overriding
    procedure Update
-     (This : access Sync_Producer_Change_Subscriber;
-      Data : in     Natural)
+      (This : access Entry_Update_Subscriber;
+       Data : in     ACO.OD_Types.Entry_Index)
    is
       pragma Unreferenced (Data);
 
@@ -161,8 +161,7 @@ package body ACO.Protocols.Synchronization is
    begin
       Protocol (This).Initialize;
 
-      This.Od.Events.Sync_Producer_Change.Attach
-         (Subscriber => This.Sync_Producer_Change_Indication'Unchecked_Access);
+      This.Od.Events.Entry_Updated.Attach (This.Entry_Update'Unchecked_Access);
    end Initialize;
 
    overriding
@@ -171,8 +170,7 @@ package body ACO.Protocols.Synchronization is
    begin
       Protocol (This).Finalize;
 
-      This.Od.Events.Sync_Producer_Change.Detach
-         (Subscriber => This.Sync_Producer_Change_Indication'Unchecked_Access);
+      This.Od.Events.Entry_Updated.Detach (This.Entry_Update'Unchecked_Access);
    end Finalize;
 
    procedure SYNC_Log

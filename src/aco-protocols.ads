@@ -7,7 +7,7 @@ package ACO.Protocols is
 
    pragma Preelaborate;
 
-   type Protocol (Od : not null access ACO.OD.Object_Dict'Class) is
+   type Protocol (Od : not null access ACO.OD.Object_Dictionary'Class) is
       abstract new Ada.Finalization.Limited_Controlled with private;
 
    type Protocol_Access is access all Protocol'Class;
@@ -33,7 +33,7 @@ private
    overriding
    procedure Finalize (This : in out Protocol);
 
-   type Protocol (Od : not null access ACO.OD.Object_Dict'Class) is
+   type Protocol (Od : not null access ACO.OD.Object_Dictionary'Class) is
       abstract new Ada.Finalization.Limited_Controlled with
    record
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Protocol'Access);

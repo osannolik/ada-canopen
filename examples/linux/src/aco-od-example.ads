@@ -66,7 +66,7 @@ private
 
    --  0x1006 Communication Cycle Period VAR
 
-   Comm_Cycle_Per_Var : aliased Entry_U32 := Create (RW, 16#00000000#);
+   Comm_Cycle_Per_Var : aliased Entry_U32 := Create (RW, 10_000);
 
    Comm_Cycle_Per_Data : aliased Entry_Array :=
       (0 => Comm_Cycle_Per_Var'Access);
@@ -96,7 +96,7 @@ private
 
    Consumer_Hbt_Nof : aliased Entry_U8 := Create (RO, 16#01#);
 
-   Consumer_Hbt_1 : aliased Entry_U32 := Create (RW, 16#00000000#);
+   Consumer_Hbt_1 : aliased Entry_U32 := Create (RW, 16#00040010#);
 
    Consumer_Hbt_Data : aliased Entry_Array :=
       (0 => Consumer_Hbt_Nof'Access,
@@ -113,6 +113,15 @@ private
 
    Producer_Hbt : aliased Object_Base (Producer_Hbt_Data'Access);
 
+   --  0x1019 Synchronous Counter Overflow Value VAR
+
+   Sync_Counter_Overflow_Var : aliased Entry_U8 := Create (RW, 16);
+
+   Sync_Counter_Overflow_Data : aliased Entry_Array :=
+      (0 => Sync_Counter_Overflow_Var'Access);
+
+   Sync_Counter_Overflow : aliased Object_Base (Sync_Counter_Overflow_Data'Access);
+
 
 
    --  Communication Profile Data
@@ -126,7 +135,8 @@ private
        5 => Sync_Win_Length'Access,
        6 => Device_Name'Access,
        7 => Consumer_Hbt'Access,
-       8 => Producer_Hbt'Access);
+       8 => Producer_Hbt'Access,
+       9 => Sync_Counter_Overflow'Access);
 
 
    function Index_Map (This : Dictionary_Data; Index : Object_Index)
@@ -141,6 +151,7 @@ private
           when 16#1008# => 6,
           when 16#1016# => 7,
           when 16#1017# => 8,
+          when 16#1019# => 9,
           when others   => No_Index);
 
 

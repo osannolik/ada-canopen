@@ -7,6 +7,7 @@ private with ACO.Log;
 private with ACO.Utils.Generic_Alarms;
 private with Interfaces;
 private with ACO.OD_Types;
+private with ACO.Configuration;
 
 package ACO.Protocols.Error_Control is
 
@@ -29,6 +30,8 @@ package ACO.Protocols.Error_Control is
      (This : in out EC);
 
 private
+
+   use ACO.Configuration;
 
    package Commands is
       use ACO.States;
@@ -100,6 +103,7 @@ private
       Event_Manager : Alarms.Alarm_Manager;
       Producer_Alarm : aliased Heartbeat_Producer_Alarm (EC'Access);
       Consumer_Alarms : Heartbeat_Consumer_Alarms (1 .. Max_Nof_Heartbeat_Slaves);
+      Slave_States : ACO.States.Node_States_List;
       Entry_Update : aliased Entry_Update_Subscriber (EC'Access);
    end record;
 
