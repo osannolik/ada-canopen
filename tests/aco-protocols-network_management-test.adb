@@ -1,11 +1,14 @@
 with AUnit.Assertions; use AUnit.Assertions;
 
+with ACO.OD.Example;
+
 package body ACO.Protocols.Network_Management.Test is
    pragma Assertion_Policy (Check);
 
    use ACO.States;
 
-   OD : aliased ACO.OD.Object_Dict;
+   OD_Data : aliased ACO.OD.Example.Dictionary_Data;
+   OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
 
    Expected_Transitions : constant array (State, State) of State :=
    --  Current    Request: Initializing,    Pre_Operational, Operational,     Stopped,         Unknown_State

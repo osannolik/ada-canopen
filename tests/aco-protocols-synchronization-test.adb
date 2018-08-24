@@ -1,5 +1,6 @@
 with AUnit.Assertions; use AUnit.Assertions;
 
+with ACO.OD.Example;
 with ACO.Drivers.Dummy;
 with Ada.Real_Time;
 
@@ -40,7 +41,8 @@ package body ACO.Protocols.Synchronization.Test is
    end Sync_Consumer_Test;
 
    procedure Sync_Producer_Test (Period : in Natural) is
-      OD     : aliased ACO.OD.Object_Dict;
+      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
+      OD     : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
       Driver : aliased ACO.Drivers.Dummy.Dummy_Driver;
       S      : SYNC (OD'Access, Driver'Access);
 
@@ -84,7 +86,8 @@ package body ACO.Protocols.Synchronization.Test is
       use Interfaces;
       use ACO.States;
 
-      OD     : aliased ACO.OD.Object_Dict;
+      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
+      OD     : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
       Driver : aliased ACO.Drivers.Dummy.Dummy_Driver;
       S      : SYNC (OD'Access, Driver'Access);
 

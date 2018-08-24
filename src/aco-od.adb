@@ -156,10 +156,10 @@ package body ACO.OD is
       (This    : in out Object_Dictionary;
        Period  : in     Natural)
    is
-      E : Entry_U32;
+      E : Entry_U8;
    begin
       if This.Object_Exist (Sync_Counter_Overflow_Index) then
-         E.Write (U32 (Period));
+         E.Write (U8 (Period));
          This.Set_Entry (E, Sync_Counter_Overflow_Index, 0);
       end if;
    end Set_Sync_Counter_Overflow;
@@ -168,10 +168,10 @@ package body ACO.OD is
       (This : Object_Dictionary)
        return Natural
    is
-      Period : U32 := 0;
+      Period : U8 := 0;
    begin
       if This.Object_Exist (Sync_Counter_Overflow_Index) then
-         Period := Entry_U32
+         Period := Entry_U8
             (This.Protected_Data.Get_Entry (Sync_Counter_Overflow_Index, 0)).Read;
       end if;
       return Natural (Period);

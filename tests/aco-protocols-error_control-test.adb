@@ -3,6 +3,8 @@ with AUnit.Assertions; use AUnit.Assertions;
 with ACO.Drivers.Dummy;
 with Ada.Real_Time;
 
+with ACO.OD.Example;
+
 package body ACO.Protocols.Error_Control.Test is
    pragma Assertion_Policy (Check);
 
@@ -55,7 +57,8 @@ package body ACO.Protocols.Error_Control.Test is
    end Heartbeat_Consumer_Test;
 
    procedure Heartbeat_Producer_Test (Period : in Natural) is
-      OD     : aliased ACO.OD.Object_Dict;
+      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
+      OD     : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
       Driver : aliased ACO.Drivers.Dummy.Dummy_Driver;
       E      : EC (Id, OD'Access, Driver'Access);
 
