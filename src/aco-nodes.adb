@@ -56,13 +56,17 @@ package body ACO.Nodes is
      (This : in out Node;
       Msg  : in     Message)
    is
+      Func : constant Function_Code := Func_Code (Msg);
    begin
       if CAN_Id (Msg) = Network_Management.NMT_CAN_Id then
          This.NMT.Message_Received (Msg, This.Id);
       elsif CAN_Id (Msg) = Synchronization.SYNC_CAN_Id then
          This.SYNC.Message_Received (Msg);
-      elsif Func_Code (Msg) = Error_Control.EC_Id then
+      elsif Func = Error_Control.EC_Id then
          This.EC.Message_Received (Msg);
+      elsif Func = Service_Data.SDO_Tx_Id or
+            Func = Service_Data.SDO_Rx_Id then
+         This.SDO.Message_Received (Msg);
       end if;
    end Dispatch;
 
@@ -97,6 +101,7 @@ package body ACO.Nodes is
 
       loop
          This.EC.Update_Alarms;
+         This.SDO.Update_Alarms;
          This.SYNC.Update_Alarms;
 
          Next_Release := Next_Release + Period;

@@ -9,6 +9,7 @@ private with ACO.Events;
 private with ACO.Protocols.Network_Management;
 private with ACO.Protocols.Error_Control;
 private with ACO.Protocols.Synchronization;
+private with ACO.Protocols.Service_Data;
 private with ACO.Log;
 
 package ACO.Nodes is
@@ -16,7 +17,7 @@ package ACO.Nodes is
 
    type Node
       (Id     : Node_Nr;
-       Od     : not null access ACO.OD.Object_Dict'Class;
+       Od     : not null access ACO.OD.Object_Dictionary'Class;
        Driver : not null access ACO.Drivers.Driver'Class)
    is new Ada.Finalization.Limited_Controlled with private;
 
@@ -45,12 +46,13 @@ private
 
    type Node
       (Id     : Node_Nr;
-       Od     : not null access ACO.OD.Object_Dict'Class;
+       Od     : not null access ACO.OD.Object_Dictionary'Class;
        Driver : not null access ACO.Drivers.Driver'Class)
    is new Ada.Finalization.Limited_Controlled with record
       NMT  : Network_Management.NMT (Od);
       EC   : Error_Control.EC (Id, Od, Driver);
       SYNC : Synchronization.SYNC (Od, Driver);
+      SDO  : Service_Data.SDO (Od, Driver);
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Node'Access);
       Start_Receiver_Task : Ada.Synchronous_Task_Control.Suspension_Object;
       Start_Periodic_Task : Ada.Synchronous_Task_Control.Suspension_Object;
