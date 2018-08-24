@@ -3,11 +3,13 @@ with ACO.Drivers.Stm32f40x;
 with STM32.Device;
 with ACO.Nodes;
 with ACO.States;
-with ACO.OD;
+with ACO.OD.Example;
 
 package body App is
 
-   O : aliased ACO.OD.Object_Dict;
+   O_Data : aliased ACO.OD.Example.Dictionary_Data;
+
+   O : aliased ACO.OD.Object_Dictionary (O_Data'Access);
 
    D : aliased ACO.Drivers.Stm32f40x.CAN_Driver (STM32.Device.CAN_1'Access);
 
@@ -23,6 +25,7 @@ package body App is
 
       Next_Release : Time := Clock;
    begin
+
       D.Initialize;
 
       N.Set_State (ACO.States.Initializing);
