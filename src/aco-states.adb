@@ -1,18 +1,27 @@
 package body ACO.States is
 
-   function Is_Full (This : Node_States_List) return Boolean
+   No_Node : constant State_Record :=
+      (Is_Used    => False,
+       Node_Id    => 0,
+       Node_State => Unknown_State);
+
+   use type ACO.Messages.Node_Nr;
+
+   function Is_Full (This : Node_States_List) return Boolean is
+      (for all N of This.Node_States => N.Is_Used);
+
+   function In_List
+      (This    : Node_States_List;
+       Node_Id : ACO.Messages.Node_Nr)
+       return Boolean
    is
-      (This.Next_Index > This.Node_States'Last);
+      (for some N of This.Node_States => N.Is_Used and then N.Node_Id = Node_Id);
 
    procedure Clear
       (This : in out Node_States_List)
    is
    begin
-      This := (Node_States =>
-                  (others => (Is_Used    => False,
-                              Node_Id    => 0,
-                              Node_State => Unknown_State)),
-               Next_Index  => This.Node_States'First);
+      This.Node_States := (others => No_Node);
    end Clear;
 
    procedure Add_Node
@@ -20,31 +29,44 @@ package body ACO.States is
        Node_Id    : in     ACO.Messages.Slave_Node_Nr;
        Node_State : in     State)
    is
-      use type ACO.Messages.Node_Nr;
+
+   begin
+      if This.In_List (Node_Id) then
+         This.Set_Node_State (Node_Id, Node_State);
+      else
+         for N of This.Node_States loop
+            if not N.Is_Used then
+               N := (Is_Used    => True,
+                     Node_Id    => Node_Id,
+                     Node_State => Node_State);
+               return;
+            end if;
+         end loop;
+      end if;
+   end Add_Node;
+
+   procedure Remove_Node
+      (This       : in out Node_States_List;
+       Node_Id    : in     ACO.Messages.Slave_Node_Nr)
+   is
+      pragma Warnings (Off, This);
    begin
       for N of This.Node_States loop
-         if not N.Is_Used then
-            N := (Is_Used    => True,
-                  Node_Id    => Node_Id,
-                  Node_State => Node_State);
-            This.Next_Index := This.Next_Index + 1;
-            return;
+         if N.Is_Used and then N.Node_Id = Node_Id then
+            N := No_Node;
          end if;
       end loop;
-   end Add_Node;
+   end Remove_Node;
 
    procedure Set_Node_State
       (This       : in out Node_States_List;
        Node_Id    : in     ACO.Messages.Slave_Node_Nr;
        Node_State : in     State)
    is
-      use type ACO.Messages.Node_Nr;
    begin
       for N of This.Node_States loop
-         if N.Node_Id = Node_Id then
-            N := (Is_Used    => True,
-                  Node_Id    => Node_Id,
-                  Node_State => Node_State);
+         if N.Is_Used and then N.Node_Id = Node_Id then
+            N.Node_State := Node_State;
             return;
          end if;
       end loop;
@@ -59,7 +81,6 @@ package body ACO.States is
        Node_Id : ACO.Messages.Slave_Node_Nr)
        return State
    is
-      use type ACO.Messages.Node_Nr;
    begin
       for N of This.Node_States loop
          if N.Is_Used and then N.Node_Id = Node_Id then

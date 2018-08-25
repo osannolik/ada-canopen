@@ -1,8 +1,11 @@
 with ACO.Messages;
+with ACO.Configuration;
 
 package ACO.States is
 
    pragma Preelaborate;
+
+   use ACO.Configuration;
 
    --    Initialisation  = 0x00,
    --    Disconnected    = 0x01,
@@ -25,9 +28,6 @@ package ACO.States is
       Current  : State := Unknown_State;
    end record;
 
-
-   Max_Nof_Heartbeat_Slaves : constant := 8;
-
    type State_Record is record
       Is_Used    : Boolean := False;
       Node_Id    : ACO.Messages.Node_Nr;
@@ -38,10 +38,14 @@ package ACO.States is
 
    type Node_States_List is tagged record
       Node_States : State_Array (1 .. Max_Nof_Heartbeat_Slaves);
-      Next_Index : Positive := 1;
    end record;
 
    function Is_Full (This : Node_States_List) return Boolean;
+
+   function In_List
+      (This    : Node_States_List;
+       Node_Id : ACO.Messages.Node_Nr)
+       return Boolean;
 
    procedure Clear
       (This : in out Node_States_List);
@@ -51,6 +55,10 @@ package ACO.States is
        Node_Id    : in     ACO.Messages.Slave_Node_Nr;
        Node_State : in     State)
       with Pre => not This.Is_Full;
+
+   procedure Remove_Node
+      (This       : in out Node_States_List;
+       Node_Id    : in     ACO.Messages.Slave_Node_Nr);
 
    procedure Set_Node_State
       (This       : in out Node_States_List;
