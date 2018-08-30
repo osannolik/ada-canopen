@@ -1,4 +1,5 @@
 with Ada.Finalization;
+with ACO.Configuration;
 with ACO.Drivers;
 with ACO.Messages;
 with ACO.States;
@@ -6,6 +7,7 @@ with ACO.OD;
 
 private with Ada.Synchronous_Task_Control;
 private with ACO.Events;
+private with ACO.Messages.Buffer;
 private with ACO.Protocols.Network_Management;
 private with ACO.Protocols.Error_Control;
 private with ACO.Protocols.Synchronization;
@@ -29,9 +31,11 @@ package ACO.Nodes is
      (This : in out Node;
       Msg  : in     Message);
 
-   task type Receiver_Task (This : not null access Node'Class);
+   task type Receiver_Task (This : not null access Node'Class)
+      with Priority => ACO.Configuration.Receiver_Task_Priority;
 
-   task type Periodic_Task (This : not null access Node'Class);
+   task type Periodic_Task (This : not null access Node'Class)
+      with Priority => ACO.Configuration.Periodic_Task_Priority;
 
 private
    use ACO.Protocols;
@@ -53,6 +57,7 @@ private
       EC   : Error_Control.EC (Id, Od, Driver);
       SYNC : Synchronization.SYNC (Od, Driver);
       SDO  : Service_Data.SDO (Od, Driver);
+      Received_Messages : ACO.Messages.Buffer.Protected_Buffer;
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Node'Access);
       Start_Receiver_Task : Ada.Synchronous_Task_Control.Suspension_Object;
       Start_Periodic_Task : Ada.Synchronous_Task_Control.Suspension_Object;

@@ -84,7 +84,11 @@ package body ACO.Nodes is
 
          This.Node_Log (Debug, "Received message " & Image (Msg));
 
-         This.Dispatch (Msg);
+         if not This.Received_Messages.Is_Full then
+            This.Received_Messages.Put_Blocking (Msg);
+         else
+            This.Node_Log (Warning, "Ignoring message: buffer full");
+         end if;
       end loop;
    end Receiver_Task;
 
@@ -92,17 +96,28 @@ package body ACO.Nodes is
    is
       use ACO.Log;
       use Ada.Real_Time;
+      use ACO.Messages.Buffer;
 
       Next_Release : Time := Clock;
-      Period : constant Time_Span := Milliseconds (1);  --  alarm resolution
+      Period : constant Time_Span :=
+         Milliseconds (Configuration.Periodic_Task_Period_Ms);
    begin
       Ada.Synchronous_Task_Control.Suspend_Until_True (This.Start_Periodic_Task);
       This.Node_Log (Debug, "Starting periodic worker task...");
 
       loop
-         This.EC.Update_Alarms;
-         This.SDO.Update_Alarms;
-         This.SYNC.Update_Alarms;
+         This.EC.Periodic_Actions;
+         This.SDO.Periodic_Actions;
+         This.SYNC.Periodic_Actions;
+
+         while not This.Received_Messages.Is_Empty loop
+            declare
+               Msg : Message;
+            begin
+               This.Received_Messages.Get (Msg);
+               This.Dispatch (Msg);
+            end;
+         end loop;
 
          Next_Release := Next_Release + Period;
          delay until Next_Release;

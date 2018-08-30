@@ -1,56 +1,35 @@
 package body ACO.Utils.Generic_Alarms is
 
-   protected body List is
-
-      procedure Add (Alarm : in Alarm_Data)
-      is
-      begin
-         Alarm_List.Add (Alarm);
-      end Add;
-
-      procedure Remove (Alarm_Ref : in Alarm_Access)
-      is
-      begin
-         Alarm_List.Remove
-            ((Alarm_Ref   => Alarm_Ref,
-              Signal_Time => Ada.Real_Time.Time_Last));
-      end Remove;
-
-      function Get_Next_Up return Alarm_Data
-      is
-      begin
-         if Alarm_List.Is_Empty then
-            return (Alarm_Ref   => No_Alarm,
-                    Signal_Time => Ada.Real_Time.Time_Last);
-         else
-            return Alarm_List.Get_First;
-         end if;
-      end Get_Next_Up;
-
-      function Is_Pending (Alarm_Ref : Alarm_Access) return Boolean
-      is
-      begin
-         return Alarm_List.Is_Item_In_List
-            ((Alarm_Ref   => Alarm_Ref,
-              Signal_Time => Ada.Real_Time.Time_Last));
-      end Is_Pending;
-
-   end List;
-
-   procedure Process
-     (This : in out Alarm_Manager)
+   function Get_Next_Up
+      (This : Alarm_Manager)
+       return Alarm_Access
    is
       use Ada.Real_Time;
-
-      Next : Alarm_Data := This.Alarm_List.Get_Next_Up;
    begin
-      while Next.Alarm_Ref /= No_Alarm and then
-            Next.Signal_Time <= Clock
-      loop
-         This.Alarm_List.Remove (Next.Alarm_Ref);
-         Next.Alarm_Ref.Signal;
+      if not This.Alarm_List.Is_Empty then
+         declare
+            Next : constant Alarm_Data := This.Alarm_List.Get_First;
+         begin
+            if Next.Alarm_Ref /= No_Alarm and then
+               Next.Signal_Time <= Clock
+            then
+               return Next.Alarm_Ref;
+            end if;
+         end;
+      end if;
 
-         Next := This.Alarm_List.Get_Next_Up;
+      return No_Alarm;
+   end Get_Next_Up;
+
+   procedure Process
+      (This : in out Alarm_Manager)
+   is
+      Next : Alarm_Access := This.Get_Next_Up;
+   begin
+      while Next /= No_Alarm loop
+         This.Cancel (Next);
+         Next.Signal;
+         Next := This.Get_Next_Up;
       end loop;
    end Process;
 
@@ -69,7 +48,9 @@ package body ACO.Utils.Generic_Alarms is
       return Boolean
    is
    begin
-      return This.Alarm_List.Is_Pending (Alarm);
+      return This.Alarm_List.Is_Item_In_List
+         ((Alarm_Ref   => Alarm,
+           Signal_Time => Ada.Real_Time.Time_Last));
    end Is_Pending;
 
    procedure Cancel
@@ -77,7 +58,9 @@ package body ACO.Utils.Generic_Alarms is
       Alarm : in     Alarm_Access)
    is
    begin
-      This.Alarm_List.Remove (Alarm);
+      This.Alarm_List.Remove
+         ((Alarm_Ref   => Alarm,
+           Signal_Time => Ada.Real_Time.Time_Last));
    end Cancel;
 
    function "<" (Left, Right : Alarm_Data) return Boolean

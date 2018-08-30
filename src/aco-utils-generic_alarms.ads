@@ -3,6 +3,7 @@ private with ACO.Utils.Generic_Sorted_List;
 
 generic
    Maximum_Nof_Alarms : Positive;
+
 package ACO.Utils.Generic_Alarms is
 
    type Alarm_Type is abstract tagged limited null record;
@@ -12,9 +13,6 @@ package ACO.Utils.Generic_Alarms is
    procedure Signal (This : access Alarm_Type) is abstract;
 
    type Alarm_Manager is tagged limited private;
-
-   procedure Process
-     (This : in out Alarm_Manager);
 
    procedure Set
      (This        : in out Alarm_Manager;
@@ -29,6 +27,13 @@ package ACO.Utils.Generic_Alarms is
    procedure Cancel
      (This  : in out Alarm_Manager;
       Alarm : in     Alarm_Access);
+
+   function Get_Next_Up
+      (This : Alarm_Manager)
+       return Alarm_Access;
+
+   procedure Process
+      (This : in out Alarm_Manager);
 
    No_Alarm : constant Alarm_Access := null;
 
@@ -49,22 +54,8 @@ private
        "="                  => "=",
        Maximum_Nof_Elements => Maximum_Nof_Alarms);
 
-   protected type List is
-
-      procedure Add (Alarm : in Alarm_Data);
-
-      procedure Remove (Alarm_Ref : in Alarm_Access);
-
-      function Get_Next_Up return Alarm_Data;
-
-      function Is_Pending (Alarm_Ref : Alarm_Access) return Boolean;
-
-   private
-      Alarm_List : List_Pack.Sorted_List;
-   end List;
-
    type Alarm_Manager is tagged limited record
-      Alarm_List : List;
+      Alarm_List : List_Pack.Sorted_List;
    end record;
 
 end ACO.Utils.Generic_Alarms;

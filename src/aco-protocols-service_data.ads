@@ -22,7 +22,7 @@ package ACO.Protocols.Service_Data is
      (This : in out SDO;
       Msg  : in     Message);
 
-   procedure Update_Alarms
+   procedure Periodic_Actions
      (This : in out SDO);
 
 private

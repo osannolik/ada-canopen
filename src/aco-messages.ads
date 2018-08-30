@@ -14,6 +14,8 @@ package ACO.Messages is
 
    type Node_Nr is mod 2**7;
 
+   Not_A_Slave : constant Node_Nr := 0;
+
    subtype Slave_Node_Nr is Node_Nr range 1 .. Node_Nr'Last;
 
    Broadcast_Id : constant Node_Nr := 0;

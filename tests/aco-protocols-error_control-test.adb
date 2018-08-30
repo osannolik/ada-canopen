@@ -29,7 +29,7 @@ package body ACO.Protocols.Error_Control.Test is
       for T in 1 .. Time_Ms loop
          Next_Release := Next_Release + Milliseconds (1);
          delay until Next_Release;
-         E.Update_Alarms;
+         E.Periodic_Actions;
       end loop;
    end Let_Time_Pass;
 

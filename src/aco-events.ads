@@ -26,6 +26,7 @@ package ACO.Events is
    type Event_Manager is tagged limited record
       Entry_Updated     : Entry_Update_Publisher;
       Node_State_Change : Node_State_Change_Publisher;
+      Slave_State_Change : Node_State_Change_Publisher;
    end record;
 
 end ACO.Events;

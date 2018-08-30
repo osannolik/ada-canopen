@@ -1,10 +1,14 @@
+with System;
+
 private with Ada.Synchronous_Task_Control;
 
 generic
    type Item_Type is private;
    Max_Nof_Items : Positive;
+   Ceiling : System.Priority;
 
 package ACO.Utils.Generic_Buffer is
+   --  A protected ring buffer
 
    type Protected_Buffer is tagged limited private;
 
@@ -15,6 +19,11 @@ package ACO.Utils.Generic_Buffer is
    procedure Get_Blocking
       (This : in out Protected_Buffer;
        Item :    out Item_Type);
+
+   procedure Get
+      (This : in out Protected_Buffer;
+       Item :    out Item_Type)
+      with Pre => not This.Is_Empty;
 
    function Count
       (This : Protected_Buffer)
@@ -47,6 +56,8 @@ private
       function Nof_Items return Natural;
 
    private
+      pragma Priority (Ceiling);
+
       Is_Full  : Boolean := False;
       Is_Empty : Boolean := True;
 

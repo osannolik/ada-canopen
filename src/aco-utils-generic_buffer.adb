@@ -32,6 +32,16 @@ package body ACO.Utils.Generic_Buffer is
       Ada.Synchronous_Task_Control.Set_True (This.Non_Full);
    end Get_Blocking;
 
+   procedure Get
+      (This : in out Protected_Buffer;
+       Item :    out Item_Type)
+   is
+      Success : Boolean;
+   begin
+      This.Buffer.Get (Item, Success);
+      Ada.Synchronous_Task_Control.Set_True (This.Non_Full);
+   end Get;
+
    function Count
       (This : Protected_Buffer)
        return Natural

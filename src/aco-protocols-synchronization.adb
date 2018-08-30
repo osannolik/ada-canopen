@@ -148,12 +148,12 @@ package body ACO.Protocols.Synchronization is
       --  TODO: Trigger TPDO
    end Message_Received;
 
-   procedure Update_Alarms
+   procedure Periodic_Actions
      (This : in out SYNC)
    is
    begin
       This.Event_Manager.Process;
-   end Update_Alarms;
+   end Periodic_Actions;
 
    overriding
    procedure Initialize (This : in out SYNC)

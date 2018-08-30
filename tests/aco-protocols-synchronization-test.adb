@@ -25,7 +25,7 @@ package body ACO.Protocols.Synchronization.Test is
       for T in 1 .. Time_Ms loop
          Next_Release := Next_Release + Milliseconds (1);
          delay until Next_Release;
-         S.Update_Alarms;
+         S.Periodic_Actions;
       end loop;
    end Let_Time_Pass;
 

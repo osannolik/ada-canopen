@@ -23,7 +23,7 @@ package ACO.Protocols.Synchronization is
      (This : in out SYNC;
       Msg  : in     Message);
 
-   procedure Update_Alarms
+   procedure Periodic_Actions
      (This : in out SYNC);
 
 private
