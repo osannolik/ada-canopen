@@ -31,6 +31,7 @@ package body ACO.Protocols.Network_Management.Test is
    is
    begin
       N.Od.Set_Node_State (S);
+      N.Od.Events.Process;
    end Set_Actual_State;
 
    function Is_Current_State

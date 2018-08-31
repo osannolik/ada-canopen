@@ -26,6 +26,8 @@ package body ACO.Protocols.Error_Control.Test is
       use Ada.Real_Time;
       Next_Release : Time := Clock;
    begin
+      E.Od.Events.Process;
+
       for T in 1 .. Time_Ms loop
          Next_Release := Next_Release + Milliseconds (1);
          delay until Next_Release;

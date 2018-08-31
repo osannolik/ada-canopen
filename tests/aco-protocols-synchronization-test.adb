@@ -22,6 +22,8 @@ package body ACO.Protocols.Synchronization.Test is
       use Ada.Real_Time;
       Next_Release : Time := Clock;
    begin
+      S.Od.Events.Process;
+
       for T in 1 .. Time_Ms loop
          Next_Release := Next_Release + Milliseconds (1);
          delay until Next_Release;
