@@ -14,7 +14,7 @@ package ACO.Utils.Generic_Pubsub is
      (This : access Sub;
       Data : in     Item_Type) is abstract;
 
-   type Pub is abstract tagged private;
+   type Pub is abstract tagged limited private;
 
    procedure Update
      (This : in out Pub;
@@ -34,7 +34,7 @@ private
 
    type Subscriber_List is array (1 .. Max_Nof_Subscribers) of Sub_Access;
 
-   type Pub is abstract tagged record
+   type Pub is tagged limited record
       Subscribers : Subscriber_List := (others => null); --  Protect?
    end record;
 

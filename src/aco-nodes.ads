@@ -41,7 +41,7 @@ private
    use ACO.Protocols;
 
    type Node_State_Change_Subscriber (Node_Ref : not null access Node'Class) is
-      new ACO.Events.Node_State_Pubsub.Sub with null record;
+      new ACO.Events.Node_State.Subscriber with null record;
 
    overriding
    procedure Update
@@ -60,7 +60,6 @@ private
       Received_Messages : ACO.Messages.Buffer.Protected_Buffer;
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Node'Access);
       Start_Receiver_Task : Ada.Synchronous_Task_Control.Suspension_Object;
-      Start_Periodic_Task : Ada.Synchronous_Task_Control.Suspension_Object;
    end record;
 
    procedure Node_Log

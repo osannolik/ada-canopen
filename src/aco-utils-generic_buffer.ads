@@ -10,6 +10,8 @@ generic
 package ACO.Utils.Generic_Buffer is
    --  A protected ring buffer
 
+   pragma Preelaborate;
+
    type Protected_Buffer is tagged limited private;
 
    procedure Put_Blocking

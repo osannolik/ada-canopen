@@ -66,7 +66,7 @@ package body ACO.OD is
       Prev : ACO.States.State;
    begin
       This.Protected_Data.Set_Node_State (Node_State, Prev);
-      This.Events.Node_State_Change.Update ((Previous => Prev, Current => Node_State));
+      This.Events.Node_State_Modified.Put ((Previous => Prev, Current => Node_State));
    end Set_Node_State;
 
    function Get_Node_State (This : Object_Dictionary) return ACO.States.State is

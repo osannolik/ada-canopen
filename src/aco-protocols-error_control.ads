@@ -82,7 +82,7 @@ private
    procedure Signal (This : access Heartbeat_Producer_Alarm);
 
    type Entry_Update_Subscriber (EC_Ref : not null access EC) is
-      new ACO.Events.Entry_Update_Pack.Sub with null record;
+      new ACO.Events.Entry_Update.Subscriber with null record;
 
    overriding
    procedure Update

@@ -48,7 +48,7 @@ private
       Interfaces.Unsigned_8 range 1 .. Interfaces.Unsigned_8'Last;
 
    type Entry_Update_Subscriber (Sync_Ref : not null access SYNC) is
-      new ACO.Events.Entry_Update_Pack.Sub with null record;
+      new ACO.Events.Entry_Update.Subscriber with null record;
 
    overriding
    procedure Update

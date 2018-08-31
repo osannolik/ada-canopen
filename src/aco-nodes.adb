@@ -7,14 +7,13 @@ package body ACO.Nodes is
    is
    begin
       Ada.Synchronous_Task_Control.Set_True (This.Start_Receiver_Task);
-      Ada.Synchronous_Task_Control.Set_True (This.Start_Periodic_Task);
    end Init;
 
    overriding
    procedure Initialize (This : in out Node)
    is
    begin
-      This.Od.Events.Node_State_Change.Attach
+      This.Od.Events.Node_State_Modified.Attach
          (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
    end Initialize;
 
@@ -22,7 +21,7 @@ package body ACO.Nodes is
    procedure Finalize (This : in out Node)
    is
    begin
-      This.Od.Events.Node_State_Change.Detach
+      This.Od.Events.Node_State_Modified.Detach
          (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
    end Finalize;
 
@@ -97,15 +96,17 @@ package body ACO.Nodes is
       use ACO.Log;
       use Ada.Real_Time;
       use ACO.Messages.Buffer;
+      use ACO.States;
 
       Next_Release : Time := Clock;
       Period : constant Time_Span :=
          Milliseconds (Configuration.Periodic_Task_Period_Ms);
    begin
-      Ada.Synchronous_Task_Control.Suspend_Until_True (This.Start_Periodic_Task);
       This.Node_Log (Debug, "Starting periodic worker task...");
 
       loop
+         This.Od.Events.Process;
+
          This.EC.Periodic_Actions;
          This.SDO.Periodic_Actions;
          This.SYNC.Periodic_Actions;

@@ -20,7 +20,7 @@ package ACO.Protocols is
 private
 
    type Node_State_Change_Subscriber (Protocol_Ref : not null access Protocol'Class) is
-      new ACO.Events.Node_State_Pubsub.Sub with null record;
+      new ACO.Events.Node_State.Subscriber with null record;
 
    overriding
    procedure Update

@@ -16,7 +16,7 @@ package body ACO.Protocols is
    procedure Initialize (This : in out Protocol)
    is
    begin
-      This.Od.Events.Node_State_Change.Attach
+      This.Od.Events.Node_State_Modified.Attach
          (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
    end Initialize;
 
@@ -24,7 +24,7 @@ package body ACO.Protocols is
    procedure Finalize (This : in out Protocol)
    is
    begin
-      This.Od.Events.Node_State_Change.Detach
+      This.Od.Events.Node_State_Modified.Detach
          (Subscriber => This.Node_State_Change_Indication'Unchecked_Access);
    end Finalize;
 
