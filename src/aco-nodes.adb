@@ -63,8 +63,8 @@ package body ACO.Nodes is
          This.SYNC.Message_Received (Msg);
       elsif Func = Error_Control.EC_Id then
          This.EC.Message_Received (Msg);
-      elsif Func = Service_Data.SDO_Tx_Id or
-            Func = Service_Data.SDO_Rx_Id then
+      elsif Func = Service_Data.SDO_C2S_Id or
+            Func = Service_Data.SDO_S2C_Id then
          This.SDO.Message_Received (Msg);
       end if;
    end Dispatch;

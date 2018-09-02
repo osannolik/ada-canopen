@@ -12,11 +12,44 @@ package body ACO.Protocols.Service_Data is
       null;
    end On_State_Change;
 
+   procedure Message_Received_For_Server
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Nr)
+   is
+      pragma Unreferenced (This, Msg, Endpoint);
+   begin
+      null;
+   end Message_Received_For_Server;
+
+   procedure Message_Received_For_Client
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Nr)
+   is
+      pragma Unreferenced (This, Msg, Endpoint);
+   begin
+      null;
+   end Message_Received_For_Client;
+
+   function Get_Endpoint
+      (Id         : Id_Type;
+       Rx_CAN_Ids : Id_Array)
+       return Endpoint_Nr
+   is
+   begin
+      for Nr in Rx_CAN_Ids'Range loop
+         if Rx_CAN_Ids (Nr) = Id then
+            return Nr;
+         end if;
+      end loop;
+      return No_Endpoint;
+   end Get_Endpoint;
+
    procedure Message_Received
      (This : in out SDO;
       Msg  : in     Message)
    is
-      pragma Unreferenced (Msg);
       use ACO.States;
    begin
       case This.Od.Get_Node_State is
@@ -26,6 +59,28 @@ package body ACO.Protocols.Service_Data is
          when Pre_Operational | Operational =>
             null;
       end case;
+
+      declare
+         Server_Endpoint : constant Endpoint_Nr :=
+            Get_Endpoint (CAN_Id (Msg), This.Od.Get_SDO_Server_Rx_CAN_Ids);
+      begin
+         if Server_Endpoint /= No_Endpoint then
+            This.Message_Received_For_Server (Msg, Server_Endpoint);
+
+            return;
+         end if;
+      end;
+
+      declare
+         Client_Endpoint : constant Endpoint_Nr :=
+            Get_Endpoint (CAN_Id (Msg), This.Od.Get_SDO_Client_Rx_CAN_Ids);
+      begin
+         if Client_Endpoint /= No_Endpoint then
+            This.Message_Received_For_Client (Msg, Client_Endpoint);
+
+            return;
+         end if;
+      end;
    end Message_Received;
 
    procedure Periodic_Actions

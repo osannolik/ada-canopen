@@ -5,18 +5,19 @@ with ACO.States;
 
 private with ACO.Log;
 private with ACO.Utils.Generic_Alarms;
+private with ACO.SDO_Sessions;
 
 package ACO.Protocols.Service_Data is
 
    use ACO.Messages;
 
-   SDO_Tx_Id : constant Function_Code := 16#B#;
-   SDO_Rx_Id : constant Function_Code := 16#C#;
+   SDO_S2C_Id : constant Function_Code := 16#B#;
+   SDO_C2S_Id : constant Function_Code := 16#C#;
 
    type SDO
       (Od     : not null access ACO.OD.Object_Dictionary'Class;
-       Driver : not null access ACO.Drivers.Driver'Class) is
-      new Protocol with private;
+       Driver : not null access ACO.Drivers.Driver'Class)
+   is new Protocol with private;
 
    procedure Message_Received
      (This : in out SDO;
@@ -26,6 +27,7 @@ package ACO.Protocols.Service_Data is
      (This : in out SDO);
 
 private
+   use ACO.SDO_Sessions;
 
    overriding
    procedure Initialize (This : in out SDO);
@@ -52,5 +54,20 @@ private
      (This    : in out SDO;
       Level   : in     ACO.Log.Log_Level;
       Message : in     String);
+
+   function Get_Endpoint
+      (Id         : Id_Type;
+       Rx_CAN_Ids : Id_Array)
+       return Endpoint_Nr;
+
+   procedure Message_Received_For_Server
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Nr);
+
+   procedure Message_Received_For_Client
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Nr);
 
 end ACO.Protocols.Service_Data;

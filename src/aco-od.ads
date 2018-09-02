@@ -15,6 +15,8 @@ package ACO.OD is
    Heartbeat_Producer_Index    : constant := 16#1017#;
    Heartbeat_Consumer_Index    : constant := 16#1016#;
    Sync_Counter_Overflow_Index : constant := 16#1019#;
+   SDO_Server_Base_Index       : constant := 16#1200#;
+   SDO_Client_Base_Index       : constant := 16#1280#;
 
    type Object_Dictionary_Base is abstract tagged limited record
       Events : ACO.Events.Event_Manager;
@@ -101,6 +103,14 @@ package ACO.OD is
       (This : Object_Dictionary)
        return Natural;
 
+   function Get_SDO_Server_Rx_CAN_Ids
+      (This : Object_Dictionary)
+       return ACO.Messages.Id_Array;
+
+   function Get_SDO_Client_Rx_CAN_Ids
+      (This : Object_Dictionary)
+       return ACO.Messages.Id_Array;
+
 private
 
    type Object_Data_Base is abstract tagged limited null record;
@@ -144,6 +154,10 @@ private
 
       function Get_Heartbeat_Consumer_Period
          (Node_Id : ACO.Messages.Node_Nr) return Natural;
+
+      function Get_SDO_Server_Rx_CAN_Ids return ACO.Messages.Id_Array;
+
+      function Get_SDO_Client_Rx_CAN_Ids return ACO.Messages.Id_Array;
 
    private
       Node_State   : ACO.States.State := ACO.States.Unknown_State;

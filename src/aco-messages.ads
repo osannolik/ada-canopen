@@ -10,6 +10,8 @@ package ACO.Messages is
 
    type Id_Type is mod 2**11;
 
+   type Id_Array is array (Natural range <>) of Id_Type;
+
    type Function_Code is mod 2**4;
 
    type Node_Nr is mod 2**7;
