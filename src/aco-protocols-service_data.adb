@@ -1,4 +1,3 @@
-
 package body ACO.Protocols.Service_Data is
 
    overriding
@@ -12,14 +11,35 @@ package body ACO.Protocols.Service_Data is
       null;
    end On_State_Change;
 
+   procedure Server_Download_Init
+      (This : in out SDO;
+       Msg  : in     Message)
+   is
+      use Commands, Interfaces;
+      Cmd : constant Download_Initiate_Cmd := To_Download_Initiate_Cmd (Msg);
+      X : constant Interfaces.Unsigned_16 :=
+         ACO.Utils.Byte_Order.Swap_Bus (Cmd.Index);
+      Y : constant ACO.OD_Types.Entry_Index := Commands.Get_Index (Msg);
+      pragma Unreferenced (This, Cmd, X, Y);
+   begin
+      null;
+   end Server_Download_Init;
+
    procedure Message_Received_For_Server
       (This     : in out SDO;
        Msg      : in     Message;
        Endpoint : in     Endpoint_Nr)
    is
-      pragma Unreferenced (This, Msg, Endpoint);
+      use Commands;
+      pragma Unreferenced (Endpoint);
    begin
-      null;
+      case Get_CS (Msg) is
+         when Download_Initiate_Req =>
+            This.Server_Download_Init (Msg);
+
+         when others =>
+            null;
+      end case;
    end Message_Received_For_Server;
 
    procedure Message_Received_For_Client
