@@ -4,6 +4,8 @@ generic
    type Item_Type is private;
 
 package ACO.Generic_Entry_Types is
+   --  Numeric type.
+   --  When filled with byte array the data is byte swapped if needed.
 
    pragma Preelaborate;
 
@@ -19,6 +21,9 @@ package ACO.Generic_Entry_Types is
 
    procedure Write (This : in out Entry_Type;
                     Data : in     Item_Type);
+
+   overriding
+   function Data_Length (This : Entry_Type) return Natural;
 
    overriding
    function Read (This : Entry_Type) return Byte_Array

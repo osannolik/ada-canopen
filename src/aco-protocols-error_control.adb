@@ -132,7 +132,7 @@ package body ACO.Protocols.Error_Control is
       use type ACO.OD_Types.Object_Index;
       EC_Ref : access EC renames This.EC_Ref;
    begin
-      case Data.Index is
+      case Data.Object is
          when Heartbeat_Consumer_Index =>
             EC_Ref.Monitor.Restart;
 

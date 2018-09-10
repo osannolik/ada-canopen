@@ -1,12 +1,21 @@
 with Ada.Unchecked_Conversion;
+with ACO.Utils.Byte_Order;
 
 package body ACO.Generic_Entry_Types is
+   use ACO.Utils.Byte_Order;
+
+   function Swap (X : Byte_Array) return Byte_Array is
+      (Byte_Array (Swap_Bus (Octets (X))))
+   with Inline;
 
    function Read (This : Entry_Type) return Item_Type is
       (This.Data);
 
    function Read (This : Entry_Type) return Byte_Array is
-      (Convert (This.Data));
+      (Swap (Convert (This.Data)));
+
+   function Data_Length (This : Entry_Type) return Natural is
+      (Item_Type'Size / 8);
 
    procedure Write (This : in out Entry_Type;
                     Data : in     Item_Type)
@@ -19,7 +28,7 @@ package body ACO.Generic_Entry_Types is
                     Bytes : in     Byte_Array)
    is
    begin
-      This.Data := Convert (Bytes);
+      This.Data := Convert (Swap (Bytes));
    end Write;
 
    function Create

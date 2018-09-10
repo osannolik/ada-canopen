@@ -88,4 +88,32 @@ package body ACO.Utils.Byte_Order is
       end if;
    end Swap_Bus;
 
+   procedure Swap (X : in out Octets)
+   is
+      Tmp : Unsigned_8;
+      I : Natural := 0;
+   begin
+      while X'First + I < X'Last - I loop
+         Tmp := X (X'First + I);
+         X (X'First + I) := X (X'Last - I);
+         X (X'Last - I) := Tmp;
+         I := I + 1;
+      end loop;
+   end Swap;
+
+   function Swap_Bus (X : in Octets) return Octets
+   is
+   begin
+      if System.Default_Bit_Order = System.Low_Order_First then
+         return X;
+      else
+         declare
+            Tmp : Octets := X;
+         begin
+            Swap (Tmp);
+            return Tmp;
+         end;
+      end if;
+   end Swap_Bus;
+
 end ACO.Utils.Byte_Order;

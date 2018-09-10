@@ -46,6 +46,16 @@ package ACO.OD is
        Subindex : Object_Subindex)
        return Boolean;
 
+   function Is_Entry_Writable
+      (This  : Object_Dictionary'Class;
+       Index : Entry_Index)
+       return Boolean;
+
+   function Is_Entry_Readable
+      (This  : Object_Dictionary'Class;
+       Index : Entry_Index)
+       return Boolean;
+
    function Get_Entry
       (This     : Object_Dictionary'Class;
        Index    : Object_Index;

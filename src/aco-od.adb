@@ -38,6 +38,26 @@ package body ACO.OD is
       return OD_Entry'Tag = An_Entry'Tag;
    end Is_Entry_Compatible;
 
+   function Is_Entry_Writable
+      (This  : Object_Dictionary'Class;
+       Index : Entry_Index)
+       return Boolean
+   is
+   begin
+      return This.Entry_Exist (Index.Object, Index.Sub) and then
+         This.Protected_Data.Get_Entry (Index.Object, Index.Sub).Is_Writable;
+   end Is_Entry_Writable;
+
+   function Is_Entry_Readable
+      (This  : Object_Dictionary'Class;
+       Index : Entry_Index)
+       return Boolean
+   is
+   begin
+      return This.Entry_Exist (Index.Object, Index.Sub) and then
+         This.Protected_Data.Get_Entry (Index.Object, Index.Sub).Is_Readable;
+   end Is_Entry_Readable;
+
    function Get_Entry
       (This     : Object_Dictionary'Class;
        Index    : Object_Index;

@@ -9,8 +9,8 @@ package ACO.OD_Types is
    subtype Object_Subindex is Interfaces.Unsigned_8;
 
    type Entry_Index is record
-      Index    : Object_Index;
-      Subindex : Object_Subindex;
+      Object : Object_Index;
+      Sub    : Object_Subindex;
    end record;
 
    type Byte_Array is array (Natural range <>) of Interfaces.Unsigned_8;
@@ -32,6 +32,8 @@ package ACO.OD_Types is
       (case This.Accessability is
           when RW | WO => True,
           when RO      => False);
+
+   function Data_Length (This : Entry_Base) return Natural is abstract;
 
    function Read (This : Entry_Base) return Byte_Array is abstract;
 
