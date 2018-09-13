@@ -2,6 +2,7 @@ with ACO.States;
 with ACO.Messages;
 with ACO.Events;
 with ACO.OD_Types;
+with ACO.SDO_Sessions;
 
 package ACO.OD is
 
@@ -113,13 +114,13 @@ package ACO.OD is
       (This : Object_Dictionary)
        return Natural;
 
-   function Get_SDO_Server_Rx_CAN_Ids
+   function Get_SDO_Server_CAN_Ids
       (This : Object_Dictionary)
-       return ACO.Messages.Id_Array;
+       return ACO.SDO_Sessions.SDO_CAN_Id_Array;
 
-   function Get_SDO_Client_Rx_CAN_Ids
+   function Get_SDO_Client_CAN_Ids
       (This : Object_Dictionary)
-       return ACO.Messages.Id_Array;
+       return ACO.SDO_Sessions.SDO_CAN_Id_Array;
 
 private
 
@@ -165,9 +166,9 @@ private
       function Get_Heartbeat_Consumer_Period
          (Node_Id : ACO.Messages.Node_Nr) return Natural;
 
-      function Get_SDO_Server_Rx_CAN_Ids return ACO.Messages.Id_Array;
+      function Get_SDO_Server_CAN_Ids return ACO.SDO_Sessions.SDO_CAN_Id_Array;
 
-      function Get_SDO_Client_Rx_CAN_Ids return ACO.Messages.Id_Array;
+      function Get_SDO_Client_CAN_Ids return ACO.SDO_Sessions.SDO_CAN_Id_Array;
 
    private
       Node_State   : ACO.States.State := ACO.States.Unknown_State;

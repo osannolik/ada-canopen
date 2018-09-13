@@ -22,4 +22,6 @@ package ACO.Configuration is
    Received_Messages_Buffer_Priority : constant System.Priority :=
       System.Max_Priority;
 
+   Max_Nof_Simultaneous_SDO_Sessions : constant := 4;
+
 end ACO.Configuration;

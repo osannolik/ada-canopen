@@ -197,29 +197,29 @@ package body ACO.OD is
       return Natural (Period);
    end Get_Sync_Counter_Overflow;
 
-   function Get_SDO_Server_Rx_CAN_Ids
+   function Get_SDO_Server_CAN_Ids
       (This : Object_Dictionary)
-       return ACO.Messages.Id_Array
+       return ACO.SDO_Sessions.SDO_CAN_Id_Array
    is
-      Nothing : ACO.Messages.Id_Array (1 .. 0);
+      Nothing : ACO.SDO_Sessions.SDO_CAN_Id_Array (1 .. 0);
    begin
       if This.Object_Exist (SDO_Server_Base_Index) then
-         return This.Protected_Data.Get_SDO_Server_Rx_CAN_Ids;
+         return This.Protected_Data.Get_SDO_Server_CAN_Ids;
       end if;
       return Nothing;
-   end Get_SDO_Server_Rx_CAN_Ids;
+   end Get_SDO_Server_CAN_Ids;
 
-   function Get_SDO_Client_Rx_CAN_Ids
+   function Get_SDO_Client_CAN_Ids
       (This : Object_Dictionary)
-       return ACO.Messages.Id_Array
+       return ACO.SDO_Sessions.SDO_CAN_Id_Array
    is
-      Nothing : ACO.Messages.Id_Array (1 .. 0);
+      Nothing : ACO.SDO_Sessions.SDO_CAN_Id_Array (1 .. 0);
    begin
       if This.Object_Exist (SDO_Client_Base_Index) then
-         return This.Protected_Data.Get_SDO_Client_Rx_CAN_Ids;
+         return This.Protected_Data.Get_SDO_Client_CAN_Ids;
       end if;
       return Nothing;
-   end Get_SDO_Client_Rx_CAN_Ids;
+   end Get_SDO_Client_CAN_Ids;
 
 
    protected body Barrier_Type is
@@ -310,7 +310,7 @@ package body ACO.OD is
          end if;
       end Get_Heartbeat_Consumer_Period;
 
-      function Get_SDO_Server_Rx_CAN_Ids return ACO.Messages.Id_Array
+      function Get_SDO_Server_CAN_Ids return ACO.SDO_Sessions.SDO_CAN_Id_Array
       is
          J : Object_Index := SDO_Server_Base_Index;
       begin
@@ -319,21 +319,23 @@ package body ACO.OD is
          end loop;
 
          declare
-            use ACO.Messages;
-            Result : Id_Array (0 .. Natural (J - SDO_Server_Base_Index) - 1);
+            use ACO.Messages, ACO.SDO_Sessions;
+            Result : SDO_CAN_Id_Array (0 .. Natural (J - SDO_Server_Base_Index) - 1);
          begin
             J := SDO_Server_Base_Index;
 
             for I in Result'Range loop
-               Result (I) := Id_Type (Entry_U32 (Get_Entry (J, 1)).Read and 16#7FF#);
+               Result (I) :=
+                  (C2S => Id_Type (Entry_U32 (Get_Entry (J, 1)).Read and 16#7FF#),
+                   S2C => Id_Type (Entry_U32 (Get_Entry (J, 2)).Read and 16#7FF#));
                J := J + 1;
             end loop;
 
             return Result;
          end;
-      end Get_SDO_Server_Rx_CAN_Ids;
+      end Get_SDO_Server_CAN_Ids;
 
-      function Get_SDO_Client_Rx_CAN_Ids return ACO.Messages.Id_Array
+      function Get_SDO_Client_CAN_Ids return ACO.SDO_Sessions.SDO_CAN_Id_Array
       is
          J : Object_Index := SDO_Client_Base_Index;
       begin
@@ -342,19 +344,21 @@ package body ACO.OD is
          end loop;
 
          declare
-            use ACO.Messages;
-            Result : Id_Array (0 .. Natural (J - SDO_Client_Base_Index) - 1);
+            use ACO.Messages, ACO.SDO_Sessions;
+            Result : SDO_CAN_Id_Array (0 .. Natural (J - SDO_Client_Base_Index) - 1);
          begin
             J := SDO_Client_Base_Index;
 
             for I in Result'Range loop
-               Result (I) := Id_Type (Entry_U32 (Get_Entry (J, 2)).Read and 16#7FF#);
+               Result (I) :=
+                  (C2S => Id_Type (Entry_U32 (Get_Entry (J, 1)).Read and 16#7FF#),
+                   S2C => Id_Type (Entry_U32 (Get_Entry (J, 2)).Read and 16#7FF#));
                J := J + 1;
             end loop;
 
             return Result;
          end;
-      end Get_SDO_Client_Rx_CAN_Ids;
+      end Get_SDO_Client_CAN_Ids;
 
    end Barrier_Type;
 
