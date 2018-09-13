@@ -9,7 +9,6 @@ package body ACO.Protocols.Synchronization is
    is
    begin
       This.Counter := Counter_Type'First;
-      This.SYNC_Log (ACO.Log.Debug, "Counter reset");
    end Counter_Reset;
 
    procedure Counter_Increment
