@@ -1,7 +1,7 @@
 with ACO.Configuration;
 with ACO.Utils.Generic_Pubsub;
 
-private with ACO.Utils.Generic_Buffer;
+private with ACO.Utils.Generic_Protected_Buffer;
 
 generic
    type Item_Type is private;
@@ -35,7 +35,7 @@ package ACO.Utils.Generic_Event is
 
 private
 
-   package B is new ACO.Utils.Generic_Buffer
+   package B is new ACO.Utils.Generic_Protected_Buffer
       (Item_Type     => Item_Type,
        Max_Nof_Items => Max_Nof_Event_Queue_Data_Items,
        Ceiling       => Event_Queue_Priority);

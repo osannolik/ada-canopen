@@ -1,13 +1,14 @@
 with System;
 
 private with Ada.Synchronous_Task_Control;
+private with ACO.Utils.Generic_Ring_Buffer;
 
 generic
    type Item_Type is private;
    Max_Nof_Items : Positive;
    Ceiling : System.Priority;
 
-package ACO.Utils.Generic_Buffer is
+package ACO.Utils.Generic_Protected_Buffer is
    --  A protected ring buffer
 
    pragma Preelaborate;
@@ -41,9 +42,7 @@ package ACO.Utils.Generic_Buffer is
 
 private
 
-   subtype Index_Type is Positive;
-
-   type Item_Array is array (Index_Type range <>) of Item_Type;
+   package RB is new ACO.Utils.Generic_Ring_Buffer (Item_Type, Max_Nof_Items);
 
    protected type Buffer_Type is
 
@@ -60,14 +59,7 @@ private
    private
       pragma Priority (Ceiling);
 
-      Is_Full  : Boolean := False;
-      Is_Empty : Boolean := True;
-
-      Items      : Item_Array (1 .. Max_Nof_Items);
-      Next_Index : Index_Type := 1;
-      Old_Index  : Index_Type := 1;
-
-      Count      : Natural    := 0;
+      Ring : RB.Ring_Buffer;
    end Buffer_Type;
 
    type Protected_Buffer is tagged limited record
@@ -76,4 +68,4 @@ private
       Non_Empty : Ada.Synchronous_Task_Control.Suspension_Object;
    end record;
 
-end ACO.Utils.Generic_Buffer;
+end ACO.Utils.Generic_Protected_Buffer;

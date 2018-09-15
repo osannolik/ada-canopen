@@ -1,4 +1,4 @@
-package body ACO.Utils.Generic_Buffer is
+package body ACO.Utils.Generic_Protected_Buffer is
 
    procedure Put_Blocking
       (This : in out Protected_Buffer;
@@ -68,33 +68,16 @@ package body ACO.Utils.Generic_Buffer is
 
    protected body Buffer_Type is
 
-      procedure Inc (Index : in out Index_Type)
-      is
-      begin
-         if Index >= Items'Last then
-            Index := Items'First;
-         else
-            Index := Index_Type'Succ (Index);
-         end if;
-      end Inc;
-
       procedure Put
          (Item    : in     Item_Type;
           Success :    out Boolean)
       is
       begin
-         Success := not Is_Full;
-
-         if not Is_Full then
-            Items (Next_Index) := Item;
-
-            Inc (Next_Index);
-
-            Count := Count + 1;
-
-            Is_Empty := False;
-
-            Is_Full := (Count >= Max_Nof_Items);
+         if Ring.Is_Full then
+            Success := False;
+         else
+            Success := True;
+            Ring.Push (Item);
          end if;
       end Put;
 
@@ -103,27 +86,20 @@ package body ACO.Utils.Generic_Buffer is
           Success : out Boolean)
       is
       begin
-         Success := not Is_Empty;
-
-         if not Is_Empty then
-            Item := Items (Old_Index);
-
-            Inc (Old_Index);
-
-            Count := Count - 1;
-
-            Is_Full := False;
-
-            Is_Empty := (Count <= 0);
+         if Ring.Is_Empty then
+            Success := False;
+         else
+            Success := True;
+            Ring.Pull (Item);
          end if;
       end Get;
 
       function Nof_Items return Natural
       is
       begin
-         return Count;
+         return Ring.Occupied_Slots;
       end Nof_Items;
 
    end Buffer_Type;
 
-end ACO.Utils.Generic_Buffer;
+end ACO.Utils.Generic_Protected_Buffer;
