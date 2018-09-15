@@ -10,6 +10,7 @@ private with ACO.SDO_Sessions;
 private with Interfaces;
 private with ACO.OD_Types;
 private with ACO.Utils.Byte_Order;
+private with ACO.Configuration;
 
 package ACO.Protocols.Service_Data is
 
@@ -98,6 +99,34 @@ private
       is
          ((As_Raw => True, Raw => Msg.Data));
 
+      type Download_Segment_Cmd (As_Raw : Boolean := False) is record
+         case As_Raw is
+            when True =>
+               Raw         : Data_Array (0 .. 7);
+            when False =>
+               Command     : Unsigned_3;
+               Toggle      : Boolean;
+               Nof_No_Data : Unsigned_3;
+               Is_Complete : Boolean;
+               Data        : Data_Array (0 .. 6);
+         end case;
+      end record
+         with Unchecked_Union, Size => 64, Bit_Order => System.Low_Order_First;
+
+      for Download_Segment_Cmd use record
+         Raw         at 0 range 0 .. 63;
+         Data        at 0 range 8 .. 63;
+         Command     at 0 range 5 .. 7;
+         Toggle      at 0 range 4 .. 4;
+         Nof_No_Data at 0 range 1 .. 3;
+         Is_Complete at 0 range 0 .. 0;
+      end record;
+
+      function To_Download_Segment_Cmd
+         (Msg : Message) return Download_Segment_Cmd
+      is
+         ((As_Raw => True, Raw => Msg.Data));
+
 
       type Download_Initiate_Resp (As_Raw : Boolean := False) is record
          case As_Raw is
@@ -125,6 +154,30 @@ private
            Command  => Download_Initiate_Conf,
            Index    => Swap_Bus (Index.Object),
            Subindex => Index.Sub));
+
+      type Download_Segment_Resp (As_Raw : Boolean := False) is record
+         case As_Raw is
+            when True =>
+               Raw     : Data_Array (0 .. 7) := (others => 0);
+            when False =>
+               Command : Unsigned_3;
+               Toggle  : Boolean;
+         end case;
+      end record
+         with Unchecked_Union, Size => 64, Bit_Order => System.Low_Order_First;
+
+      for Download_Segment_Resp use record
+         Raw     at 0 range 0 .. 63;
+         Command at 0 range 5 .. 7;
+         Toggle  at 0 range 4 .. 4;
+      end record;
+
+      function Create_Response (Toggle : Boolean)
+                                return Download_Segment_Resp
+      is
+         ((As_Raw  => False,
+           Command => Download_Segment_Conf,
+           Toggle  => Toggle));
 
 
       type Abort_Cmd (As_Raw : Boolean := False) is record
@@ -160,22 +213,56 @@ private
 
    end Commands;
 
+   type Error_Type is
+      (Nothing,
+       General_Error,
+       Invalid_Value_For_Parameter,
+       Toggle_Bit_Not_Altered,
+       SDO_Protocol_Timed_Out,
+       Command_Specifier_Not_Valid_Or_Unknown,
+       Object_Does_Not_Exist_In_The_Object_Dictionary,
+       Attempt_To_Write_A_Read_Only_Object,
+       Failed_To_Transfer_Or_Store_Data,
+       Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control);
+
+   Abort_Code : constant array (Error_Type) of Abort_Code_Type :=
+      (Nothing                                               => 16#0000_0000#,
+       General_Error                                         => 16#0800_0000#,
+       Invalid_Value_For_Parameter                           => 16#0609_0030#,
+       Toggle_Bit_Not_Altered                                => 16#0503_0000#,
+       SDO_Protocol_Timed_Out                                => 16#0504_0000#,
+       Command_Specifier_Not_Valid_Or_Unknown                => 16#0504_0001#,
+       Object_Does_Not_Exist_In_The_Object_Dictionary        => 16#0602_0000#,
+       Attempt_To_Write_A_Read_Only_Object                   => 16#0601_0002#,
+       Failed_To_Transfer_Or_Store_Data                      => 16#0800_0020#,
+       Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control => 16#0800_0021#);
+
    overriding
    procedure Initialize (This : in out SDO);
 
    overriding
    procedure Finalize (This : in out SDO);
 
-   package Alarms is new ACO.Utils.Generic_Alarms (1);
+   package Alarms is new ACO.Utils.Generic_Alarms
+      (Configuration.Max_Nof_Simultaneous_SDO_Sessions);
 
+   type Alarm (SDO_Ref : access SDO'Class := null) is new Alarms.Alarm_Type with
+      record
+         Id : Endpoint_Nr := No_Endpoint_Id;
+      end record;
 
+   overriding
+   procedure Signal (This : access Alarm);
+
+   type Alarm_Array is array (Valid_Endpoint_Nr'Range) of aliased Alarm;
 
    type SDO
       (Od     : not null access ACO.OD.Object_Dictionary'Class;
        Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
    record
+      Sessions      : Session_Manager;
       Event_Manager : Alarms.Alarm_Manager;
-      Sessions : ACO.SDO_Sessions.Session_List;
+      Alarms        : Alarm_Array := (others => (SDO'Access, No_Endpoint_Id));
    end record;
 
    overriding
@@ -189,12 +276,15 @@ private
       Level   : in     ACO.Log.Log_Level;
       Message : in     String);
 
-   procedure Message_Received_For_Server
+   procedure Start_Alarm
       (This     : in out SDO;
-       Msg      : in     Message;
        Endpoint : in     Endpoint_Type);
 
-   procedure Message_Received_For_Client
+   procedure Stop_Alarm
+      (This     : in out SDO;
+       Endpoint : in     Endpoint_Type);
+
+   procedure Message_Received_For_Server
       (This     : in out SDO;
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type);
@@ -204,31 +294,21 @@ private
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type);
 
+   procedure Server_Download_Segment
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type);
+
+   procedure Message_Received_For_Client
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type);
+
    procedure Write
       (This    : in out SDO;
        Index   : in     ACO.OD_Types.Entry_Index;
        Data    : in     Data_Array;
-       Success :    out Boolean);
-
-   type Abort_Type is
-      (General_Error,
-       Invalid_Value_For_Parameter,
-       Toggle_Bit_Not_Altered,
-       SDO_Protocol_Timed_Out,
-       Command_Specifier_Not_Valid_Or_Unknown,
-       Attempt_To_Write_A_Read_Only_Object,
-       Failed_To_Transfer_Or_Store_Data,
-       Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control);
-
-   Abort_Code : constant array (Abort_Type'Range) of Abort_Code_Type :=
-      (General_Error                                         => 16#0800_0000#,
-       Invalid_Value_For_Parameter                           => 16#0609_0030#,
-       Toggle_Bit_Not_Altered                                => 16#0503_0000#,
-       SDO_Protocol_Timed_Out                                => 16#0504_0000#,
-       Command_Specifier_Not_Valid_Or_Unknown                => 16#0504_0001#,
-       Attempt_To_Write_A_Read_Only_Object                   => 16#0601_0002#,
-       Failed_To_Transfer_Or_Store_Data                      => 16#0800_0020#,
-       Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control => 16#0800_0021#);
+       Error   :    out Error_Type);
 
    procedure Send_SDO_Response
       (This     : in out SDO;
@@ -238,7 +318,7 @@ private
    procedure Send_Abort
       (This     : in out SDO;
        Endpoint : in     Endpoint_Type;
-       Reason   : in     Abort_Type;
+       Error    : in     Error_Type;
        Index    : in     ACO.OD_Types.Entry_Index := (0,0));
 
 end ACO.Protocols.Service_Data;

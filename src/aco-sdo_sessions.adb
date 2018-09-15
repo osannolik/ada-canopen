@@ -1,18 +1,12 @@
 package body ACO.SDO_Sessions is
 
-   function Create (Endpoint : Endpoint_Type) return SDO_Session is
-      (SDO_Session'(Endpoint  => Endpoint,
-                    State     => Initiated,
-                    Nof_Bytes => 0,
-                    Count     => 0));
-
    function Get_Endpoint
       (CAN_Id         : Id_Type;
        Client_CAN_Ids : SDO_CAN_Id_Array;
        Server_CAN_Ids : SDO_CAN_Id_Array)
        return Endpoint_Type
    is
-      I : Endpoint_Nr := Endpoint_Nr'Succ (No_Endpoint_Id);
+      I : Endpoint_Nr := Valid_Endpoint_Nr'First;
    begin
       for Client_CAN_Id of Client_CAN_Ids loop
          if Client_CAN_Id.S2C = CAN_Id then
@@ -31,39 +25,70 @@ package body ACO.SDO_Sessions is
       return No_Endpoint;
    end Get_Endpoint;
 
---     function Get
---        (This : Session_List;
---         Id   : Endpoint_Nr)
---         return SDO_Session
---     is
---        S : SDO_Session;
---     begin
---        if This.In_List (Id) then
---           S.Id := Id;
---           return This.List.Get (This.List.Index (S));
---        else
---           return No_Session;
---        end if;
---     end Get;
+   function Create_Download
+      (Endpoint  : Endpoint_Type;
+       Index     : ACO.OD_Types.Entry_Index;
+       Nof_Bytes : Natural)
+       return SDO_Session
+   is
+      ((Service   => Download,
+        Endpoint  => Endpoint,
+        Index     => Index,
+        Nof_Bytes => Nof_Bytes,
+        Count     => 0,
+        Toggle    => False));
 
    procedure Put
-      (This    : in out Session_List;
+      (This    : in out Session_Manager;
        Session : in     SDO_Session)
    is
    begin
-      This.List.Add (Session);
+      This.List (Session.Endpoint.Id) := Session;
    end Put;
 
-   function Is_Full (This : Session_List) return Boolean is
-      (This.List.Is_Full);
+   function Get
+      (This : Session_Manager;
+       Id   : Valid_Endpoint_Nr)
+       return SDO_Session
+   is
+      (This.List (Id));
 
-   function In_List
-      (This     : Session_List;
-       Endpoint : Endpoint_Type)
-       return Boolean
+   function Service
+      (This : Session_Manager;
+       Id   : Valid_Endpoint_Nr)
+       return Services
+   is
+      (This.List (Id).Service);
+
+   procedure Clear
+      (This : in out Session_Manager;
+       Id   : in     Valid_Endpoint_Nr)
    is
    begin
-      return This.List.In_List (Create (Endpoint));
-   end In_List;
+      This.List (Id) := (None, No_Endpoint);
+      This.Buffers (Id).Next := This.Buffers (Id).Buffer'First;
+   end Clear;
+
+   procedure Buffer
+      (This : in out Session_Manager;
+       Id   : in     Valid_Endpoint_Nr;
+       Data : in     Data_Array)
+   is
+      Next : Natural renames This.Buffers (Id).Next;
+   begin
+      This.Buffers (Id).Buffer (Next .. Next + Data'Length - 1) := Data;
+      Next := Next + Data'Length;
+   end Buffer;
+
+   function Get_Buffer_Data
+      (This : Session_Manager;
+       Id   : Valid_Endpoint_Nr)
+       return Data_Array
+   is
+      subtype Returned is Natural range
+         This.Buffers (Id).Buffer'First .. This.Buffers (Id).Next - 1;
+   begin
+      return This.Buffers (Id).Buffer (Returned'Range);
+   end Get_Buffer_Data;
 
 end ACO.SDO_Sessions;

@@ -1,16 +1,22 @@
 with ACO.Messages;
-
-private with ACO.Configuration;
-private with ACO.Utils.Generic_Simple_List;
+with ACO.OD_Types;
+with ACO.Configuration;
 
 package ACO.SDO_Sessions is
 
    pragma Preelaborate;
 
    use ACO.Messages;
+   use ACO.Configuration;
 
-   type Transfer_State is
-      (Initiated, Downloading, Uploading, Block_Downloading, Block_Uploading);
+   type Session_Manager is tagged limited private;
+
+   type Services is
+      (None,
+       Download,
+       Upload,
+       Block_Download,
+       Block_Upload);
 
    type Endpoint_Role is (Client, Server);
 
@@ -18,36 +24,28 @@ package ACO.SDO_Sessions is
 
    No_Endpoint_Id : constant Endpoint_Nr := Endpoint_Nr'First;
 
+   subtype Valid_Endpoint_Nr is Endpoint_Nr range
+      Endpoint_Nr'First ..  Max_Nof_Simultaneous_SDO_Sessions;
+
    type SDO_CAN_Id is record
-      C2S : Id_Type;
-      S2C : Id_Type;
+      C2S : Id_Type := 0;
+      S2C : Id_Type := 0;
    end record;
 
    type SDO_CAN_Id_Array is array (Natural range <>) of SDO_CAN_Id;
 
    type Endpoint_Type is record
-      Id     : Endpoint_Nr := No_Endpoint_Id;
-      Role   : Endpoint_Role;
+      Id     : Endpoint_Nr   := No_Endpoint_Id;
+      Role   : Endpoint_Role := Client;
       CAN_Id : SDO_CAN_Id;
    end record;
 
-   No_Endpoint : constant Endpoint_Type :=
-      (Id => No_Endpoint_Id, Role => Client, CAN_Id => (0, 0));
+   No_Endpoint : Endpoint_Type;
 
-   type SDO_Session is record
-      Endpoint  : Endpoint_Type;
-      State     : Transfer_State;
-      Nof_Bytes : Natural;
-      Count     : Natural;
-   end record;
-
-   function "=" (R, L : SDO_Session) return Boolean is
-      (R.Endpoint.Id = L.Endpoint.Id);
-
-
-   function Create (Endpoint : Endpoint_Type) return SDO_Session;
-
-   type Session_List is tagged limited private;
+   function Tx_CAN_Id (Endpoint : Endpoint_Type) return Id_Type is
+      (case Endpoint.Role is
+          when Server => Endpoint.CAN_Id.S2C,
+          when Client => Endpoint.CAN_Id.C2S);
 
    function Get_Endpoint
       (CAN_Id         : Id_Type;
@@ -55,36 +53,70 @@ package ACO.SDO_Sessions is
        Server_CAN_Ids : SDO_CAN_Id_Array)
        return Endpoint_Type;
 
+
+   type SDO_Session (Service : Services := None) is record
+      Endpoint : Endpoint_Type := No_Endpoint;
+
+      case Service is
+         when None | Upload | Block_Download | Block_Upload =>
+            null;
+
+         when Download =>
+            Index     : ACO.OD_Types.Entry_Index;
+            Nof_Bytes : Natural := 0;
+            Count     : Natural := 0;
+            Toggle    : Boolean := False;
+      end case;
+   end record;
+
+   function Create_Download
+      (Endpoint  : Endpoint_Type;
+       Index     : ACO.OD_Types.Entry_Index;
+       Nof_Bytes : Natural)
+       return SDO_Session;
+
+   function Get
+      (This : Session_Manager;
+       Id   : Valid_Endpoint_Nr)
+       return SDO_Session;
+
    procedure Put
-      (This    : in out Session_List;
+      (This    : in out Session_Manager;
        Session : in     SDO_Session);
 
---     function Get
---        (This : Session_List;
---         Id   : Endpoint_Nr)
---         return SDO_Session;
+   function Service
+      (This : Session_Manager;
+       Id   : Valid_Endpoint_Nr)
+       return Services;
 
-   function Is_Full (This : Session_List) return Boolean;
+   procedure Clear
+      (This : in out Session_Manager;
+       Id   : in     Valid_Endpoint_Nr);
 
-   function In_List
-      (This     : Session_List;
-       Endpoint : Endpoint_Type)
-       return Boolean;
+   procedure Buffer
+      (This : in out Session_Manager;
+       Id   : in     Valid_Endpoint_Nr;
+       Data : in     Data_Array);
 
-   function Tx_CAN_Id (Endpoint : Endpoint_Type) return Id_Type is
-      (case Endpoint.Role is
-          when Server => Endpoint.CAN_Id.S2C,
-          when Client => Endpoint.CAN_Id.C2S);
+   function Get_Buffer_Data
+      (This : Session_Manager;
+       Id   : Valid_Endpoint_Nr)
+       return Data_Array;
 
 private
 
-   package SL is new ACO.Utils.Generic_Simple_List
-      (Element_Type     => SDO_Session,
-       "="              => "=",
-       Max_Nof_Elements => ACO.Configuration.Max_Nof_Simultaneous_SDO_Sessions);
+   type Session_Array is array (Endpoint_Nr range <>) of SDO_Session;
 
-   type Session_List is tagged limited record
-      List : SL.List_Type;
+   type Data_Buffer is record
+      Buffer : Data_Array (1 .. Max_Data_SDO_Transfer_Size);
+      Next   : Natural := 1;
+   end record;
+
+   type Buffer_Array is array (Endpoint_Nr range <>) of Data_Buffer;
+
+   type Session_Manager is tagged limited record
+      List    : Session_Array (Valid_Endpoint_Nr'Range);
+      Buffers : Buffer_Array (Valid_Endpoint_Nr'Range);
    end record;
 
 end ACO.SDO_Sessions;
