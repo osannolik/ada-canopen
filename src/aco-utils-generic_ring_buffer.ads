@@ -10,83 +10,60 @@ package ACO.Utils.Generic_Ring_Buffer is
 
    type Item_Array is array (Natural range <>) of Item_Type;
 
-   function Is_Empty (This : Ring_Buffer) return Boolean;
-   --  @return True if the queue if empty.
+   function Is_Full (This : Ring_Buffer) return Boolean
+      with Inline;
 
-   function Is_Full (This : Ring_Buffer) return Boolean;
-   --  @return True if the queue if full.
+   function Is_Empty (This : Ring_Buffer) return Boolean
+      with Inline;
 
-   procedure Push
+   function Length (This : Ring_Buffer) return Natural
+      with Inline;
+
+   function Free_Slots (This : Ring_Buffer) return Natural
+      with Inline;
+
+   procedure Put
       (This : in out Ring_Buffer;
        Item : in     Item_Type)
       with Pre => not This.Is_Full;
-   --  Push an item into the queue and put it last.
-   --  @param Item The item.
 
-   procedure Push
+   procedure Put
       (This  : in out Ring_Buffer;
        Items : in     Item_Array)
-      with Pre => Items'Length <= This.Empty_Slots;
-   --  Push an array of items into the queue and put it last.
-   --  @param Items The item array.
+      with Pre => Items'Length <= This.Free_Slots;
 
-   procedure Pull
+   procedure Get
       (This : in out Ring_Buffer;
-       Item : out    Item_Type)
+       Item :    out Item_Type)
       with Pre => not This.Is_Empty;
-   --  Pull an item from the front of the queue.
-   --  @param Item The item.
 
-   procedure Pull
-      (This         : in out Ring_Buffer;
-       N            : in     Natural;
-       Items_Access : access Item_Array)
-      with Pre => N <= This.Occupied_Slots;
-   --  Pull N items from the front of the queue.
-   --  @param N The number of items.
-   --  @param Items_Access A reference to the item array the pulled items will
-   --  be placed in.
+   procedure Get
+      (This  : in out Ring_Buffer;
+       Items :    out Item_Array)
+      with Pre => Items'Length <= This.Length;
 
-   function Peek (This : Ring_Buffer; N : Positive) return Item_Type
-      with Pre => not This.Is_Empty;
-   --  Peek N slots into the queue. N=1 is the front most item.
-   --  @param N The number of queue slots.
+   procedure Flush
+      (This : in out Ring_Buffer)
+      with Post => This.Is_Empty;
 
    function Peek (This : Ring_Buffer) return Item_Type
       with Pre => not This.Is_Empty;
-   --  Peek the front item.
-   --  @return The front most queue item.
 
-   function Peek (This : Ring_Buffer; N : Positive) return Item_Array
-      with Pre => N <= This.Occupied_Slots;
-   --  Peek N number of items.
-   --  @param N The number of items to peek.
-   --  @return An array of the peeked items.
-
-   function Occupied_Slots (This : Ring_Buffer) return Natural;
-   --  @return The number of items in the queue.
-
-   function Empty_Slots (This : Ring_Buffer) return Natural;
-   --  @return The number of available slots in the queue.
-
-   procedure Flush
-      (This : in out Ring_Buffer;
-       N    : in     Natural);
-   --  Throw away N number of items from the front of the queue.
-   --  @param N The number of items to flush.
-
-   procedure Flush_All (This : in out Ring_Buffer);
-   --  Empty the queue, i.e. remove all items.
+   function Peek (This : Ring_Buffer) return Item_Array
+      with Pre => not This.Is_Empty;
 
 private
 
-   subtype Index is Natural range 0 .. Max_Nof_Items;
-   --  Length is Max_Nof_Items + 1
+   subtype Index is Positive range 1 .. Max_Nof_Items;
 
    type Ring_Buffer is tagged limited record
-      Items   : Item_Array (Index);
-      Idx_New : Index := Index'First;
-      Idx_Old : Index := Index'First;
+      Items : Item_Array (Index);
+      Next  : Index   := Index'First;
+      Old   : Index   := Index'First;
+      Count : Natural := 0;
    end record;
+
+   procedure Inc (I : in out Index)
+      with Inline;
 
 end ACO.Utils.Generic_Ring_Buffer;

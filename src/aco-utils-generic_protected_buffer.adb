@@ -77,7 +77,7 @@ package body ACO.Utils.Generic_Protected_Buffer is
             Success := False;
          else
             Success := True;
-            Ring.Push (Item);
+            Ring.Put (Item);
          end if;
       end Put;
 
@@ -90,14 +90,14 @@ package body ACO.Utils.Generic_Protected_Buffer is
             Success := False;
          else
             Success := True;
-            Ring.Pull (Item);
+            Ring.Get (Item);
          end if;
       end Get;
 
       function Nof_Items return Natural
       is
       begin
-         return Ring.Occupied_Slots;
+         return Ring.Length;
       end Nof_Items;
 
    end Buffer_Type;

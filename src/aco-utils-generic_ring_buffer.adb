@@ -1,99 +1,84 @@
 package body ACO.Utils.Generic_Ring_Buffer is
 
-   function Is_Empty (This : Ring_Buffer) return Boolean is
-      (This.Idx_Old = This.Idx_New);
-
    function Is_Full (This : Ring_Buffer) return Boolean is
-      (This.Idx_Old = ((This.Idx_New + 1) mod (Index'Last + 1)));
+      (This.Count >= Max_Nof_Items);
 
-   procedure Push
+   function Is_Empty (This : Ring_Buffer) return Boolean is
+      (This.Count = 0);
+
+   function Length (This : Ring_Buffer) return Natural is
+      (This.Count);
+
+   function Free_Slots (This : Ring_Buffer) return Natural is
+      (Max_Nof_Items - This.Count);
+
+   procedure Inc (I : in out Index)
+   is
+   begin
+      I := (if I >= Index'Last then Index'First else Index'Succ (I));
+   end Inc;
+
+   procedure Put
       (This : in out Ring_Buffer;
        Item : in     Item_Type)
    is
    begin
-      This.Items (This.Idx_New) := Item;
-      This.Idx_New := (This.Idx_New + 1) mod (Index'Last + 1);
-   end Push;
+      This.Items (This.Next) := Item;
+      Inc (This.Next);
+      This.Count := This.Count + 1;
+   end Put;
 
-   procedure Push
+   procedure Put
       (This  : in out Ring_Buffer;
        Items : in     Item_Array)
    is
    begin
-      for I of Items loop
-         This.Push (Item => I);
+      for Item of Items loop
+         This.Put (Item);
       end loop;
-   end Push;
+   end Put;
 
-   procedure Pull
+   procedure Get
       (This : in out Ring_Buffer;
-       Item : out    Item_Type)
+       Item :    out Item_Type)
    is
    begin
-      Item := This.Items (This.Idx_Old);
-      This.Idx_Old := (This.Idx_Old + 1) mod (Index'Last + 1);
-   end Pull;
+      Item := This.Items (This.Old);
+      Inc (This.Old);
+      This.Count := This.Count - 1;
+   end Get;
 
-   procedure Pull
-      (This         : in out Ring_Buffer;
-       N            : in     Natural;
-       Items_Access : access Item_Array)
+   procedure Get
+      (This  : in out Ring_Buffer;
+       Items :    out Item_Array)
    is
-      Start : constant Index := Items_Access.all'First;
    begin
-      if N = 0 then
-         return;
-      end if;
-
-      for Idx in Start .. Start + N - 1 loop
-         This.Pull (Item => Items_Access (Idx));
+      for Item of Items loop
+         This.Get (Item);
       end loop;
-   end Pull;
-
-   function Peek (This : Ring_Buffer; N : Positive) return Item_Type is
-      (This.Items ((This.Idx_Old + N - 1) mod (Index'Last + 1)));
-
-   function Peek (This : Ring_Buffer) return Item_Type is
-      (This.Items (This.Idx_Old));
-
-   function Peek (This : Ring_Buffer; N : Positive) return Item_Array
-   is
-      Items : Item_Array (Index'First .. Index'First + N - 1);
-   begin
-      for Idx in Items'Range loop
-         Items (Idx) := This.Peek (N => Idx + 1);
-      end loop;
-
-      return Items;
-   end Peek;
-
-   function Occupied_Slots (This : Ring_Buffer) return Natural
-   is
-   begin
-      if This.Idx_New >= This.Idx_Old then
-         return This.Idx_New - This.Idx_Old;
-      else
-         return Index'Last - This.Idx_Old + 1 + This.Idx_New - Index'First;
-      end if;
-   end Occupied_Slots;
-
-   function Empty_Slots (This : Ring_Buffer) return Natural is
-   begin
-      return Max_Nof_Items - This.Occupied_Slots;
-   end Empty_Slots;
+   end Get;
 
    procedure Flush
-      (This : in out Ring_Buffer;
-       N    : in     Natural)
+      (This : in out Ring_Buffer)
    is
    begin
-      This.Idx_Old := (This.Idx_Old + N) mod (Index'Last + 1);
+      This.Count := 0;
+      This.Old := This.Next;
    end Flush;
 
-   procedure Flush_All (This : in out Ring_Buffer)
+   function Peek (This : Ring_Buffer) return Item_Type is
+      (This.Items (This.Old));
+
+   function Peek (This : Ring_Buffer) return Item_Array
    is
+      Items : Item_Array (Index'First .. Index'First + This.Count - 1);
+      I : Index := This.Old;
    begin
-      This.Idx_Old := This.Idx_New;
-   end Flush_All;
+      for Item of Items loop
+         Item := This.Items (I);
+         Inc (I);
+      end loop;
+      return Items;
+   end Peek;
 
 end ACO.Utils.Generic_Ring_Buffer;
