@@ -2,6 +2,8 @@ with ACO.Messages;
 with ACO.OD_Types;
 with ACO.Configuration;
 
+private with ACO.Utils.Generic_Ring_Buffer;
+
 package ACO.SDO_Sessions is
 
    pragma Preelaborate;
@@ -93,26 +95,36 @@ package ACO.SDO_Sessions is
       (This : in out Session_Manager;
        Id   : in     Valid_Endpoint_Nr);
 
-   procedure Buffer
+   procedure Put_Buffer
       (This : in out Session_Manager;
        Id   : in     Valid_Endpoint_Nr;
        Data : in     Data_Array);
 
-   function Get_Buffer_Data
+   function Length_Buffer
+      (This : Session_Manager;
+       Id   : Valid_Endpoint_Nr)
+       return Natural;
+
+   procedure Get_Buffer
+      (This : in out Session_Manager;
+       Id   : in     Valid_Endpoint_Nr;
+       Data :    out Data_Array)
+      with Pre => Data'Length <= This.Length_Buffer (Id);
+
+   function Peek_Buffer
       (This : Session_Manager;
        Id   : Valid_Endpoint_Nr)
        return Data_Array;
 
 private
 
+   package RB is new ACO.Utils.Generic_Ring_Buffer
+      (Item_Type     => ACO.Messages.Data_Type,
+       Max_Nof_Items => Max_Data_SDO_Transfer_Size);
+
    type Session_Array is array (Endpoint_Nr range <>) of SDO_Session;
 
-   type Data_Buffer is record
-      Buffer : Data_Array (1 .. Max_Data_SDO_Transfer_Size);
-      Next   : Natural := 1;
-   end record;
-
-   type Buffer_Array is array (Endpoint_Nr range <>) of Data_Buffer;
+   type Buffer_Array is array (Endpoint_Nr range <>) of RB.Ring_Buffer;
 
    type Session_Manager is tagged limited record
       List    : Session_Array (Valid_Endpoint_Nr'Range);

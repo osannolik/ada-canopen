@@ -171,7 +171,7 @@ package body ACO.Protocols.Service_Data is
          return;
       end if;
 
-      This.Sessions.Buffer
+      This.Sessions.Put_Buffer
          (Id   => Endpoint.Id,
           Data => Cmd.Data (0 .. 6 - Natural (Cmd.Nof_No_Data)));
 
@@ -180,7 +180,7 @@ package body ACO.Protocols.Service_Data is
       if Cmd.Is_Complete then
          This.Write
             (Index => Session.Index,
-             Data  => This.Sessions.Get_Buffer_Data (Endpoint.Id),
+             Data  => This.Sessions.Peek_Buffer (Endpoint.Id),
              Error => Error);
 
          This.Stop_Alarm (Endpoint);
@@ -213,8 +213,8 @@ package body ACO.Protocols.Service_Data is
    begin
       case Get_CS (Msg) is
          when Download_Initiate_Req =>
+            This.SDO_Log (ACO.Log.Debug, "Server: Handling Download Initiate");
             if Service = None then
-               This.SDO_Log (ACO.Log.Debug, "Server: Handling Download Initiate");
                This.Server_Download_Init (Msg, Endpoint);
             else
                This.Send_Abort
@@ -223,8 +223,8 @@ package body ACO.Protocols.Service_Data is
             end if;
 
          when Download_Segment_Req =>
+            This.SDO_Log (ACO.Log.Debug, "Server: Handling Download Segment");
             if Service = Download then
-               This.SDO_Log (ACO.Log.Debug, "Server: Handling Download Segment");
                This.Server_Download_Segment (Msg, Endpoint);
             else
                This.Send_Abort

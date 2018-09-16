@@ -66,29 +66,47 @@ package body ACO.SDO_Sessions is
    is
    begin
       This.List (Id) := (None, No_Endpoint);
-      This.Buffers (Id).Next := This.Buffers (Id).Buffer'First;
+      This.Buffers (Id).Flush;
    end Clear;
 
-   procedure Buffer
+   procedure Put_Buffer
       (This : in out Session_Manager;
        Id   : in     Valid_Endpoint_Nr;
        Data : in     Data_Array)
    is
-      Next : Natural renames This.Buffers (Id).Next;
    begin
-      This.Buffers (Id).Buffer (Next .. Next + Data'Length - 1) := Data;
-      Next := Next + Data'Length;
-   end Buffer;
+      This.Buffers (Id).Put (RB.Item_Array (Data));
+   end Put_Buffer;
 
-   function Get_Buffer_Data
+   procedure Get_Buffer
+      (This : in out Session_Manager;
+       Id   : in     Valid_Endpoint_Nr;
+       Data :    out Data_Array)
+   is
+   begin
+      This.Buffers (Id).Get (RB.Item_Array (Data));
+   end Get_Buffer;
+
+   function Length_Buffer
+      (This : Session_Manager;
+       Id   : Valid_Endpoint_Nr)
+       return Natural
+   is
+   begin
+      return This.Buffers (Id).Length;
+   end Length_Buffer;
+
+   function Peek_Buffer
       (This : Session_Manager;
        Id   : Valid_Endpoint_Nr)
        return Data_Array
    is
-      subtype Returned is Natural range
-         This.Buffers (Id).Buffer'First .. This.Buffers (Id).Next - 1;
    begin
-      return This.Buffers (Id).Buffer (Returned'Range);
-   end Get_Buffer_Data;
+      if This.Buffers (Id).Is_Empty then
+         return Empty_Data;
+      else
+         return Data_Array (RB.Item_Array'(This.Buffers (Id).Peek));
+      end if;
+   end Peek_Buffer;
 
 end ACO.SDO_Sessions;
