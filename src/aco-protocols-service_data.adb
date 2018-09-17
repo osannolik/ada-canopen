@@ -3,8 +3,6 @@ with Ada.Real_Time;
 
 package body ACO.Protocols.Service_Data is
 
-   use ACO.OD_Types;
-
    overriding
    procedure On_State_Change
      (This     : in out SDO;
@@ -35,6 +33,7 @@ package body ACO.Protocols.Service_Data is
        Endpoint : in     Endpoint_Type)
    is
       use Ada.Real_Time, ACO.Configuration;
+
       Timeout_Alarm : Alarm renames This.Alarms (Endpoint.Id);
    begin
       if This.Event_Manager.Is_Pending (Timeout_Alarm'Unchecked_Access) then
@@ -61,11 +60,12 @@ package body ACO.Protocols.Service_Data is
        Error    : in     Error_Type;
        Index    : in     Entry_Index := (0,0))
    is
-      use Commands;
-      Cmd : constant Abort_Cmd := Create_Abort (Index, Abort_Code (Error));
+      use ACO.SDO_Commands;
+
+      Cmd : constant Abort_Cmd := Create (Index, Abort_Code (Error));
    begin
       This.SDO_Log (ACO.Log.Warning, "Aborting: " & Error'Img);
-      This.Send_SDO_Response (Endpoint, Cmd.Raw);
+      This.Send_SDO (Endpoint, Cmd.Raw);
    end Send_Abort;
 
    procedure Write
@@ -87,7 +87,7 @@ package body ACO.Protocols.Service_Data is
          This.SDO_Log (ACO.Log.Debug, Ada.Exceptions.Exception_Name (E));
    end Write;
 
-   procedure Send_SDO_Response
+   procedure Send_SDO
       (This     : in out SDO;
        Endpoint : in     Endpoint_Type;
        Raw_Data : in     Msg_Data)
@@ -100,18 +100,19 @@ package body ACO.Protocols.Service_Data is
    begin
       This.SDO_Log (ACO.Log.Debug, "Sending " & Image (Msg));
       This.Driver.Send_Message (Msg);
-   end Send_SDO_Response;
+   end Send_SDO;
 
    procedure Server_Download_Init
       (This     : in out SDO;
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type)
    is
-      use Commands;
+      use ACO.SDO_Commands;
 
-      Cmd   : constant Download_Initiate_Cmd := To_Download_Initiate_Cmd (Msg);
+      Cmd   : constant Download_Initiate_Cmd := Convert (Msg);
       Index : constant Entry_Index := Get_Index (Msg);
       Error : Error_Type := Nothing;
+      Size  : constant Natural := Get_Data_Size (Cmd);
    begin
       if not This.Od.Entry_Exist (Index.Object, Index.Sub) then
          Error := Object_Does_Not_Exist_In_The_Object_Dictionary;
@@ -119,6 +120,8 @@ package body ACO.Protocols.Service_Data is
          Error := Attempt_To_Write_A_Read_Only_Object;
       elsif not Cmd.Is_Size_Indicated then
          Error := Command_Specifier_Not_Valid_Or_Unknown;
+      elsif Size > ACO.Configuration.Max_Data_SDO_Transfer_Size then
+         Error := General_Error;
       end if;
 
       if Error /= Nothing then
@@ -134,7 +137,7 @@ package body ACO.Protocols.Service_Data is
       else
          declare
             Session : constant SDO_Session :=
-               Create_Download (Endpoint, Index, Get_Data_Size (Cmd));
+               Create_Download (Endpoint, Index, Size);
          begin
             This.Sessions.Put (Session);
             This.Start_Alarm (Endpoint);
@@ -143,9 +146,9 @@ package body ACO.Protocols.Service_Data is
 
       if Error = Nothing then
          declare
-            Resp : constant Download_Initiate_Resp := Create_Response (Index);
+            Resp : constant Download_Initiate_Resp := Create (Index);
          begin
-            This.Send_SDO_Response (Endpoint, Resp.Raw);
+            This.Send_SDO (Endpoint, Resp.Raw);
          end;
       else
          This.Send_Abort (Endpoint, Error, Index);
@@ -157,9 +160,9 @@ package body ACO.Protocols.Service_Data is
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type)
    is
-      use Commands;
+      use ACO.SDO_Commands;
 
-      Cmd     : constant Download_Segment_Cmd := To_Download_Segment_Cmd (Msg);
+      Cmd     : constant Download_Segment_Cmd := Convert (Msg);
       Session : SDO_Session := This.Sessions.Get (Endpoint.Id);
       Error   : Error_Type := Nothing;
    begin
@@ -167,6 +170,7 @@ package body ACO.Protocols.Service_Data is
          This.Send_Abort (Endpoint => Endpoint,
                           Error    => Toggle_Bit_Not_Altered,
                           Index    => Session.Index);
+         This.Stop_Alarm (Endpoint);
          This.Sessions.Clear (Endpoint.Id);
          return;
       end if;
@@ -192,9 +196,9 @@ package body ACO.Protocols.Service_Data is
 
       if Error = Nothing then
          declare
-            Resp : constant Download_Segment_Resp := Create_Response (Cmd.Toggle);
+            Resp : constant Download_Segment_Resp := Create (Cmd.Toggle);
          begin
-            This.Send_SDO_Response (Endpoint, Resp.Raw);
+            This.Send_SDO (Endpoint, Resp.Raw);
          end;
       else
          This.Send_Abort (Endpoint => Endpoint,
@@ -208,7 +212,8 @@ package body ACO.Protocols.Service_Data is
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type)
    is
-      use Commands;
+      use ACO.SDO_Commands;
+
       Service : constant Services := This.Sessions.Service (Endpoint.Id);
    begin
       case Get_CS (Msg) is
@@ -237,14 +242,134 @@ package body ACO.Protocols.Service_Data is
       end case;
    end Message_Received_For_Server;
 
+   procedure Client_Send_Data_Segment
+      (This     : in out SDO;
+       Endpoint : in     Endpoint_Type;
+       Toggle   : in     Boolean)
+   is
+      use ACO.SDO_Commands;
+
+      Bytes_Remain : constant Natural := This.Sessions.Length_Buffer (Endpoint.Id);
+   begin
+      if Bytes_Remain = 0 then
+         return;
+      end if;
+
+      declare
+         Bytes_To_Send : constant Positive :=
+            Natural'Min (Bytes_Remain, Segment_Data'Length);
+         Data : Data_Array (0 .. Bytes_To_Send - 1);
+      begin
+         This.Sessions.Get_Buffer (Endpoint.Id, Data);
+         This.Send_SDO
+            (Endpoint => Endpoint,
+             Raw_Data => Create (Toggle      => Toggle,
+                                 Is_Complete => (Bytes_To_Send = Bytes_Remain),
+                                 Data        => Data).Raw);
+         This.SDO_Log
+            (ACO.Log.Debug, "Client: Sent data segment of length" & Bytes_To_Send'Img);
+      end;
+   end Client_Send_Data_Segment;
+
+   procedure Client_Download_Init
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type)
+   is
+      pragma Unreferenced (Msg);
+      use ACO.SDO_Commands;
+
+      Session      : SDO_Session := This.Sessions.Get (Endpoint.Id);
+      Bytes_Remain : constant Natural := This.Sessions.Length_Buffer (Endpoint.Id);
+   begin
+      if Bytes_Remain = 0 then
+         This.SDO_Log (ACO.Log.Debug, "Client: Expedited download completed");
+         This.Stop_Alarm (Endpoint);
+         This.Sessions.Clear (Endpoint.Id);
+
+         return;
+      end if;
+
+      This.Start_Alarm (Endpoint);
+
+      Session.Toggle := False;
+
+      This.Client_Send_Data_Segment (Endpoint, Session.Toggle);
+
+      This.Sessions.Put (Session);
+   end Client_Download_Init;
+
+   procedure Client_Download_Segment
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type)
+   is
+      use ACO.SDO_Commands;
+
+      Resp         : constant Download_Segment_Resp := Convert (Msg);
+      Session      : SDO_Session := This.Sessions.Get (Endpoint.Id);
+      Bytes_Remain : constant Natural := This.Sessions.Length_Buffer (Endpoint.Id);
+   begin
+      if Resp.Toggle /= Session.Toggle then
+         This.Send_Abort (Endpoint => Endpoint,
+                          Error    => Toggle_Bit_Not_Altered,
+                          Index    => Session.Index);
+         This.Stop_Alarm (Endpoint);
+         This.Sessions.Clear (Endpoint.Id);
+
+         return;
+      end if;
+
+      if Bytes_Remain = 0 then
+         This.SDO_Log (ACO.Log.Debug, "Client: Segmented download completed");
+         This.Stop_Alarm (Endpoint);
+         This.Sessions.Clear (Endpoint.Id);
+
+         return;
+      end if;
+
+      This.Start_Alarm (Endpoint);
+
+      Session.Toggle := not Session.Toggle;
+
+      This.Client_Send_Data_Segment (Endpoint, Session.Toggle);
+
+      This.Sessions.Put (Session);
+   end Client_Download_Segment;
+
    procedure Message_Received_For_Client
       (This     : in out SDO;
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type)
    is
-      pragma Unreferenced (This, Msg, Endpoint);
+      use ACO.SDO_Commands;
+
+      Service : constant Services := This.Sessions.Service (Endpoint.Id);
    begin
-      null;
+      case Get_CS (Msg) is
+         when Download_Initiate_Conf =>
+            This.SDO_Log (ACO.Log.Debug, "Client: Handling Download Initiate");
+            if Service = Download then
+               This.Client_Download_Init (Msg, Endpoint);
+            else
+               This.Send_Abort
+                  (Endpoint => Endpoint,
+                   Error    => Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control);
+            end if;
+
+         when Download_Segment_Conf =>
+            This.SDO_Log (ACO.Log.Debug, "Client: Handling Download Segment");
+            if Service = Download then
+               This.Client_Download_Segment (Msg, Endpoint);
+            else
+               This.Send_Abort
+                  (Endpoint => Endpoint,
+                   Error    => Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control);
+            end if;
+
+         when others =>
+            null;
+      end case;
    end Message_Received_For_Client;
 
    procedure Message_Received
@@ -263,19 +388,71 @@ package body ACO.Protocols.Service_Data is
 
       declare
          Endpoint : constant Endpoint_Type := Get_Endpoint
-            (CAN_Id            => CAN_Id (Msg),
-             Client_CAN_Ids => This.Od.Get_SDO_Client_CAN_Ids,
-             Server_CAN_Ids => This.Od.Get_SDO_Server_CAN_Ids);
+            (Rx_CAN_Id         => CAN_Id (Msg),
+             Client_Parameters => This.Od.Get_SDO_Client_Parameters,
+             Server_Parameters => This.Od.Get_SDO_Server_Parameters);
       begin
          if Endpoint.Id /= No_Endpoint_Id then
-            if Endpoint.Role = Server then
-               This.Message_Received_For_Server (Msg, Endpoint);
-            else
-               This.Message_Received_For_Client (Msg, Endpoint);
-            end if;
+            case Endpoint.Role is
+               when Server =>
+                  This.Message_Received_For_Server (Msg, Endpoint);
+               when Client =>
+                  This.Message_Received_For_Client (Msg, Endpoint);
+            end case;
          end if;
       end;
    end Message_Received;
+
+   procedure Write_Remote_Entry
+      (This     : in out SDO;
+       Node     : in     Node_Nr;
+       Index    : in     Object_Index;
+       Subindex : in     Object_Subindex;
+       An_Entry : in     Entry_Base'Class)
+   is
+      use ACO.Configuration;
+
+      Endpoint : constant Endpoint_Type := Get_Endpoint
+         (Server_Node       => Node,
+          Client_Parameters => This.Od.Get_SDO_Client_Parameters,
+          Server_Parameters => This.Od.Get_SDO_Server_Parameters);
+      Size : constant Natural := An_Entry.Data_Length;
+   begin
+      if Endpoint.Id = No_Endpoint_Id then
+         This.SDO_Log (ACO.Log.Warning,
+                       "Node" & Node'Img & " is not a server for any Client");
+         return;
+      elsif This.Sessions.Service (Endpoint.Id) /= None then
+         This.SDO_Log (ACO.Log.Warning,
+                       "Client endpoint" & Endpoint.Id'Img & " already in use");
+         return;
+      elsif not (Size in 1 .. Max_Data_SDO_Transfer_Size) then
+         This.SDO_Log (ACO.Log.Warning,
+                       "Size" & Size'Img & " bytes of entry is too large or 0");
+         return;
+      end if;
+
+      This.Sessions.Clear_Buffer (Endpoint.Id);
+
+      declare
+         use ACO.SDO_Commands;
+         Cmd : Download_Initiate_Cmd;
+      begin
+         if Size <= Expedited_Data'Length then
+            Cmd := Create (Index => (Index, Subindex),
+                           Data  => Data_Array (An_Entry.Read));
+         else
+            This.Sessions.Put_Buffer (Endpoint.Id, Data_Array (An_Entry.Read));
+            Cmd := Create (Index => (Index, Subindex),
+                           Size  => Size);
+         end if;
+
+         This.Send_SDO (Endpoint, Cmd.Raw);
+      end;
+
+      This.Sessions.Put (Create_Download (Endpoint, (Index, Subindex), Size));
+      This.Start_Alarm (Endpoint);
+   end Write_Remote_Entry;
 
    procedure Periodic_Actions
      (This : in out SDO)

@@ -124,16 +124,19 @@ private
 
    --  0x1200-0x127F SDO Server Parameter
 
-   SDO_Server_Field_Nof : aliased Entry_U8 := Create (RO, 16#02#);
+   SDO_Server_Field_Nof : aliased Entry_U8 := Create (RO, 16#03#);
 
    SDO_Server_COBID_C2S : aliased Entry_U32 := Create (RO, 16#00000600# + 1);
 
    SDO_Server_COBID_S2C : aliased Entry_U32 := Create (RO, 16#00000580# + 1);
 
+   SDO_Server_Client_ID : aliased Entry_U8 := Create (RO, 16#01#);
+
    SDO_Server_Data : aliased Entry_Array :=
       (0 => SDO_Server_Field_Nof'Access,
        1 => SDO_Server_COBID_C2S'Access,
-       2 => SDO_Server_COBID_S2C'Access);
+       2 => SDO_Server_COBID_S2C'Access,
+       3 => SDO_Server_Client_ID'Access);
 
    SDO_Servers : aliased Object_Base (SDO_Server_Data'Access);
 

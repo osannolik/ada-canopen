@@ -1,29 +1,60 @@
 package body ACO.SDO_Sessions is
 
    function Get_Endpoint
-      (CAN_Id         : Id_Type;
-       Client_CAN_Ids : SDO_CAN_Id_Array;
-       Server_CAN_Ids : SDO_CAN_Id_Array)
+      (Rx_CAN_Id         : Id_Type;
+       Client_Parameters : SDO_Parameter_Array;
+       Server_Parameters : SDO_Parameter_Array)
+       return Endpoint_Type
+   is
+      function Is_Rx_CAN_Id
+         (P : SDO_Parameters; Is_Server : Boolean) return Boolean
+      is
+         (if Is_Server then P.CAN_Id_C2S = Rx_CAN_Id else P.CAN_Id_S2C = Rx_CAN_Id);
+   begin
+      return Get_Matching_Endpoint
+         (Is_Rx_CAN_Id'Access, Client_Parameters, Server_Parameters);
+   end Get_Endpoint;
+
+   function Get_Endpoint
+      (Server_Node       : Node_Nr;
+       Client_Parameters : SDO_Parameter_Array;
+       Server_Parameters : SDO_Parameter_Array)
+       return Endpoint_Type
+   is
+      function Is_Server_Node_Of_Client
+         (P : SDO_Parameters; Is_Server : Boolean) return Boolean
+      is
+         (if Is_Server then False else P.Node = Server_Node);
+   begin
+      return Get_Matching_Endpoint
+         (Is_Server_Node_Of_Client'Access, Client_Parameters, Server_Parameters);
+   end Get_Endpoint;
+
+   function Get_Matching_Endpoint
+      (Match_Condition   : not null access
+          function (P : SDO_Parameters; Is_Server : Boolean) return Boolean;
+       Client_Parameters : SDO_Parameter_Array;
+       Server_Parameters : SDO_Parameter_Array)
        return Endpoint_Type
    is
       I : Endpoint_Nr := Valid_Endpoint_Nr'First;
    begin
-      for Client_CAN_Id of Client_CAN_Ids loop
-         if Client_CAN_Id.S2C = CAN_Id then
-            return (Id => I, Role => Client, CAN_Id => Client_CAN_Id);
+      for P of Client_Parameters loop
+         if Match_Condition (P, False) then
+            return (Id => I, Role => Client, Parameters => P);
          end if;
          I := Endpoint_Nr'Succ (I);
       end loop;
 
-      for Server_CAN_Id of Server_CAN_Ids loop
-         if Server_CAN_Id.C2S = CAN_Id then
-            return (Id => I, Role => Server, CAN_Id => Server_CAN_Id);
+      for P of Server_Parameters loop
+         if Match_Condition (P, True) then
+            return (Id => I, Role => Server, Parameters => P);
          end if;
          I := Endpoint_Nr'Succ (I);
       end loop;
 
       return No_Endpoint;
-   end Get_Endpoint;
+   end Get_Matching_Endpoint;
 
    function Create_Download
       (Endpoint  : Endpoint_Type;
@@ -68,6 +99,14 @@ package body ACO.SDO_Sessions is
       This.List (Id) := (None, No_Endpoint);
       This.Buffers (Id).Flush;
    end Clear;
+
+   procedure Clear_Buffer
+      (This : in out Session_Manager;
+       Id   : in     Valid_Endpoint_Nr)
+   is
+   begin
+      This.Buffers (Id).Flush;
+   end Clear_Buffer;
 
    procedure Put_Buffer
       (This : in out Session_Manager;

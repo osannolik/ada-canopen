@@ -29,30 +29,37 @@ package ACO.SDO_Sessions is
    subtype Valid_Endpoint_Nr is Endpoint_Nr range
       Endpoint_Nr'First ..  Max_Nof_Simultaneous_SDO_Sessions;
 
-   type SDO_CAN_Id is record
-      C2S : Id_Type := 0;
-      S2C : Id_Type := 0;
+   type SDO_Parameters is record
+      CAN_Id_C2S : Id_Type := 0;
+      CAN_Id_S2C : Id_Type := 0;
+      Node       : Node_Nr;
    end record;
 
-   type SDO_CAN_Id_Array is array (Natural range <>) of SDO_CAN_Id;
+   type SDO_Parameter_Array is array (Natural range <>) of SDO_Parameters;
 
    type Endpoint_Type is record
-      Id     : Endpoint_Nr   := No_Endpoint_Id;
-      Role   : Endpoint_Role := Client;
-      CAN_Id : SDO_CAN_Id;
+      Id         : Endpoint_Nr   := No_Endpoint_Id;
+      Role       : Endpoint_Role := Client;
+      Parameters : SDO_Parameters;
    end record;
 
    No_Endpoint : Endpoint_Type;
 
    function Tx_CAN_Id (Endpoint : Endpoint_Type) return Id_Type is
       (case Endpoint.Role is
-          when Server => Endpoint.CAN_Id.S2C,
-          when Client => Endpoint.CAN_Id.C2S);
+          when Server => Endpoint.Parameters.CAN_Id_S2C,
+          when Client => Endpoint.Parameters.CAN_Id_C2S);
 
    function Get_Endpoint
-      (CAN_Id         : Id_Type;
-       Client_CAN_Ids : SDO_CAN_Id_Array;
-       Server_CAN_Ids : SDO_CAN_Id_Array)
+      (Rx_CAN_Id         : Id_Type;
+       Client_Parameters : SDO_Parameter_Array;
+       Server_Parameters : SDO_Parameter_Array)
+       return Endpoint_Type;
+
+   function Get_Endpoint
+      (Server_Node       : Node_Nr;
+       Client_Parameters : SDO_Parameter_Array;
+       Server_Parameters : SDO_Parameter_Array)
        return Endpoint_Type;
 
 
@@ -95,6 +102,10 @@ package ACO.SDO_Sessions is
       (This : in out Session_Manager;
        Id   : in     Valid_Endpoint_Nr);
 
+   procedure Clear_Buffer
+      (This : in out Session_Manager;
+       Id   : in     Valid_Endpoint_Nr);
+
    procedure Put_Buffer
       (This : in out Session_Manager;
        Id   : in     Valid_Endpoint_Nr;
@@ -130,5 +141,12 @@ private
       List    : Session_Array (Valid_Endpoint_Nr'Range);
       Buffers : Buffer_Array (Valid_Endpoint_Nr'Range);
    end record;
+
+   function Get_Matching_Endpoint
+      (Match_Condition   : not null access
+          function (P : SDO_Parameters; Is_Server : Boolean) return Boolean;
+       Client_Parameters : SDO_Parameter_Array;
+       Server_Parameters : SDO_Parameter_Array)
+       return Endpoint_Type;
 
 end ACO.SDO_Sessions;

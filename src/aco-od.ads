@@ -114,13 +114,13 @@ package ACO.OD is
       (This : Object_Dictionary)
        return Natural;
 
-   function Get_SDO_Server_CAN_Ids
+   function Get_SDO_Server_Parameters
       (This : Object_Dictionary)
-       return ACO.SDO_Sessions.SDO_CAN_Id_Array;
+       return ACO.SDO_Sessions.SDO_Parameter_Array;
 
-   function Get_SDO_Client_CAN_Ids
+   function Get_SDO_Client_Parameters
       (This : Object_Dictionary)
-       return ACO.SDO_Sessions.SDO_CAN_Id_Array;
+       return ACO.SDO_Sessions.SDO_Parameter_Array;
 
 private
 
@@ -166,9 +166,11 @@ private
       function Get_Heartbeat_Consumer_Period
          (Node_Id : ACO.Messages.Node_Nr) return Natural;
 
-      function Get_SDO_Server_CAN_Ids return ACO.SDO_Sessions.SDO_CAN_Id_Array;
+      function Get_SDO_Server_Parameters
+         return ACO.SDO_Sessions.SDO_Parameter_Array;
 
-      function Get_SDO_Client_CAN_Ids return ACO.SDO_Sessions.SDO_CAN_Id_Array;
+      function Get_SDO_Client_Parameters
+         return ACO.SDO_Sessions.SDO_Parameter_Array;
 
    private
       Node_State   : ACO.States.State := ACO.States.Unknown_State;
