@@ -27,7 +27,7 @@ package ACO.SDO_Sessions is
    No_Endpoint_Id : constant Endpoint_Nr := Endpoint_Nr'First;
 
    subtype Valid_Endpoint_Nr is Endpoint_Nr range
-      Endpoint_Nr'First ..  Max_Nof_Simultaneous_SDO_Sessions;
+      Endpoint_Nr'First + 1 ..  Max_Nof_Simultaneous_SDO_Sessions;
 
    type SDO_Parameters is record
       CAN_Id_C2S : Id_Type := 0;
