@@ -2,6 +2,7 @@ with Generic_Sorted_List_Test;
 with ACO.Protocols.Network_Management.Test;
 with ACO.Protocols.Error_Control.Test;
 with ACO.Protocols.Synchronization.Test;
+with ACO.Protocols.Service_Data.Test;
 
 package body Unit_Tests is
 
@@ -12,6 +13,7 @@ package body Unit_Tests is
       Ret.Add_Test (new ACO.Protocols.Network_Management.Test.Test);
       Ret.Add_Test (new ACO.Protocols.Error_Control.Test.Test);
       Ret.Add_Test (new ACO.Protocols.Synchronization.Test.Test);
+      Ret.Add_Test (new ACO.Protocols.Service_Data.Test.Test);
       return Ret;
    end Suite;
 
