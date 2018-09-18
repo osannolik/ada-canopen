@@ -122,21 +122,57 @@ private
 
    Sync_Counter_Overflow : aliased Object_Base (Sync_Counter_Overflow_Data'Access);
 
+   --  0x1200-0x127F SDO Server Parameter
 
+   SDO_Server_Field_Nof : aliased Entry_U8 := Create (RO, 16#03#);
+
+   SDO_Server_COBID_C2S : aliased Entry_U32 := Create (RO, 16#00000600# + 1);
+
+   SDO_Server_COBID_S2C : aliased Entry_U32 := Create (RO, 16#00000580# + 1);
+
+   SDO_Server_Client_ID : aliased Entry_U8 := Create (RO, 16#01#);
+
+   SDO_Server_Data : aliased Entry_Array :=
+      (0 => SDO_Server_Field_Nof'Access,
+       1 => SDO_Server_COBID_C2S'Access,
+       2 => SDO_Server_COBID_S2C'Access,
+       3 => SDO_Server_Client_ID'Access);
+
+   SDO_Servers : aliased Object_Base (SDO_Server_Data'Access);
+
+   --  0x1280-0x12FF SDO Client Parameter
+
+   SDO_Client_Field_Nof : aliased Entry_U8 := Create (RO, 16#03#);
+
+   SDO_Client_COBID_C2S : aliased Entry_U32 := Create (RO, 16#00000600# + 1);
+
+   SDO_Client_COBID_S2C : aliased Entry_U32 := Create (RO, 16#00000580# + 1);
+
+   SDO_Client_Server_ID : aliased Entry_U8 := Create (RO, 16#01#);
+
+   SDO_Client_Data : aliased Entry_Array :=
+      (0 => SDO_Client_Field_Nof'Access,
+       1 => SDO_Client_COBID_C2S'Access,
+       2 => SDO_Client_COBID_S2C'Access,
+       3 => SDO_Client_Server_ID'Access);
+
+   SDO_Clients : aliased Object_Base (SDO_Client_Data'Access);
 
    --  Communication Profile Data
 
    Com_Profile : aliased Profile_Objects :=
-      (0 => Device_Type'Access,
-       1 => Error_Register'Access,
-       2 => Predef_Err_Field'Access,
-       3 => Sync_COB_ID'Access,
-       4 => Comm_Cycle_Per'Access,
-       5 => Sync_Win_Length'Access,
-       6 => Device_Name'Access,
-       7 => Consumer_Hbt'Access,
-       8 => Producer_Hbt'Access,
-       9 => Sync_Counter_Overflow'Access);
+      (0  => Device_Type'Access,
+       1  => Error_Register'Access,
+       2  => Predef_Err_Field'Access,
+       3  => Sync_COB_ID'Access,
+       4  => Comm_Cycle_Per'Access,
+       5  => Sync_Win_Length'Access,
+       6  => Device_Name'Access,
+       7  => Consumer_Hbt'Access,
+       8  => Producer_Hbt'Access,
+       9  => Sync_Counter_Overflow'Access,
+       10 => SDO_Servers'Access,
+       11 => SDO_Clients'Access);
 
 
    function Index_Map (This : Dictionary_Data; Index : Object_Index)
@@ -152,6 +188,8 @@ private
           when 16#1016# => 7,
           when 16#1017# => 8,
           when 16#1019# => 9,
+          when 16#1200# => 10,
+          when 16#1280# => 11,
           when others   => No_Index);
 
 
