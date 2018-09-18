@@ -64,7 +64,7 @@ package body ACO.Protocols.Service_Data.Test is
          --  Since entry size is <= 4 the download will be expedited.
          S.Write_Remote_Entry
             (Node     => 1,
-             Index    => 16#1017#,
+             Index    => ACO.OD.Heartbeat_Producer_Index,
              Subindex => 0,
              An_Entry => E);
 
