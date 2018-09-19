@@ -86,14 +86,84 @@ package body ACO.Protocols.Service_Data.Test is
 
          --  Check that the value has been updated
          Assert (Value = S.Od.Get_Heartbeat_Producer_Period,
-                 "Expedited Download: value in server OD did not update correctly");
+                 "Value in server OD did not update correctly");
       end;
    end Expedited_Download_Test;
+
+   procedure Segmented_Download_Test
+   is
+      use ACO.SDO_Commands;
+      use ACO.OD_Types.Entries;
+      use ACO.OD.Example;
+
+      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
+      OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      Driver  : aliased ACO.Drivers.Dummy.Dummy_Driver;
+      S       : SDO (OD'Access, Driver'Access);
+   begin
+      S.Od.Set_Heartbeat_Producer_Period (500);
+      S.Od.Set_Node_State (ACO.States.Pre_Operational);
+
+      declare
+         Value : constant Device_Name_String := "A Super Duper";
+         E     : constant Entry_Base'Class := Device_Name_Entry'(Create (RW, Value));
+         Msg : Message;
+      begin
+         --  As client, request to download entry to 0x1017 on node 1.
+         --  Since entry size is <= 4 the download will be expedited.
+         S.Write_Remote_Entry
+            (Node     => 1,
+             Index    => 16#1008#,
+             Subindex => 0,
+             An_Entry => E);
+
+         --  As server, receive and process download init request
+         Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+         S.Message_Received (Msg);
+
+         --  As client, receive and process download init response
+         Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+         S.Message_Received (Msg);
+
+         --  As server, receive and process data segment of length 7
+         Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+         S.Message_Received (Msg);
+
+         --  As client, receive and process data segment response
+         Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+         S.Message_Received (Msg);
+
+         --  As server, receive and process data segment of length 6
+         Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+         S.Message_Received (Msg);
+
+         --  As client, receive and process data segment response
+         Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+         S.Message_Received (Msg);
+
+         --  Nothing more should have been sent
+         Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
+                 "Client should not have sent a massage");
+
+         --  All sessions should be closed (service = None)
+         Assert (For_All_Sessions_Check_State (S, None),
+                 "A session has not been ended properly");
+
+         --  Check that the value has been updated
+         declare
+            New_Value : constant Entry_Base'Class := S.Od.Get_Entry (16#1008#, 0);
+         begin
+            Assert (Device_Name_Entry (New_Value).Read = Value,
+                    "Value in server OD did not update correctly");
+         end;
+      end;
+   end Segmented_Download_Test;
 
    procedure Run_Test (T : in out Test) is
       pragma Unreferenced (T);
    begin
       Expedited_Download_Test;
+      Segmented_Download_Test;
    end Run_Test;
 
 end ACO.Protocols.Service_Data.Test;

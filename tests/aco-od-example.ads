@@ -12,7 +12,8 @@ package ACO.OD.Example is
 
    Device_Name_Str : constant String := "A device name";
 
-   subtype Device_Name_String is Visible_String (Device_Name_Str'Range);
+   type Device_Name_String is new Visible_String (Device_Name_Str'Range)
+      with Alignment => 1;
 
    package Device_Name_Pack is new ACO.Generic_Entry_Types (Device_Name_String);
 
@@ -85,7 +86,7 @@ private
    --  0x1008 Manufacturer Device Name VAR
 
    Device_Name_Var : aliased Device_Name_Entry :=
-      Create (RO, Device_Name_Str);
+      Create (RW, Device_Name_String (Device_Name_Str));
 
    Device_Name_Data : aliased Entry_Array :=
       (0 => Device_Name_Var'Access);

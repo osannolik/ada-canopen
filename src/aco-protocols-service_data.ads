@@ -136,6 +136,11 @@ private
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type);
 
+   procedure Client_Download_Segment
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type);
+
    procedure Write
       (This    : in out SDO;
        Index   : in     ACO.OD_Types.Entry_Index;
