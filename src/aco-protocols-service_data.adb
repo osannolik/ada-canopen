@@ -1,5 +1,6 @@
 with Ada.Exceptions;
 with Ada.Real_Time;
+with Interfaces;
 
 package body ACO.Protocols.Service_Data is
 
@@ -237,6 +238,10 @@ package body ACO.Protocols.Service_Data is
                    Error    => Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control);
             end if;
 
+         when Abort_Req =>
+            This.SDO_Log (ACO.Log.Debug, "Server: Handling Abort");
+            This.Abort_All (Msg, Endpoint);
+
          when others =>
             null;
       end case;
@@ -337,6 +342,50 @@ package body ACO.Protocols.Service_Data is
       This.Sessions.Put (Session);
    end Client_Download_Segment;
 
+   function Hex_Str (X : Interfaces.Unsigned_32) return String
+   is
+      use type Interfaces.Unsigned_32;
+
+      Chars : constant String := "0123456789abcdef";
+      N     : Interfaces.Unsigned_32 := X;
+      Res   : String (1 .. 10) := "0x00000000";
+      I     : Natural := Res'Last;
+   begin
+      loop
+         Res (I) := Chars (Natural (N mod 16) + 1);
+         N := N / 16;
+         exit when N = 0;
+         I := I - 1;
+      end loop;
+      return Res;
+   end Hex_Str;
+
+   procedure Abort_All
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type)
+   is
+      use ACO.SDO_Commands;
+      use type ACO.SDO_Commands.Abort_Code_Type;
+
+      Resp : constant Abort_Cmd := Convert (Msg);
+      Error : Error_Type := Unknown;
+   begin
+      for E in Error_Type'Range loop
+         if Abort_Code (E) = Resp.Code then
+            Error := E;
+            exit;
+         end if;
+      end loop;
+
+      This.SDO_Log
+         (ACO.Log.Error,
+          Error'Img & " (" & Hex_Str (Resp.Code) & ") on " & Image (Endpoint));
+
+      This.Sessions.Clear (Endpoint.Id);
+      This.Stop_Alarm (Endpoint);
+   end Abort_All;
+
    procedure Message_Received_For_Client
       (This     : in out SDO;
        Msg      : in     Message;
@@ -366,6 +415,10 @@ package body ACO.Protocols.Service_Data is
                   (Endpoint => Endpoint,
                    Error    => Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control);
             end if;
+
+         when Abort_Req =>
+            This.SDO_Log (ACO.Log.Debug, "Client: Handling Abort");
+            This.Abort_All (Msg, Endpoint);
 
          when others =>
             null;

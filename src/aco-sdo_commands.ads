@@ -196,6 +196,11 @@ package ACO.SDO_Commands is
       Command  at 0 range 5 .. 7;
    end record;
 
+   function Convert
+      (Msg : Message) return Abort_Cmd
+   is
+      ((As_Raw => True, Raw => Msg.Data));
+
    function Create
       (Index : Entry_Index;
        Code  : Abort_Code_Type)

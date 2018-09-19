@@ -148,4 +148,10 @@ package body ACO.SDO_Sessions is
       end if;
    end Peek_Buffer;
 
+   function Image (Endpoint : Endpoint_Type) return String
+   is
+   begin
+      return "(" & Endpoint.Role'Img & "," & Endpoint.Id'Img & ")";
+   end Image;
+
 end ACO.SDO_Sessions;

@@ -50,6 +50,8 @@ package ACO.SDO_Sessions is
           when Server => Endpoint.Parameters.CAN_Id_S2C,
           when Client => Endpoint.Parameters.CAN_Id_C2S);
 
+   function Image (Endpoint : Endpoint_Type) return String;
+
    function Get_Endpoint
       (Rx_CAN_Id         : Id_Type;
        Client_Parameters : SDO_Parameter_Array;

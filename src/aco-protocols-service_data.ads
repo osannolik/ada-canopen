@@ -42,6 +42,7 @@ private
 
    type Error_Type is
       (Nothing,
+       Unknown,
        General_Error,
        Invalid_Value_For_Parameter,
        Toggle_Bit_Not_Altered,
@@ -54,6 +55,7 @@ private
 
    Abort_Code : constant array (Error_Type) of ACO.SDO_Commands.Abort_Code_Type :=
       (Nothing                                               => 16#0000_0000#,
+       Unknown                                               => 16#0000_0000#,
        General_Error                                         => 16#0800_0000#,
        Invalid_Value_For_Parameter                           => 16#0609_0030#,
        Toggle_Bit_Not_Altered                                => 16#0503_0000#,
@@ -137,6 +139,11 @@ private
        Endpoint : in     Endpoint_Type);
 
    procedure Client_Download_Segment
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type);
+
+   procedure Abort_All
       (This     : in out SDO;
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type);
