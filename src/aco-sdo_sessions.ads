@@ -73,10 +73,8 @@ package ACO.SDO_Sessions is
             null;
 
          when Download =>
-            Index     : ACO.OD_Types.Entry_Index;
-            Nof_Bytes : Natural := 0;
-            Count     : Natural := 0;
-            Toggle    : Boolean := False;
+            Index  : ACO.OD_Types.Entry_Index;
+            Toggle : Boolean := False;
       end case;
    end record;
 

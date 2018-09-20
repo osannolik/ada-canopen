@@ -62,12 +62,10 @@ package body ACO.SDO_Sessions is
        Nof_Bytes : Natural)
        return SDO_Session
    is
-      ((Service   => Download,
-        Endpoint  => Endpoint,
-        Index     => Index,
-        Nof_Bytes => Nof_Bytes,
-        Count     => 0,
-        Toggle    => False));
+      ((Service  => Download,
+        Endpoint => Endpoint,
+        Index    => Index,
+        Toggle   => False));
 
    procedure Put
       (This    : in out Session_Manager;

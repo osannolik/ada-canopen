@@ -372,7 +372,7 @@ package body ACO.Protocols.Service_Data is
       Error : Error_Type := Unknown;
    begin
       for E in Error_Type'Range loop
-         if Abort_Code (E) = Resp.Code then
+         if Abort_Code (E) = Code (Resp) then
             Error := E;
             exit;
          end if;
@@ -380,7 +380,7 @@ package body ACO.Protocols.Service_Data is
 
       This.SDO_Log
          (ACO.Log.Error,
-          Error'Img & " (" & Hex_Str (Resp.Code) & ") on " & Image (Endpoint));
+          Error'Img & " (" & Hex_Str (Code (Resp)) & ") on " & Image (Endpoint));
 
       This.Sessions.Clear (Endpoint.Id);
       This.Stop_Alarm (Endpoint);

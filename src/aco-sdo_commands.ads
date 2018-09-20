@@ -206,4 +206,8 @@ package ACO.SDO_Commands is
        Code  : Abort_Code_Type)
        return Abort_Cmd;
 
+   function Code (Cmd : Abort_Cmd) return Abort_Code_Type
+   is
+      (Abort_Code_Type (Unsigned_32' (Swap_Bus (Cmd.Code))));
+
 end ACO.SDO_Commands;
