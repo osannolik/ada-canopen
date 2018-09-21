@@ -1,3 +1,4 @@
+with Ada.Real_Time;
 with ACO.Messages;
 with ACO.Drivers;
 with ACO.OD;
@@ -27,7 +28,8 @@ package ACO.Protocols.Error_Control is
       Msg  : in     Message);
 
    procedure Periodic_Actions
-     (This : in out EC);
+      (This  : in out EC;
+       T_Now : in     Ada.Real_Time.Time);
 
 private
 
@@ -79,7 +81,9 @@ private
       new Alarms.Alarm_Type with null record;
 
    overriding
-   procedure Signal (This : access Heartbeat_Producer_Alarm);
+   procedure Signal
+      (This  : access Heartbeat_Producer_Alarm;
+       T_Now : in     Ada.Real_Time.Time);
 
    type Entry_Update_Subscriber (EC_Ref : not null access EC) is
       new ACO.Events.Entry_Update.Subscriber with null record;

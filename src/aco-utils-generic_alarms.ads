@@ -10,7 +10,9 @@ package ACO.Utils.Generic_Alarms is
 
    type Alarm_Access is access all Alarm_Type'Class;
 
-   procedure Signal (This : access Alarm_Type) is abstract;
+   procedure Signal
+      (This  : access Alarm_Type;
+       T_Now : in     Ada.Real_Time.Time) is abstract;
 
    type Alarm_Manager is tagged limited private;
 
@@ -29,11 +31,13 @@ package ACO.Utils.Generic_Alarms is
       Alarm : in     Alarm_Access);
 
    function Get_Next_Up
-      (This : Alarm_Manager)
+      (This  : Alarm_Manager;
+       T_Now : Ada.Real_Time.Time)
        return Alarm_Access;
 
    procedure Process
-      (This : in out Alarm_Manager);
+      (This  : in out Alarm_Manager;
+       T_Now : in     Ada.Real_Time.Time);
 
    No_Alarm : constant Alarm_Access := null;
 

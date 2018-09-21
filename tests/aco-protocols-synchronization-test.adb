@@ -15,19 +15,19 @@ package body ACO.Protocols.Synchronization.Test is
       return AUnit.Format ("Synchronization Test");
    end Name;
 
+   T_Now : Ada.Real_Time.Time;
+
    procedure Let_Time_Pass
-     (S       : in out SYNC;
-      Time_Ms : in     Natural)
+      (S       : in out SYNC;
+       Time_Ms : in     Natural)
    is
       use Ada.Real_Time;
-      Next_Release : Time := Clock;
    begin
       S.Od.Events.Process;
 
-      for T in 1 .. Time_Ms loop
-         Next_Release := Next_Release + Milliseconds (1);
-         delay until Next_Release;
-         S.Periodic_Actions;
+      for DT in 1 .. Time_Ms loop
+         T_Now := T_Now + Milliseconds (1);
+         S.Periodic_Actions (T_Now);
       end loop;
    end Let_Time_Pass;
 
@@ -53,6 +53,8 @@ package body ACO.Protocols.Synchronization.Test is
 
       Msg : Message;
    begin
+      T_Now := Ada.Real_Time.Clock;
+
       S.Od.Set_Communication_Cycle_Period (Period);
       S.Od.Set_Sync_Counter_Overflow (4);
 
@@ -94,15 +96,16 @@ package body ACO.Protocols.Synchronization.Test is
       S      : SYNC (OD'Access, Driver'Access);
 
       Period_Ms : constant Natural := Period / 10;
-      Margin : constant Natural := Period_Ms / 2;
       Overflow : constant := 3;
 
       Msg : Message;
    begin
+      T_Now := Ada.Real_Time.Clock;
+
       S.Od.Set_Communication_Cycle_Period (Period);
       S.Od.Set_Sync_Counter_Overflow (Overflow);
 
-      Let_Time_Pass (S, Period_Ms + Margin);
+      Let_Time_Pass (S, Period_Ms);
       Assert (Nof_Sent (S) = 0, "Sync sent before start");
 
       --  Initialization => Operational
@@ -121,8 +124,8 @@ package body ACO.Protocols.Synchronization.Test is
 
       --  Initialization => Pre-Operational
       S.Od.Set_Node_State (Pre_Operational);
-      Let_Time_Pass (S, 2 * Period_Ms + Margin);
-      Assert (Nof_Sent (S) = 2, "Incorrect number of syncs sent");
+      Let_Time_Pass (S, 2 * Period_Ms);
+      Assert (Nof_Sent (S) = 2, "Incorrect number of syncs sent" & Nof_Sent (S)'Img);
       Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
       Assert (Msg.Length = 1, "Sync has wrong size, counter not included");
       Assert (Msg.Data (Msg_Data'First) = 1,
@@ -143,7 +146,7 @@ package body ACO.Protocols.Synchronization.Test is
 
       --  Stopped => Operational
       S.Od.Set_Node_State (Operational);
-      Let_Time_Pass (S, 2 * Period_Ms + Margin);
+      Let_Time_Pass (S, 2 * Period_Ms);
       Assert (Nof_Sent (S) = 2, "Incorrect number of syncs sent");
       Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
       Assert (Msg.Length = 1, "Sync has wrong size, counter not included");
@@ -160,7 +163,7 @@ package body ACO.Protocols.Synchronization.Test is
 
       --  Stopped => Pre-Operational
       S.Od.Set_Node_State (Pre_Operational);
-      Let_Time_Pass (S, 2 * Period_Ms + Margin);
+      Let_Time_Pass (S, 2 * Period_Ms);
       Assert (Nof_Sent (S) = 2, "Incorrect number of syncs sent");
       Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
       Assert (Msg.Length = 1, "Sync has wrong size, counter not included");
@@ -183,7 +186,7 @@ package body ACO.Protocols.Synchronization.Test is
       end loop;
 
       S.Od.Set_Sync_Counter_Overflow (0);
-      Let_Time_Pass (S, Period_Ms + Margin);
+      Let_Time_Pass (S, Period_Ms);
       Assert (Nof_Sent (S) = 1, "Incorrect number of syncs sent");
       Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
       Assert (Msg.Length = 0, "Sync has wrong size, counter is included");
@@ -192,9 +195,9 @@ package body ACO.Protocols.Synchronization.Test is
    procedure Run_Test (T : in out Test) is
       pragma Unreferenced (T);
    begin
-      Sync_Producer_Test (1_00);
+      Sync_Producer_Test (10_000);
       Sync_Producer_Test (0);
-      Sync_Producer_Counter_Test (1_00);
+      Sync_Producer_Counter_Test (10_000);
       Sync_Consumer_Test;
    end Run_Test;
 

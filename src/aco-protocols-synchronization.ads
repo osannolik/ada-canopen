@@ -1,3 +1,4 @@
+with Ada.Real_Time;
 with ACO.Messages;
 with ACO.OD;
 with ACO.Drivers;
@@ -24,7 +25,8 @@ package ACO.Protocols.Synchronization is
       Msg  : in     Message);
 
    procedure Periodic_Actions
-     (This : in out SYNC);
+      (This  : in out SYNC;
+       T_Now : in     Ada.Real_Time.Time);
 
 private
 
@@ -42,7 +44,9 @@ private
       new Alarms.Alarm_Type with null record;
 
    overriding
-   procedure Signal (This : access Sync_Producer_Alarm);
+   procedure Signal
+      (This  : access Sync_Producer_Alarm;
+       T_Now : in     Ada.Real_Time.Time);
 
    subtype Counter_Type is
       Interfaces.Unsigned_8 range 1 .. Interfaces.Unsigned_8'Last;

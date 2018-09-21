@@ -17,21 +17,19 @@ package body ACO.Protocols.Service_Data.Test is
       return AUnit.Format ("Service Data Object Test");
    end Name;
 
-   --  TODO: Time progress of timers etc should be refactored to not require
-   --        real time to pass...
+   T_Now : Ada.Real_Time.Time;
+
    procedure Let_Time_Pass
       (S       : in out SDO;
        Time_Ms : in     Natural)
    is
       use Ada.Real_Time;
-      Next_Release : Time := Clock;
    begin
       S.Od.Events.Process;
 
-      for T in 1 .. Time_Ms loop
-         Next_Release := Next_Release + Milliseconds (1);
-         delay until Next_Release;
-         S.Periodic_Actions;
+      for DT in 1 .. Time_Ms loop
+         T_Now := T_Now + Milliseconds (1);
+         S.Periodic_Actions (T_Now);
       end loop;
    end Let_Time_Pass;
 
@@ -186,6 +184,8 @@ package body ACO.Protocols.Service_Data.Test is
       S       : SDO (OD'Access, Driver'Access);
       Timeout : constant := ACO.Configuration.SDO_Session_Timeout_Ms;
    begin
+      T_Now := Ada.Real_Time.Clock;
+
       S.Od.Set_Node_State (ACO.States.Pre_Operational);
 
       declare

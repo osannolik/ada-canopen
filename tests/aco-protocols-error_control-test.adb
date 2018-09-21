@@ -19,19 +19,19 @@ package body ACO.Protocols.Error_Control.Test is
       return AUnit.Format ("Error Control Test");
    end Name;
 
+   T_Now : Ada.Real_Time.Time;
+
    procedure Let_Time_Pass
-     (E       : in out EC;
-      Time_Ms : in     Natural)
+      (E       : in out EC;
+       Time_Ms : in     Natural)
    is
       use Ada.Real_Time;
-      Next_Release : Time := Clock;
    begin
       E.Od.Events.Process;
 
-      for T in 1 .. Time_Ms loop
-         Next_Release := Next_Release + Milliseconds (1);
-         delay until Next_Release;
-         E.Periodic_Actions;
+      for DT in 1 .. Time_Ms loop
+         T_Now := T_Now + Milliseconds (1);
+         E.Periodic_Actions (T_Now);
       end loop;
    end Let_Time_Pass;
 
@@ -71,6 +71,8 @@ package body ACO.Protocols.Error_Control.Test is
 
       Msg : Message;
    begin
+      T_Now := Ada.Real_Time.Clock;
+
       E.Od.Set_Heartbeat_Producer_Period (Period);
 
       Let_Time_Pass (E, Period);

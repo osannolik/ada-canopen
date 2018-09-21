@@ -1,5 +1,3 @@
-with Ada.Real_Time;
-
 package body ACO.Protocols.Synchronization is
 
    function To_Ms_From_100us (T : Natural) return Natural is
@@ -55,7 +53,9 @@ package body ACO.Protocols.Synchronization is
    end Send_Sync;
 
    overriding
-   procedure Signal (This : access Sync_Producer_Alarm)
+   procedure Signal
+      (This  : access Sync_Producer_Alarm;
+       T_Now : in     Ada.Real_Time.Time)
    is
       use Ada.Real_Time;
       use Alarms;
@@ -66,7 +66,7 @@ package body ACO.Protocols.Synchronization is
          To_Ms_From_100us (SYNC_Ref.Od.Get_Communication_Cycle_Period);
    begin
       if Period > 0 then
-         SYNC_Ref.Event_Manager.Set (Alarm_Access (This), Clock + Milliseconds (Period));
+         SYNC_Ref.Event_Manager.Set (Alarm_Access (This), T_Now + Milliseconds (Period));
          SYNC_Ref.Send_Sync;
       end if;
    end Signal;
@@ -148,10 +148,11 @@ package body ACO.Protocols.Synchronization is
    end Message_Received;
 
    procedure Periodic_Actions
-     (This : in out SYNC)
+      (This  : in out SYNC;
+       T_Now : in     Ada.Real_Time.Time)
    is
    begin
-      This.Event_Manager.Process;
+      This.Event_Manager.Process (T_Now);
    end Periodic_Actions;
 
    overriding

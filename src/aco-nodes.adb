@@ -107,9 +107,13 @@ package body ACO.Nodes is
       loop
          This.Od.Events.Process;
 
-         This.EC.Periodic_Actions;
-         This.SDO.Periodic_Actions;
-         This.SYNC.Periodic_Actions;
+         declare
+            T_Now : constant Time := Clock;
+         begin
+            This.EC.Periodic_Actions (T_Now);
+            This.SDO.Periodic_Actions (T_Now);
+            This.SYNC.Periodic_Actions (T_Now);
+         end;
 
          while not This.Received_Messages.Is_Empty loop
             declare

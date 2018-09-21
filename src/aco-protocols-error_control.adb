@@ -1,5 +1,3 @@
-with Ada.Real_Time;
-
 package body ACO.Protocols.Error_Control is
 
    function Create_Heartbeat
@@ -30,7 +28,9 @@ package body ACO.Protocols.Error_Control is
    end Send_Bootup;
 
    overriding
-   procedure Signal (This : access Heartbeat_Producer_Alarm)
+   procedure Signal
+      (This  : access Heartbeat_Producer_Alarm;
+       T_Now : in     Ada.Real_Time.Time)
    is
       use Ada.Real_Time;
       use Alarms;
@@ -40,7 +40,7 @@ package body ACO.Protocols.Error_Control is
       Period : constant Natural := EC_Ref.Od.Get_Heartbeat_Producer_Period;
    begin
       if Period > 0 then
-         EC_Ref.Event_Manager.Set (Alarm_Access (This), Clock + Milliseconds (Period));
+         EC_Ref.Event_Manager.Set (Alarm_Access (This), T_Now + Milliseconds (Period));
          EC_Ref.Send_Heartbeat (EC_Ref.Od.Get_Node_State);
       end if;
    end Signal;
@@ -147,11 +147,12 @@ package body ACO.Protocols.Error_Control is
    end Update;
 
    procedure Periodic_Actions
-     (This : in out EC)
+      (This  : in out EC;
+       T_Now : in     Ada.Real_Time.Time)
    is
    begin
-      This.Event_Manager.Process;
-      This.Monitor.Update_Alarms;
+      This.Event_Manager.Process (T_Now);
+      This.Monitor.Update_Alarms (T_Now);
    end Periodic_Actions;
 
    overriding

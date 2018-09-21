@@ -1,7 +1,8 @@
 package body ACO.Utils.Generic_Alarms is
 
    function Get_Next_Up
-      (This : Alarm_Manager)
+      (This  : Alarm_Manager;
+       T_Now : Ada.Real_Time.Time)
        return Alarm_Access
    is
       use Ada.Real_Time;
@@ -11,7 +12,7 @@ package body ACO.Utils.Generic_Alarms is
             Next : constant Alarm_Data := This.Alarm_List.Get_First;
          begin
             if Next.Alarm_Ref /= No_Alarm and then
-               Next.Signal_Time <= Clock
+               Next.Signal_Time <= T_Now
             then
                return Next.Alarm_Ref;
             end if;
@@ -22,14 +23,15 @@ package body ACO.Utils.Generic_Alarms is
    end Get_Next_Up;
 
    procedure Process
-      (This : in out Alarm_Manager)
+      (This  : in out Alarm_Manager;
+       T_Now : in     Ada.Real_Time.Time)
    is
-      Next : Alarm_Access := This.Get_Next_Up;
+      Next : Alarm_Access := This.Get_Next_Up (T_Now);
    begin
       while Next /= No_Alarm loop
          This.Cancel (Next);
-         Next.Signal;
-         Next := This.Get_Next_Up;
+         Next.Signal (T_Now);
+         Next := This.Get_Next_Up (T_Now);
       end loop;
    end Process;
 

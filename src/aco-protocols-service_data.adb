@@ -1,5 +1,4 @@
 with Ada.Exceptions;
-with Ada.Real_Time;
 with Interfaces;
 
 package body ACO.Protocols.Service_Data is
@@ -16,8 +15,12 @@ package body ACO.Protocols.Service_Data is
    end On_State_Change;
 
    overriding
-   procedure Signal (This : access Alarm)
+   procedure Signal
+      (This  : access Alarm;
+       T_Now : in     Ada.Real_Time.Time)
    is
+      pragma Unreferenced (T_Now);
+
       Session : constant SDO_Session := This.SDO_Ref.Sessions.Get (This.Id);
    begin
       This.SDO_Ref.SDO_Log
@@ -508,10 +511,11 @@ package body ACO.Protocols.Service_Data is
    end Write_Remote_Entry;
 
    procedure Periodic_Actions
-     (This : in out SDO)
+      (This  : in out SDO;
+       T_Now : in     Ada.Real_Time.Time)
    is
    begin
-      This.Event_Manager.Process;
+      This.Event_Manager.Process (T_Now);
    end Periodic_Actions;
 
    overriding

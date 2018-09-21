@@ -1,5 +1,3 @@
-with Ada.Real_Time;
-
 package body ACO.Slave_Monitors is
 
    function Is_Monitored
@@ -33,8 +31,11 @@ package body ACO.Slave_Monitors is
    end Get_State;
 
    overriding
-   procedure Signal (This : access Slave_Alarm)
+   procedure Signal
+      (This  : access Slave_Alarm;
+       T_Now : in     Ada.Real_Time.Time)
    is
+      pragma Unreferenced (T_Now);
    begin
       This.Node_Id := Not_A_Slave;
       This.Slave_State := (Previous => This.Slave_State.Current,
@@ -117,10 +118,11 @@ package body ACO.Slave_Monitors is
    end Update_State;
 
    procedure Update_Alarms
-      (This : in out Slave_Monitor)
+      (This  : in out Slave_Monitor;
+       T_Now : in     Ada.Real_Time.Time)
    is
    begin
-      This.Manager.Process;
+      This.Manager.Process (T_Now);
    end Update_Alarms;
 
 end ACO.Slave_Monitors;

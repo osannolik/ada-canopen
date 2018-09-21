@@ -1,3 +1,4 @@
+with Ada.Real_Time;
 with ACO.States;
 with ACO.Messages;
 with ACO.OD;
@@ -41,7 +42,8 @@ package ACO.Slave_Monitors is
       with Pre => This.Is_Monitored (Node_Id);
 
    procedure Update_Alarms
-      (This : in out Slave_Monitor);
+      (This  : in out Slave_Monitor;
+       T_Now : in     Ada.Real_Time.Time);
 
 private
    use ACO.Configuration;
@@ -58,7 +60,9 @@ private
    end record;
 
    overriding
-   procedure Signal (This : access Slave_Alarm);
+   procedure Signal
+      (This  : access Slave_Alarm;
+       T_Now : in     Ada.Real_Time.Time);
 
    type Slaves_Array is array (Positive range <>) of aliased Slave_Alarm;
 

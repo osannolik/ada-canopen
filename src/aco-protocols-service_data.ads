@@ -1,3 +1,4 @@
+with Ada.Real_Time;
 with ACO.Messages;
 with ACO.OD;
 with ACO.OD_Types;
@@ -28,7 +29,8 @@ package ACO.Protocols.Service_Data is
       Msg  : in     Message);
 
    procedure Periodic_Actions
-     (This : in out SDO);
+      (This  : in out SDO;
+       T_Now : in     Ada.Real_Time.Time);
 
    procedure Write_Remote_Entry
       (This     : in out SDO;
@@ -81,7 +83,9 @@ private
       end record;
 
    overriding
-   procedure Signal (This : access Alarm);
+   procedure Signal
+      (This  : access Alarm;
+       T_Now : in     Ada.Real_Time.Time);
 
    type Alarm_Array is array (Valid_Endpoint_Nr'Range) of aliased Alarm;
 
