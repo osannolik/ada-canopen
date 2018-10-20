@@ -78,4 +78,46 @@ package body ACO.SDO_Commands is
         Subindex => Index.Sub,
         Code     => Swap_Bus (Code)));
 
+   function Create
+      (Index : Entry_Index)
+       return Upload_Initiate_Cmd
+   is
+      ((As_Raw   => False,
+        Command  => Upload_Initiate_Req,
+        Index    => Swap_Bus (Index.Object),
+        Subindex => Index.Sub));
+
+   function Create
+      (Index : Entry_Index;
+       Data  : Data_Array)
+       return Upload_Initiate_Resp
+   is
+      Tmp : Expedited_Data := (others => 0);
+   begin
+      Tmp (Tmp'First .. Tmp'First + Data'Length - 1) := Data;
+      return (As_Raw            => False,
+              Command           => Upload_Initiate_Conf,
+              Nof_No_Data       => Unsigned_2 (Expedited_Data'Length - Data'Length),
+              Is_Expedited      => True,
+              Is_Size_Indicated => True,
+              Index             => Swap_Bus (Index.Object),
+              Subindex          => Index.Sub,
+              Data              => Tmp);
+   end Create;
+
+   function Create
+      (Index : Entry_Index;
+       Size  : Natural)
+       return Upload_Initiate_Resp
+   is
+      ((As_Raw            => False,
+        Command           => Upload_Initiate_Conf,
+        Nof_No_Data       => 0,
+        Is_Expedited      => False,
+        Is_Size_Indicated => True,
+        Index             => Swap_Bus (Index.Object),
+        Subindex          => Index.Sub,
+        Data              =>
+           Data_Array (Octets_4'(Swap_Bus (Unsigned_32 (Size))))));
+
 end ACO.SDO_Commands;

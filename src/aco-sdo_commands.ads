@@ -210,4 +210,79 @@ package ACO.SDO_Commands is
    is
       (Abort_Code_Type (Unsigned_32' (Swap_Bus (Cmd.Code))));
 
+   type Upload_Initiate_Cmd (As_Raw : Boolean := False) is record
+      case As_Raw is
+         when True =>
+            Raw      : Data_Array (0 .. 7) := (others => 0);
+         when False =>
+            Command  : Unsigned_3;
+            Index    : Unsigned_16;
+            Subindex : Unsigned_8;
+      end case;
+   end record
+      with Unchecked_Union, Size => 64, Bit_Order => System.Low_Order_First;
+
+   for Upload_Initiate_Cmd use record
+      Raw      at 0 range 0 .. 63;
+      Subindex at 0 range 24 .. 31;
+      Index    at 0 range 8 .. 23;
+      Command  at 0 range 5 .. 7;
+   end record;
+
+   function Convert
+      (Msg : Message) return Upload_Initiate_Cmd
+   is
+      ((As_Raw => True, Raw => Msg.Data));
+
+   function Create
+      (Index : Entry_Index)
+       return Upload_Initiate_Cmd;
+
+   type Upload_Initiate_Resp (As_Raw : Boolean := False) is record
+      case As_Raw is
+         when True =>
+            Raw               : Data_Array (0 .. 7);
+         when False =>
+            Command           : Unsigned_3;
+            Nof_No_Data       : Unsigned_2;
+            Is_Expedited      : Boolean;
+            Is_Size_Indicated : Boolean;
+            Index             : Unsigned_16;
+            Subindex          : Unsigned_8;
+            Data              : Data_Array (0 .. 3);
+      end case;
+   end record
+      with Unchecked_Union, Size => 64, Bit_Order => System.Low_Order_First;
+
+   for Upload_Initiate_Resp use record
+      Raw               at 0 range 0 .. 63;
+      Data              at 0 range 32 .. 63;
+      Subindex          at 0 range 24 .. 31;
+      Index             at 0 range 8 .. 23;
+      Command           at 0 range 5 .. 7;
+      Nof_No_Data       at 0 range 2 .. 3;
+      Is_Expedited      at 0 range 1 .. 1;
+      Is_Size_Indicated at 0 range 0 .. 0;
+   end record;
+
+   function Get_Data_Size (Cmd : Upload_Initiate_Resp) return Natural is
+      (if Cmd.Is_Expedited then 4 - Natural (Cmd.Nof_No_Data) else
+             Natural (Swap_Bus (Octets_4 (Cmd.Data))));
+
+   function Convert
+      (Msg : Message) return Upload_Initiate_Resp
+   is
+      ((As_Raw => True, Raw => Msg.Data));
+
+   function Create
+      (Index : Entry_Index;
+       Data  : Data_Array)
+       return Upload_Initiate_Resp
+      with Pre => Data'Length <= Expedited_Data'Length;
+
+   function Create
+      (Index : Entry_Index;
+       Size  : Natural)
+       return Upload_Initiate_Resp;
+
 end ACO.SDO_Commands;
