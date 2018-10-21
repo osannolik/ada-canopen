@@ -67,21 +67,26 @@ package ACO.SDO_Sessions is
 
    type SDO_Session (Service : Services := None) is record
       Endpoint : Endpoint_Type := No_Endpoint;
+      Index  : ACO.OD_Types.Entry_Index;
+      Toggle : Boolean := False;
 
       case Service is
-         when None | Upload | Block_Download | Block_Upload =>
+         when None | Download | Block_Download | Block_Upload =>
             null;
 
-         when Download =>
-            Index  : ACO.OD_Types.Entry_Index;
-            Toggle : Boolean := False;
+        when Upload =>
+            Is_Complete : Boolean := False;
       end case;
    end record;
 
    function Create_Download
-      (Endpoint  : Endpoint_Type;
-       Index     : ACO.OD_Types.Entry_Index;
-       Nof_Bytes : Natural)
+      (Endpoint : Endpoint_Type;
+       Index    : ACO.OD_Types.Entry_Index)
+       return SDO_Session;
+
+   function Create_Upload
+      (Endpoint : Endpoint_Type;
+       Index    : ACO.OD_Types.Entry_Index)
        return SDO_Session;
 
    function Get

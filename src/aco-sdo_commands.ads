@@ -285,4 +285,66 @@ package ACO.SDO_Commands is
        Size  : Natural)
        return Upload_Initiate_Resp;
 
+
+   type Upload_Segment_Cmd (As_Raw : Boolean := False) is record
+      case As_Raw is
+         when True =>
+            Raw     : Data_Array (0 .. 7) := (others => 0);
+         when False =>
+            Command : Unsigned_3;
+            Toggle  : Boolean;
+      end case;
+   end record
+      with Unchecked_Union, Size => 64, Bit_Order => System.Low_Order_First;
+
+   for Upload_Segment_Cmd use record
+      Raw     at 0 range 0 .. 63;
+      Command at 0 range 5 .. 7;
+      Toggle  at 0 range 4 .. 4;
+   end record;
+
+   function Convert
+      (Msg : Message) return Upload_Segment_Cmd
+   is
+      ((As_Raw => True, Raw => Msg.Data));
+
+   function Create
+      (Toggle : Boolean)
+       return Upload_Segment_Cmd;
+
+   type Upload_Segment_Resp (As_Raw : Boolean := False) is record
+      case As_Raw is
+         when True =>
+            Raw         : Data_Array (0 .. 7);
+         when False =>
+            Command     : Unsigned_3;
+            Toggle      : Boolean;
+            Nof_No_Data : Unsigned_3;
+            Is_Complete : Boolean;
+            Data        : Segment_Data;
+      end case;
+   end record
+      with Unchecked_Union, Size => 64, Bit_Order => System.Low_Order_First;
+
+   for Upload_Segment_Resp use record
+      Raw         at 0 range 0 .. 63;
+      Data        at 0 range 8 .. 63;
+      Command     at 0 range 5 .. 7;
+      Toggle      at 0 range 4 .. 4;
+      Nof_No_Data at 0 range 1 .. 3;
+      Is_Complete at 0 range 0 .. 0;
+   end record;
+
+   function Convert
+      (Msg : Message) return Upload_Segment_Resp
+   is
+      ((As_Raw => True, Raw => Msg.Data));
+
+   function Create
+      (Toggle      : Boolean;
+       Is_Complete : Boolean;
+       Data        : Data_Array)
+       return Upload_Segment_Resp
+      with Pre => Data'Length <= Segment_Data'Length;
+
 end ACO.SDO_Commands;

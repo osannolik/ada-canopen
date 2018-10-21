@@ -39,6 +39,12 @@ package ACO.Protocols.Service_Data is
        Subindex : in     Object_Subindex;
        An_Entry : in     Entry_Base'Class);
 
+   procedure Read_Remote_Entry
+      (This     : in out SDO;
+       Node     : in     Node_Nr;
+       Index    : in     Object_Index;
+       Subindex : in     Object_Subindex);
+
 private
    use ACO.SDO_Sessions;
 
@@ -51,6 +57,7 @@ private
        SDO_Protocol_Timed_Out,
        Command_Specifier_Not_Valid_Or_Unknown,
        Object_Does_Not_Exist_In_The_Object_Dictionary,
+       Attempt_To_Read_A_Write_Only_Object,
        Attempt_To_Write_A_Read_Only_Object,
        Failed_To_Transfer_Or_Store_Data,
        Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control);
@@ -64,6 +71,7 @@ private
        SDO_Protocol_Timed_Out                                => 16#0504_0000#,
        Command_Specifier_Not_Valid_Or_Unknown                => 16#0504_0001#,
        Object_Does_Not_Exist_In_The_Object_Dictionary        => 16#0602_0000#,
+       Attempt_To_Read_A_Write_Only_Object                   => 16#0601_0001#,
        Attempt_To_Write_A_Read_Only_Object                   => 16#0601_0002#,
        Failed_To_Transfer_Or_Store_Data                      => 16#0800_0020#,
        Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control => 16#0800_0021#);
@@ -93,9 +101,9 @@ private
       (Od     : not null access ACO.OD.Object_Dictionary'Class;
        Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
    record
-      Sessions      : Session_Manager;
-      Event_Manager : Alarms.Alarm_Manager;
-      Alarms        : Alarm_Array := (others => (SDO'Access, No_Endpoint_Id));
+      Sessions : Session_Manager;
+      Timeouts : Alarms.Alarm_Manager;
+      Alarms   : Alarm_Array := (others => (SDO'Access, No_Endpoint_Id));
    end record;
 
    overriding
@@ -132,12 +140,32 @@ private
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type);
 
+   procedure Server_Upload_Init
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type);
+
+   procedure Server_Upload_Segment
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type);
+
    procedure Message_Received_For_Client
       (This     : in out SDO;
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type);
 
    procedure Client_Download_Init
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type);
+
+   procedure Client_Upload_Init
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type);
+
+   procedure Client_Upload_Segment
       (This     : in out SDO;
        Msg      : in     Message;
        Endpoint : in     Endpoint_Type);

@@ -57,15 +57,25 @@ package body ACO.SDO_Sessions is
    end Get_Matching_Endpoint;
 
    function Create_Download
-      (Endpoint  : Endpoint_Type;
-       Index     : ACO.OD_Types.Entry_Index;
-       Nof_Bytes : Natural)
+      (Endpoint : Endpoint_Type;
+       Index    : ACO.OD_Types.Entry_Index)
        return SDO_Session
    is
       ((Service  => Download,
         Endpoint => Endpoint,
         Index    => Index,
         Toggle   => False));
+
+   function Create_Upload
+      (Endpoint : Endpoint_Type;
+       Index    : ACO.OD_Types.Entry_Index)
+       return SDO_Session
+   is
+      ((Service     => Upload,
+        Endpoint    => Endpoint,
+        Index       => Index,
+        Toggle      => False,
+        Is_Complete => False));
 
    procedure Put
       (This    : in out Session_Manager;
@@ -94,7 +104,7 @@ package body ACO.SDO_Sessions is
        Id   : in     Valid_Endpoint_Nr)
    is
    begin
-      This.List (Id) := (None, No_Endpoint);
+      This.List (Id) := (None, No_Endpoint, (0,0), False);
       This.Buffers (Id).Flush;
    end Clear;
 
