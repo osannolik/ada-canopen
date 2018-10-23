@@ -763,10 +763,11 @@ package body ACO.Protocols.Service_Data is
    end Write_Remote_Entry;
 
    procedure Read_Remote_Entry
-      (This     : in out SDO;
-       Node     : in     Node_Nr;
-       Index    : in     Object_Index;
-       Subindex : in     Object_Subindex)
+      (This        : in out SDO;
+       Node        : in     Node_Nr;
+       Index       : in     Object_Index;
+       Subindex    : in     Object_Subindex;
+       Endpoint_Id :    out Endpoint_Nr)
    is
       Endpoint : constant Endpoint_Type := Get_Endpoint
          (Server_Node       => Node,
@@ -774,11 +775,14 @@ package body ACO.Protocols.Service_Data is
           Server_Parameters => This.Od.Get_SDO_Server_Parameters);
       Cmd : ACO.SDO_Commands.Upload_Initiate_Cmd;
    begin
+      Endpoint_Id := Endpoint.Id;
+
       if Endpoint.Id = No_Endpoint_Id then
          This.SDO_Log (ACO.Log.Warning,
                        "Node" & Node'Img & " is not a server for any Client");
          return;
       elsif This.Sessions.Service (Endpoint.Id) /= None then
+         Endpoint_Id := No_Endpoint_Id;
          This.SDO_Log (ACO.Log.Warning,
                        "Client endpoint" & Endpoint.Id'Img & " already in use");
          return;
@@ -791,6 +795,33 @@ package body ACO.Protocols.Service_Data is
       This.Sessions.Put (Create_Upload (Endpoint, (Index, Subindex)));
       This.Start_Alarm (Endpoint);
    end Read_Remote_Entry;
+
+   function Is_Entry_Read_Complete
+      (This        : SDO;
+       Endpoint_Id : Valid_Endpoint_Nr)
+       return Boolean
+   is
+      Session : constant SDO_Session := This.Sessions.Get (Endpoint_Id);
+   begin
+      case Session.Service is
+         when Upload =>
+            return Session.Is_Complete;
+         when None | Download | Block_Download | Block_Upload =>
+            return False;
+      end case;
+   end Is_Entry_Read_Complete;
+
+   procedure Get_Read_Entry
+      (This        : in out SDO;
+       Endpoint_Id : in     Valid_Endpoint_Nr;
+       Read_Entry  : in out Entry_Base'Class)
+   is
+      Data : Data_Array (0 .. Read_Entry.Data_Length - 1);
+   begin
+      This.Sessions.Get_Buffer (Endpoint_Id, Data);
+      Read_Entry.Write (Byte_Array (Data));
+      This.Sessions.Clear (Endpoint_Id);
+   end Get_Read_Entry;
 
    procedure Periodic_Actions
       (This  : in out SDO;

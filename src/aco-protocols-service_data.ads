@@ -4,10 +4,10 @@ with ACO.OD;
 with ACO.OD_Types;
 with ACO.Drivers;
 with ACO.States;
+with ACO.SDO_Sessions;
 
 private with ACO.Log;
 private with ACO.Utils.Generic_Alarms;
-private with ACO.SDO_Sessions;
 private with ACO.Configuration;
 private with ACO.SDO_Commands;
 
@@ -15,6 +15,7 @@ package ACO.Protocols.Service_Data is
 
    use ACO.Messages;
    use ACO.OD_Types;
+   use ACO.SDO_Sessions;
 
    SDO_S2C_Id : constant Function_Code := 16#B#;
    SDO_C2S_Id : constant Function_Code := 16#C#;
@@ -40,13 +41,25 @@ package ACO.Protocols.Service_Data is
        An_Entry : in     Entry_Base'Class);
 
    procedure Read_Remote_Entry
-      (This     : in out SDO;
-       Node     : in     Node_Nr;
-       Index    : in     Object_Index;
-       Subindex : in     Object_Subindex);
+      (This        : in out SDO;
+       Node        : in     Node_Nr;
+       Index       : in     Object_Index;
+       Subindex    : in     Object_Subindex;
+       Endpoint_Id :    out Endpoint_Nr);
+
+   function Is_Entry_Read_Complete
+      (This        : SDO;
+       Endpoint_Id : Valid_Endpoint_Nr)
+       return Boolean;
+
+   procedure Get_Read_Entry
+      (This        : in out SDO;
+       Endpoint_Id : in     Valid_Endpoint_Nr;
+       Read_Entry  : in out Entry_Base'Class)
+      with Pre => This.Is_Entry_Read_Complete (Endpoint_Id);
 
 private
-   use ACO.SDO_Sessions;
+
 
    type Error_Type is
       (Nothing,
