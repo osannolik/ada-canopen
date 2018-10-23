@@ -91,6 +91,59 @@ package body ACO.Protocols.Service_Data.Test is
       end;
    end Expedited_Download_Test;
 
+   procedure Expedited_Upload_Test
+   is
+      use ACO.SDO_Commands;
+      use ACO.OD_Types.Entries;
+
+      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
+      OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      Driver  : aliased ACO.Drivers.Dummy.Dummy_Driver;
+      S       : SDO (OD'Access, Driver'Access);
+
+      Msg          : Message;
+      Endpoint_Id  : Endpoint_Nr;
+      Target_Entry : Entry_U16;
+      Value        : constant := 500;
+   begin
+      S.Od.Set_Heartbeat_Producer_Period (Value);
+      S.Od.Set_Node_State (ACO.States.Pre_Operational);
+
+      S.Read_Remote_Entry
+         (Node        => 1,
+          Index       => ACO.OD.Heartbeat_Producer_Index,
+          Subindex    => 0,
+          Endpoint_Id => Endpoint_Id);
+
+      --  As server, receive and process upload init request
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  As client, receive and process upload init response
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  Read should be indicated as success
+      Assert (S.Is_Entry_Read_Complete (Endpoint_Id),
+              "Client has not completed upload");
+
+      S.Get_Read_Entry (Endpoint_Id => Endpoint_Id,
+                        Read_Entry  => Target_Entry);
+
+      --  Check for uploaded value
+      Assert (Target_Entry.Read = Value,
+              "Uploaded value incorrect");
+
+      --  Nothing more should have been sent
+      Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
+              "Client should not have sent a massage");
+
+      --  All sessions should be closed (service = None)
+      Assert (For_All_Sessions_Check_State (S, None),
+              "A session has not been ended properly");
+
+   end Expedited_Upload_Test;
+
    procedure Segmented_Download_Test
    is
       use ACO.SDO_Commands;
@@ -349,6 +402,8 @@ package body ACO.Protocols.Service_Data.Test is
       Expedited_Download_Test;
       Segmented_Download_Test;
       Download_Timeout_Test;
+
+      Expedited_Upload_Test;
    end Run_Test;
 
 end ACO.Protocols.Service_Data.Test;
