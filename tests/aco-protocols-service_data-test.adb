@@ -45,7 +45,6 @@ package body ACO.Protocols.Service_Data.Test is
 
    procedure Expedited_Download_Test
    is
-      use ACO.SDO_Commands;
       use ACO.OD_Types.Entries;
 
       OD_Data : aliased ACO.OD.Example.Dictionary_Data;
@@ -93,7 +92,6 @@ package body ACO.Protocols.Service_Data.Test is
 
    procedure Expedited_Upload_Test
    is
-      use ACO.SDO_Commands;
       use ACO.OD_Types.Entries;
 
       OD_Data : aliased ACO.OD.Example.Dictionary_Data;
@@ -146,8 +144,6 @@ package body ACO.Protocols.Service_Data.Test is
 
    procedure Segmented_Download_Test
    is
-      use ACO.SDO_Commands;
-      use ACO.OD_Types.Entries;
       use ACO.OD.Example;
 
       OD_Data : aliased ACO.OD.Example.Dictionary_Data;
@@ -212,6 +208,85 @@ package body ACO.Protocols.Service_Data.Test is
       end;
    end Segmented_Download_Test;
 
+   procedure Segmented_Upload_Test
+   is
+      use ACO.OD.Example;
+
+      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
+      OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      Driver  : aliased ACO.Drivers.Dummy.Dummy_Driver;
+      S       : SDO (OD'Access, Driver'Access);
+
+      Msg          : Message;
+      Endpoint_Id  : Endpoint_Nr;
+      Read_Entry   : Device_Name_Entry;
+      Value        : constant Device_Name_String := "Random values";
+      Known_Entry  : constant Entry_Base'Class :=
+         Device_Name_Entry'(Create (RW, Value));
+   begin
+      S.Od.Set_Node_State (ACO.States.Pre_Operational);
+
+      --  Set to a known value
+      S.Od.Set_Entry
+         (New_Entry => Known_Entry,
+          Index     => 16#1008#,
+          Subindex  => 0);
+
+      S.Read_Remote_Entry
+         (Node        => 1,
+          Index       => 16#1008#,
+          Subindex    => 0,
+          Endpoint_Id => Endpoint_Id);
+
+      --  As server, receive and process upload init request
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  As client, receive and process upload init response
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  Read should be indicated as NOT successful
+      Assert (not S.Is_Entry_Read_Complete (Endpoint_Id),
+              "Client has completed upload prematurely");
+
+      --  As server, receive and process upload segment request
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  As client, receive and process segment of length 7
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  As server, receive and process upload segment request
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  As client, receive and process segment of length 6
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  Read should be indicated as successful
+      Assert (S.Is_Entry_Read_Complete (Endpoint_Id),
+              "Client has not completed upload");
+
+      S.Get_Read_Entry (Endpoint_Id => Endpoint_Id,
+                        Read_Entry  => Read_Entry);
+
+      --  Check for uploaded value
+      Assert (Read_Entry.Read = Value,
+              "Uploaded value incorrect");
+
+      --  Nothing more should have been sent
+      Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
+              "Client should not have sent a massage");
+
+      --  All sessions should be closed (service = None)
+      Assert (For_All_Sessions_Check_State (S, None),
+              "A session has not been ended properly");
+
+   end Segmented_Upload_Test;
+
    function To_Error (Msg : Message) return Error_Type is
       use ACO.SDO_Commands;
       use type ACO.SDO_Commands.Abort_Code_Type;
@@ -227,8 +302,6 @@ package body ACO.Protocols.Service_Data.Test is
 
    procedure Download_Timeout_Test
    is
-      use ACO.SDO_Commands;
-      use ACO.OD_Types.Entries;
       use ACO.OD.Example;
 
       OD_Data : aliased ACO.OD.Example.Dictionary_Data;
@@ -404,6 +477,7 @@ package body ACO.Protocols.Service_Data.Test is
       Download_Timeout_Test;
 
       Expedited_Upload_Test;
+      Segmented_Upload_Test;
    end Run_Test;
 
 end ACO.Protocols.Service_Data.Test;
