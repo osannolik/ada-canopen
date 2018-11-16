@@ -469,6 +469,172 @@ package body ACO.Protocols.Service_Data.Test is
       end;
    end Download_Timeout_Test;
 
+   procedure Upload_Timeout_Test
+   is
+      use ACO.OD.Example;
+
+      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
+      OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      Driver  : aliased ACO.Drivers.Dummy.Dummy_Driver;
+      S       : SDO (OD'Access, Driver'Access);
+      Timeout : constant := ACO.Configuration.SDO_Session_Timeout_Ms;
+
+      Msg         : Message;
+      Endpoint_Id : Endpoint_Nr;
+   begin
+      T_Now := Ada.Real_Time.Clock;
+
+      S.Od.Set_Node_State (ACO.States.Pre_Operational);
+
+      -----------------------------------------------------------------------
+      --  # 1. First message lost or server not responding
+      -----------------------------------------------------------------------
+      S.Read_Remote_Entry
+         (Node        => 1,
+          Index       => 16#1008#,
+          Subindex    => 0,
+          Endpoint_Id => Endpoint_Id);
+
+      --  The message that got away...
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+
+      Let_Time_Pass (S, Timeout + 10);
+
+      --  Client should have sent an abort message
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+      Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
+              "Incorrect abort code");
+
+      --  Nothing more should have been sent
+      Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
+              "Client should not have sent a massage");
+
+      --  All sessions should be closed (service = None)
+      Assert (For_All_Sessions_Check_State (S, None),
+              "A session has not been ended properly");
+
+      -----------------------------------------------------------------------
+      --  # 2. Server response message lost or client not responding
+      -----------------------------------------------------------------------
+      S.Read_Remote_Entry
+         (Node        => 1,
+          Index       => 16#1008#,
+          Subindex    => 0,
+          Endpoint_Id => Endpoint_Id);
+
+      --  As server, receive and process upload init request
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  The message that got away...
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+
+      Let_Time_Pass (S, Timeout + 10);
+
+      --  Client and Server should have sent an abort message
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+      Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
+              "Incorrect abort code");
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+      Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
+              "Incorrect abort code");
+
+      --  Nothing more should have been sent
+      Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
+              "Client should not have sent a massage");
+
+      --  All sessions should be closed (service = None)
+      Assert (For_All_Sessions_Check_State (S, None),
+              "A session has not been ended properly");
+
+      -----------------------------------------------------------------------
+      --  # 3. Client upload request lost or server not responding
+      -----------------------------------------------------------------------
+      S.Read_Remote_Entry
+         (Node        => 1,
+          Index       => 16#1008#,
+          Subindex    => 0,
+          Endpoint_Id => Endpoint_Id);
+
+      --  As server, receive and process upload init request
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  As client, receive and process upload init response
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  The message that got away...
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+
+      Let_Time_Pass (S, Timeout + 10);
+
+      --  Client and Server should have sent an abort message
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+      Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
+              "Incorrect abort code");
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+      Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
+              "Incorrect abort code");
+
+      --  Nothing more should have been sent
+      Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
+              "Client should not have sent a massage");
+
+      --  All sessions should be closed (service = None)
+      Assert (For_All_Sessions_Check_State (S, None),
+              "A session has not been ended properly");
+
+      -----------------------------------------------------------------------
+      --  # 4. Server segment response message lost or client not responding
+      -----------------------------------------------------------------------
+      S.Read_Remote_Entry
+         (Node        => 1,
+          Index       => 16#1008#,
+          Subindex    => 0,
+          Endpoint_Id => Endpoint_Id);
+
+      --  As server, receive and process upload init request
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  As client, receive and process upload init response
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  As server, receive and process upload request
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+
+      --  The message that got away...
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+
+      Let_Time_Pass (S, Timeout + 10);
+
+      --  Client and Server should have sent an abort message
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+      Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
+              "Incorrect abort code");
+      Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
+      S.Message_Received (Msg);
+      Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
+              "Incorrect abort code");
+
+      --  Nothing more should have been sent
+      Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
+              "Client should not have sent a massage");
+
+      --  All sessions should be closed (service = None)
+      Assert (For_All_Sessions_Check_State (S, None),
+              "A session has not been ended properly");
+   end Upload_Timeout_Test;
+
    procedure Run_Test (T : in out Test) is
       pragma Unreferenced (T);
    begin
@@ -478,6 +644,7 @@ package body ACO.Protocols.Service_Data.Test is
 
       Expedited_Upload_Test;
       Segmented_Upload_Test;
+      Upload_Timeout_Test;
    end Run_Test;
 
 end ACO.Protocols.Service_Data.Test;
