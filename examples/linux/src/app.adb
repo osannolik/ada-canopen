@@ -12,9 +12,7 @@ with Ada.Exceptions;
 
 package body App is
 
-   O_Data : aliased ACO.OD.Example.Dictionary_Data;
-
-   O : aliased ACO.OD.Object_Dictionary (O_Data'Access);
+   O : aliased ACO.OD.Example.Dictionary;
 
    D : aliased ACO.Drivers.Socket.CAN_Driver;
 

@@ -7,31 +7,31 @@ package body ACO.OD is
    use ACO.OD_Types.Entries;
    use Interfaces;
 
-   function Objects
+   function Object
       (This  : Object_Dictionary'Class;
        Index : Object_Index)
        return Object_Ref
    is
-      (This.Data.Objects (This.Data.Index_Map (Index)));
+      (This.Objects (This.Index_Map (Index)));
 
    function Object_Exist
       (This  : Object_Dictionary'Class;
        Index : Object_Index) return Boolean
-   is (This.Data.Index_Map (Index) /= No_Index);
+   is (This.Index_Map (Index) /= No_Index);
 
    function Entry_Exist
       (This     : Object_Dictionary'Class;
        Index    : Object_Index;
        Subindex : Object_Subindex) return Boolean
    is
-      Arr_Idx : constant Index_Type := This.Data.Index_Map (Index);
+      Arr_Idx : constant Index_Type := This.Index_Map (Index);
    begin
       return Arr_Idx /= No_Index and then
-         Subindex in This.Data.Objects (Arr_Idx).Entries'Range;
+         Subindex in This.Objects (Arr_Idx).Entries'Range;
    end Entry_Exist;
 
    function Is_Entry_Compatible
-      (This     : Object_Dictionary'Class;
+      (This     : Object_Dictionary;
        An_Entry : Entry_Base'Class;
        Index    : Object_Index;
        Subindex : Object_Subindex)
@@ -39,53 +39,53 @@ package body ACO.OD is
    is
       use type Ada.Tags.Tag;
 
-      OD_Entry : constant Entry_Ref := This.Objects (Index).Entries (Subindex);
+      OD_Entry : constant Entry_Ref := This.Object (Index).Entries (Subindex);
    begin
       return OD_Entry'Tag = An_Entry'Tag;
    end Is_Entry_Compatible;
 
    function Is_Entry_Writable
-      (This  : Object_Dictionary'Class;
+      (This  : Object_Dictionary;
        Index : Entry_Index)
        return Boolean
    is
    begin
       if This.Entry_Exist (Index.Object, Index.Sub) then
-         return This.Objects (Index.Object).Entries (Index.Sub).Is_Writable;
+         return This.Object (Index.Object).Entries (Index.Sub).Is_Writable;
       else
          return False;
       end if;
    end Is_Entry_Writable;
 
    function Is_Entry_Readable
-      (This  : Object_Dictionary'Class;
+      (This  : Object_Dictionary;
        Index : Entry_Index)
        return Boolean
    is
    begin
       if This.Entry_Exist (Index.Object, Index.Sub) then
-         return This.Objects (Index.Object).Entries (Index.Sub).Is_Readable;
+         return This.Object (Index.Object).Entries (Index.Sub).Is_Readable;
       else
          return False;
       end if;
    end Is_Entry_Readable;
 
    function Get_Entry
-      (This     : Object_Dictionary'Class;
+      (This     : Object_Dictionary;
        Index    : Object_Index;
        Subindex : Object_Subindex) return Entry_Base'Class
    is
-      (This.Objects (Index).Entries (Subindex).all);
+      (This.Object (Index).Entries (Subindex).all);
 
    procedure Set_Entry
-      (This      : in out Object_Dictionary'Class;
+      (This      : in out Object_Dictionary;
        New_Entry : in     Entry_Base'Class;
        Index     : in     Object_Index;
        Subindex  : in     Object_Subindex;
        Silently  : in     Boolean := False)
    is
    begin
-      This.Objects (Index).Entries (Subindex).all := New_Entry;
+      This.Object (Index).Entries (Subindex).all := New_Entry;
       if not Silently then
          This.Events.Entry_Updated.Put ((Index, Subindex));
       end if;
@@ -113,7 +113,7 @@ package body ACO.OD is
        Node_Id : ACO.Messages.Node_Nr)
        return Object_Subindex
    is
-      Object : constant Object_Ref := This.Objects (Heartbeat_Consumer_Index);
+      Object : constant Object_Ref := This.Object (Heartbeat_Consumer_Index);
    begin
       for I in 1 .. Object.Entries'Last loop
          declare

@@ -23,11 +23,16 @@ package ACO.OD is
       Events : ACO.Events.Event_Manager;
    end record;
 
-   type Object_Data_Base is abstract tagged limited private;
+   type Object_Dictionary is abstract new Object_Dictionary_Base with private;
 
-   type Object_Dictionary (Data : not null access Object_Data_Base'Class) is
-      new Object_Dictionary_Base with private;
+   function Objects
+      (This : Object_Dictionary)
+       return Profile_Objects_Ref is abstract;
 
+   function Index_Map
+      (This  : Object_Dictionary;
+       Index : Object_Index)
+       return Index_Type is abstract;
 
    function Object_Exist
       (This  : Object_Dictionary'Class;
@@ -41,7 +46,7 @@ package ACO.OD is
        return Boolean;
 
    function Is_Entry_Compatible
-      (This     : Object_Dictionary'Class;
+      (This     : Object_Dictionary;
        An_Entry : Entry_Base'Class;
        Index    : Object_Index;
        Subindex : Object_Subindex)
@@ -49,23 +54,23 @@ package ACO.OD is
       with Pre => This.Entry_Exist (Index, Subindex);
 
    function Is_Entry_Writable
-      (This  : Object_Dictionary'Class;
+      (This  : Object_Dictionary;
        Index : Entry_Index)
        return Boolean;
 
    function Is_Entry_Readable
-      (This  : Object_Dictionary'Class;
+      (This  : Object_Dictionary;
        Index : Entry_Index)
        return Boolean;
 
    function Get_Entry
-      (This     : Object_Dictionary'Class;
+      (This     : Object_Dictionary;
        Index    : Object_Index;
        Subindex : Object_Subindex) return Entry_Base'Class
       with Pre => This.Entry_Exist (Index, Subindex);
 
    procedure Set_Entry
-      (This      : in out Object_Dictionary'Class;
+      (This      : in out Object_Dictionary;
        New_Entry : in     Entry_Base'Class;
        Index     : in     Object_Index;
        Subindex  : in     Object_Subindex;
@@ -135,28 +140,11 @@ package ACO.OD is
 
 private
 
-   type Object_Data_Base is abstract tagged limited null record;
-
-   function Objects
-      (This : Object_Data_Base)
-       return Profile_Objects_Ref
-   is
-      (null);
-
-   function Index_Map
-      (This  : Object_Data_Base;
-       Index : Object_Index)
-       return Index_Type
-   is
-      (No_Index);
-
-   type Object_Dictionary (Data : not null access Object_Data_Base'Class) is
-      new Object_Dictionary_Base with
-   record
+   type Object_Dictionary is abstract new Object_Dictionary_Base with record
       Node_State : ACO.States.State := ACO.States.Unknown_State;
    end record;
 
-   function Objects
+   function Object
       (This  : Object_Dictionary'Class;
        Index : Object_Index)
        return Object_Ref
