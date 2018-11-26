@@ -57,9 +57,13 @@ package SocketCAN is
      (Socket : in Socket_Type;
       Frame  : in Can_Frame);
 
-   procedure Receive_Socket
+   procedure Receive_Socket_Blocking
      (Socket : in     Socket_Type;
       Frame  :    out Can_Frame);
+
+   function Is_Frame_Pending
+      (Socket : Socket_Type)
+       return Boolean;
 
 private
 
@@ -81,5 +85,20 @@ private
        Msg : System.Address;
        Len : C.int) return C.int;
    pragma Import (C, C_Read, "read");
+
+   type Poll_Fd is record
+      Fd      : C.int;
+      Events  : C.short;
+      Revents : C.short;
+   end record;
+   pragma Convention (C, Poll_Fd);
+
+   subtype Nfds is C.unsigned_long;
+
+   function C_Poll
+      (Fds     : System.Address;
+       N_Fds   : Nfds;
+       Timeout : C.int) return C.int;
+   pragma Import (C, C_Poll, "poll");
 
 end SocketCAN;

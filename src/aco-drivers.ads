@@ -10,7 +10,7 @@ package ACO.Drivers is
 
    type Driver_Access is access all Driver'Class;
 
-   procedure Await_Message
+   procedure Receive_Message_Blocking
      (This : in out Driver;
       Msg  :    out Message) is abstract;
 
@@ -20,5 +20,9 @@ package ACO.Drivers is
 
    procedure Initialize
      (This : in out Driver) is abstract;
+
+   function Is_Message_Pending
+      (This : Driver)
+       return Boolean is abstract;
 
 end ACO.Drivers;

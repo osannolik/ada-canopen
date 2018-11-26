@@ -5,7 +5,7 @@ package body ACO.Drivers.Socket is
    use ACO.Log;
 
    overriding
-   procedure Await_Message
+   procedure Receive_Message_Blocking
      (This : in out CAN_Driver;
       Msg  :    out Message)
    is
@@ -13,7 +13,7 @@ package body ACO.Drivers.Socket is
 
       Frame : Can_Frame;
    begin
-      Receive_Socket (This.Socket, Frame);
+      Receive_Socket_Blocking (This.Socket, Frame);
 
       Msg := (CAN_Id => (True, Id_Type (Frame.Can_Id)),
               RTR    => Frame.Rtr,
@@ -23,7 +23,7 @@ package body ACO.Drivers.Socket is
       when E: others =>
          Put_Line (Warning, Ada.Exceptions.Exception_Information (E));
 
-   end Await_Message;
+   end Receive_Message_Blocking;
 
    overriding
    procedure Send_Message
@@ -58,5 +58,14 @@ package body ACO.Drivers.Socket is
          Put_Line (Error, Ada.Exceptions.Exception_Information (E));
 
    end Initialize;
+
+   overriding
+   function Is_Message_Pending
+      (This : CAN_Driver)
+       return Boolean
+   is
+   begin
+      return SocketCAN.Is_Frame_Pending (This.Socket);
+   end Is_Message_Pending;
 
 end ACO.Drivers.Socket;

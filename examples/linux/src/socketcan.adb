@@ -104,7 +104,7 @@ package body SocketCAN is
       end if;
    end Send_Socket;
 
-   procedure Receive_Socket
+   procedure Receive_Socket_Blocking
      (Socket : in     Socket_Type;
       Frame  :    out Can_Frame)
    is
@@ -112,8 +112,9 @@ package body SocketCAN is
 
       Msg : aliased Can_Defs.C_Can_Frame;
       Mtu : constant C.int := Msg'Size / 8;
-      Res : constant C.int := C_Read (C.int (Socket), Msg'Address, Mtu);
+      Res : C.int;
    begin
+      Res := C_Read (C.int (Socket), Msg'Address, Mtu);
       if Res = Failure then
          raise SocketCAN_Error with
             "Failed to read message: read return value " & Res'Img;
@@ -123,7 +124,7 @@ package body SocketCAN is
       end if;
 
       Frame := Convert (Msg);
-   end Receive_Socket;
+   end Receive_Socket_Blocking;
 
    Protocols : constant array (Protocol_Type) of C.int :=
       (RAW    => 1,
@@ -179,5 +180,29 @@ package body SocketCAN is
          end if;
       end;
    end Bind_Socket;
+
+   function Is_Frame_Pending
+      (Socket : Socket_Type)
+       return Boolean
+   is
+      use type C.short;
+
+      POLLIN : constant C.short := 16#0001#;
+      Pfd : aliased Poll_Fd :=
+         (Fd      => C.int (Socket),
+          Events  => POLLIN,
+          Revents => 0);
+      Res : C.int;
+   begin
+      Res := C_Poll (Fds     => Pfd'Address,
+                     N_Fds   => 1,
+                     Timeout => 0);
+      if Res < 0 then
+         raise SocketCAN_Error with
+            "Polling error" & Res'Img & " (revents =" & Pfd.Revents'Img & ")";
+      end if;
+
+      return (Pfd.Revents = POLLIN);
+   end Is_Frame_Pending;
 
 end SocketCAN;
