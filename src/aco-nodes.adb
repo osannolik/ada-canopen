@@ -1,5 +1,3 @@
-with Ada.Real_Time;
-
 package body ACO.Nodes is
 
    procedure Init
@@ -71,58 +69,72 @@ package body ACO.Nodes is
 
    task body Receiver_Task
    is
-      use ACO.Log;
-
-      Msg : Message;
    begin
       Ada.Synchronous_Task_Control.Suspend_Until_True (This.Start_Receiver_Task);
-      This.Node_Log (Debug, "Starting receiver task...");
+      This.Node_Log (ACO.Log.Debug, "Starting receiver task...");
 
       loop
-         This.Driver.Await_Message (Msg);
-
-         This.Node_Log (Debug, "Received message " & Image (Msg));
-
-         if not This.Received_Messages.Is_Full then
-            This.Received_Messages.Put_Blocking (Msg);
-         else
-            This.Node_Log (Warning, "Ignoring message: buffer full");
-         end if;
+         This.Get_Received_Messages (Block => True);
       end loop;
    end Receiver_Task;
 
+   procedure Get_Received_Messages
+      (This  : in out Node;
+       Block : in     Boolean := False)
+   is
+      Msg : Message;
+   begin
+      if Block or else This.Driver.Is_Message_Pending then
+         This.Driver.Receive_Message_Blocking (Msg);
+         This.Node_Log (ACO.Log.Debug, "Received message " & Image (Msg));
+
+         if This.Received_Messages.Is_Full then
+            This.Node_Log (ACO.Log.Warning, "Ignoring message: buffer full");
+         else
+            This.Received_Messages.Put_Blocking (Msg);
+         end if;
+      end if;
+   end Get_Received_Messages;
+
+   procedure Process_Received_Messages
+      (This : in out Node)
+   is
+      Msg : Message;
+   begin
+      while not This.Received_Messages.Is_Empty loop
+         This.Received_Messages.Get (Msg);
+         This.Dispatch (Msg);
+      end loop;
+   end Process_Received_Messages;
+
+   procedure Periodic_Actions
+      (This  : in out Node;
+       T_Now : in     Ada.Real_Time.Time)
+   is
+   begin
+      This.Od.Events.Process;
+
+      This.EC.Periodic_Actions (T_Now);
+      This.SDO.Periodic_Actions (T_Now);
+      This.SYNC.Periodic_Actions (T_Now);
+
+      This.Process_Received_Messages;
+   end Periodic_Actions;
+
    task body Periodic_Task
    is
-      use ACO.Log;
-      use Ada.Real_Time;
-      use ACO.Messages.Buffer;
-      use ACO.States;
+      use type Ada.Real_Time.Time;
 
-      Next_Release : Time := Clock;
-      Period : constant Time_Span :=
-         Milliseconds (Configuration.Periodic_Task_Period_Ms);
+      Next_Release : Ada.Real_Time.Time;
+      Period : constant Ada.Real_Time.Time_Span :=
+         Ada.Real_Time.Milliseconds (Configuration.Periodic_Task_Period_Ms);
    begin
-      This.Node_Log (Debug, "Starting periodic worker task...");
+      This.Node_Log (ACO.Log.Debug, "Starting periodic worker task...");
+
+      Next_Release := Ada.Real_Time.Clock;
 
       loop
-         This.Od.Events.Process;
-
-         declare
-            T_Now : constant Time := Clock;
-         begin
-            This.EC.Periodic_Actions (T_Now);
-            This.SDO.Periodic_Actions (T_Now);
-            This.SYNC.Periodic_Actions (T_Now);
-         end;
-
-         while not This.Received_Messages.Is_Empty loop
-            declare
-               Msg : Message;
-            begin
-               This.Received_Messages.Get (Msg);
-               This.Dispatch (Msg);
-            end;
-         end loop;
+         This.Periodic_Actions (T_Now => Next_Release);
 
          Next_Release := Next_Release + Period;
          delay until Next_Release;

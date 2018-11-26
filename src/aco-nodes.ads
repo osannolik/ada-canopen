@@ -4,6 +4,7 @@ with ACO.Drivers;
 with ACO.Messages;
 with ACO.States;
 with ACO.OD;
+with Ada.Real_Time;
 
 private with Ada.Synchronous_Task_Control;
 private with ACO.Events;
@@ -27,9 +28,16 @@ package ACO.Nodes is
      (This  : in out Node;
       State : in     ACO.States.State);
 
-   procedure Dispatch
-     (This : in out Node;
-      Msg  : in     Message);
+   procedure Get_Received_Messages
+      (This  : in out Node;
+       Block : in     Boolean := False);
+
+   procedure Process_Received_Messages
+      (This : in out Node);
+
+   procedure Periodic_Actions
+      (This  : in out Node;
+       T_Now : in     Ada.Real_Time.Time);
 
    task type Receiver_Task (This : not null access Node'Class)
       with Priority => ACO.Configuration.Receiver_Task_Priority;
@@ -61,6 +69,10 @@ private
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Node'Access);
       Start_Receiver_Task : Ada.Synchronous_Task_Control.Suspension_Object;
    end record;
+
+   procedure Dispatch
+      (This : in out Node;
+       Msg  : in     Message);
 
    procedure Node_Log
      (This    : in out Node;

@@ -1,4 +1,4 @@
-with Ada.Real_Time; use Ada.Real_Time;
+with Ada.Real_Time;
 with ACO.Drivers.Socket;
 with ACO.Nodes;
 with ACO.States;
@@ -11,7 +11,6 @@ with Ada.Text_IO;
 with Ada.Exceptions;
 
 package body App is
-   use Ada.Text_IO;
 
    O_Data : aliased ACO.OD.Example.Dictionary_Data;
 
@@ -27,7 +26,10 @@ package body App is
 
    procedure Run
    is
-      Next_Release : Time := Clock;
+      use Ada.Text_IO;
+      use type Ada.Real_Time.Time;
+
+      Next_Release : Ada.Real_Time.Time;
    begin
       ACO.Log.Set_Stream (Text_Streams.Stream (Current_Output));
       ACO.Log.Set_Level (ACO.Log.Debug);
@@ -36,8 +38,14 @@ package body App is
 
       N.Set_State (ACO.States.Initializing);
 
+      Next_Release := Ada.Real_Time.Clock;
+
       loop
-         Next_Release := Next_Release + Milliseconds (500);
+         --  N.Get_Received_Messages (Block => False);
+
+         --  N.Periodic_Actions (T_Now => Next_Release);
+
+         Next_Release := Next_Release + Ada.Real_Time.Milliseconds (1);
          delay until Next_Release;
       end loop;
 
