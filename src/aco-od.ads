@@ -45,7 +45,8 @@ package ACO.OD is
        An_Entry : Entry_Base'Class;
        Index    : Object_Index;
        Subindex : Object_Subindex)
-       return Boolean;
+       return Boolean
+      with Pre => This.Entry_Exist (Index, Subindex);
 
    function Is_Entry_Writable
       (This  : Object_Dictionary'Class;
@@ -83,44 +84,54 @@ package ACO.OD is
    procedure Set_Heartbeat_Consumer_Period
       (This    : in out Object_Dictionary;
        Node_Id : in     ACO.Messages.Node_Nr;
-       Period  : in     Natural);
+       Period  : in     Natural)
+      with Pre => This.Object_Exist (Heartbeat_Consumer_Index);
 
    function Get_Heartbeat_Consumer_Period
       (This    : Object_Dictionary;
        Node_Id : ACO.Messages.Node_Nr)
-       return Natural;
+       return Natural
+      with Pre => This.Object_Exist (Heartbeat_Consumer_Index);
 
    procedure Set_Heartbeat_Producer_Period
       (This    : in out Object_Dictionary;
-       Period  : in     Natural);
+       Period  : in     Natural)
+      with Pre => This.Entry_Exist (Heartbeat_Producer_Index, 0);
 
    function Get_Heartbeat_Producer_Period
       (This : Object_Dictionary)
-       return Natural;
+       return Natural
+      with Pre => This.Entry_Exist (Heartbeat_Producer_Index, 0);
 
    procedure Set_Communication_Cycle_Period
       (This    : in out Object_Dictionary;
-       Period  : in     Natural);
+       Period  : in     Natural)
+      with Pre => This.Entry_Exist (Comm_Cycle_Period_Index, 0);
 
    function Get_Communication_Cycle_Period
       (This : Object_Dictionary)
-       return Natural;
+       return Natural
+      with Pre => This.Entry_Exist (Comm_Cycle_Period_Index, 0);
 
    procedure Set_Sync_Counter_Overflow
       (This    : in out Object_Dictionary;
-       Period  : in     Natural);
+       Period  : in     Natural)
+      with Pre => This.Entry_Exist (Sync_Counter_Overflow_Index, 0);
 
    function Get_Sync_Counter_Overflow
       (This : Object_Dictionary)
-       return Natural;
+       return Natural
+      with Pre => This.Entry_Exist (Sync_Counter_Overflow_Index, 0);
 
    function Get_SDO_Server_Parameters
       (This : Object_Dictionary)
-       return ACO.SDO_Sessions.SDO_Parameter_Array;
+       return ACO.SDO_Sessions.SDO_Parameter_Array
+      with Pre => This.Object_Exist (SDO_Server_Base_Index);
 
    function Get_SDO_Client_Parameters
       (This : Object_Dictionary)
-       return ACO.SDO_Sessions.SDO_Parameter_Array;
+       return ACO.SDO_Sessions.SDO_Parameter_Array
+      with Pre => This.Object_Exist (SDO_Client_Base_Index);
 
 private
 
@@ -139,47 +150,16 @@ private
    is
       (No_Index);
 
-   protected type Barrier_Type (Data : not null access Object_Data_Base'Class)
-   is
-
-      function Get_Entry
-         (Index    : Object_Index;
-          Subindex : Object_Subindex)
-          return Entry_Base'Class;
-
-      procedure Set_Entry
-         (New_Entry : in Entry_Base'Class;
-          Index     : in Object_Index;
-          Subindex  : in Object_Subindex);
-
-      function Get_Node_State return ACO.States.State;
-
-      procedure Set_Node_State
-         (New_State  : in     ACO.States.State;
-          Prev_State :    out ACO.States.State);
-
-      procedure Set_Heartbeat_Consumer_Period
-         (Node_Id  : in     ACO.Messages.Node_Nr;
-          Period   : in     Natural;
-          Subindex :    out Object_Subindex);
-
-      function Get_Heartbeat_Consumer_Period
-         (Node_Id : ACO.Messages.Node_Nr) return Natural;
-
-      function Get_SDO_Server_Parameters
-         return ACO.SDO_Sessions.SDO_Parameter_Array;
-
-      function Get_SDO_Client_Parameters
-         return ACO.SDO_Sessions.SDO_Parameter_Array;
-
-   private
-      Node_State   : ACO.States.State := ACO.States.Unknown_State;
-   end Barrier_Type;
-
    type Object_Dictionary (Data : not null access Object_Data_Base'Class) is
       new Object_Dictionary_Base with
    record
-      Protected_Data : Barrier_Type (Data);
+      Node_State : ACO.States.State := ACO.States.Unknown_State;
    end record;
+
+   function Objects
+      (This  : Object_Dictionary'Class;
+       Index : Object_Index)
+       return Object_Ref
+      with Inline;
 
 end ACO.OD;
