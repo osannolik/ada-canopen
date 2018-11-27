@@ -41,7 +41,7 @@ package body ACO.Slave_Monitors is
       This.Slave_State := (Previous => This.Slave_State.Current,
                            Current  => Unknown_State);
       if This.Monitor_Ref /= null then
-         This.Monitor_Ref.Od.Events.Slave_State_Change.Update (This.Slave_State);
+         This.Monitor_Ref.Od.Events.Slave_State_Change.Put (This.Slave_State);
       end if;
    end Signal;
 
@@ -82,7 +82,7 @@ package body ACO.Slave_Monitors is
                                      Current  => Slave_State);
                This.Manager.Set
                   (Alarm'Unchecked_Access, Clock + Milliseconds (Period));
-               This.Od.Events.Slave_State_Change.Update (Alarm.Slave_State);
+               This.Od.Events.Slave_State_Change.Put (Alarm.Slave_State);
 
                exit;
             end if;
@@ -107,7 +107,7 @@ package body ACO.Slave_Monitors is
                                      Current  => Slave_State);
                This.Manager.Set
                   (Alarm'Unchecked_Access, Clock + Milliseconds (Period));
-               This.Od.Events.Slave_State_Change.Update (Alarm.Slave_State);
+               This.Od.Events.Slave_State_Change.Put (Alarm.Slave_State);
             else
                Alarm.Node_Id := Not_A_Slave;
             end if;

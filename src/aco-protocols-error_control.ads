@@ -98,7 +98,7 @@ private
        Od     : not null access ACO.OD.Object_Dictionary'Class;
        Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
    record
-      Event_Manager : Alarms.Alarm_Manager;
+      Timers : Alarms.Alarm_Manager;
       Producer_Alarm : aliased Heartbeat_Producer_Alarm (EC'Access);
       Monitor : ACO.Slave_Monitors.Slave_Monitor (Od);
       Entry_Update : aliased Entry_Update_Subscriber (EC'Access);

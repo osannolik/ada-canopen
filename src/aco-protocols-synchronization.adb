@@ -66,7 +66,7 @@ package body ACO.Protocols.Synchronization is
          To_Ms_From_100us (SYNC_Ref.Od.Get_Communication_Cycle_Period);
    begin
       if Period > 0 then
-         SYNC_Ref.Event_Manager.Set (Alarm_Access (This), T_Now + Milliseconds (Period));
+         SYNC_Ref.Timers.Set (Alarm_Access (This), T_Now + Milliseconds (Period));
          SYNC_Ref.Send_Sync;
       end if;
    end Signal;
@@ -79,7 +79,7 @@ package body ACO.Protocols.Synchronization is
          To_Ms_From_100us (This.Od.Get_Communication_Cycle_Period);
    begin
       if Period > 0 then
-         This.Event_Manager.Set
+         This.Timers.Set
             (Alarm       => This.Producer_Alarm'Unchecked_Access,
              Signal_Time => Clock + Milliseconds (Period));
       end if;
@@ -88,7 +88,7 @@ package body ACO.Protocols.Synchronization is
    procedure Sync_Producer_Stop (This : in out SYNC)
    is
    begin
-      This.Event_Manager.Cancel (This.Producer_Alarm'Unchecked_Access);
+      This.Timers.Cancel (This.Producer_Alarm'Unchecked_Access);
    end Sync_Producer_Stop;
 
    overriding
@@ -128,7 +128,7 @@ package body ACO.Protocols.Synchronization is
 
       SYNC_Ref : access SYNC renames This.SYNC_Ref;
    begin
-      if SYNC_Ref.Event_Manager.Is_Pending (SYNC_Ref.Producer_Alarm'Access) then
+      if SYNC_Ref.Timers.Is_Pending (SYNC_Ref.Producer_Alarm'Access) then
          SYNC_Ref.Sync_Producer_Stop;
          SYNC_Ref.Counter_Reset;
          SYNC_Ref.Sync_Producer_Start;
@@ -152,7 +152,7 @@ package body ACO.Protocols.Synchronization is
        T_Now : in     Ada.Real_Time.Time)
    is
    begin
-      This.Event_Manager.Process (T_Now);
+      This.Timers.Process (T_Now);
    end Periodic_Actions;
 
    overriding

@@ -40,12 +40,12 @@ package body ACO.Protocols.Service_Data is
 
       Timeout_Alarm : Alarm renames This.Alarms (Endpoint.Id);
    begin
-      if This.Timeouts.Is_Pending (Timeout_Alarm'Unchecked_Access) then
-         This.Timeouts.Cancel (Timeout_Alarm'Unchecked_Access);
+      if This.Timers.Is_Pending (Timeout_Alarm'Unchecked_Access) then
+         This.Timers.Cancel (Timeout_Alarm'Unchecked_Access);
       end if;
 
       Timeout_Alarm.Id := Endpoint.Id;
-      This.Timeouts.Set
+      This.Timers.Set
          (Alarm       => Timeout_Alarm'Unchecked_Access,
           Signal_Time => Clock + Milliseconds (SDO_Session_Timeout_Ms));
    end Start_Alarm;
@@ -55,7 +55,7 @@ package body ACO.Protocols.Service_Data is
        Endpoint : in     Endpoint_Type)
    is
    begin
-      This.Timeouts.Cancel (This.Alarms (Endpoint.Id)'Unchecked_Access);
+      This.Timers.Cancel (This.Alarms (Endpoint.Id)'Unchecked_Access);
    end Stop_Alarm;
 
    procedure Send_Abort
@@ -828,7 +828,7 @@ package body ACO.Protocols.Service_Data is
        T_Now : in     Ada.Real_Time.Time)
    is
    begin
-      This.Timeouts.Process (T_Now);
+      This.Timers.Process (T_Now);
    end Periodic_Actions;
 
    overriding

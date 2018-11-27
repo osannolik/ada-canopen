@@ -146,7 +146,6 @@ package body ACO.OD is
          E := Entry_U32 (This.Get_Entry (Heartbeat_Consumer_Index, Subindex));
          E.Write (Set_Hbt_Period (E.Read, Period));
          This.Set_Entry (E, Heartbeat_Consumer_Index, Subindex);
-         This.Events.Entry_Updated.Put ((Heartbeat_Consumer_Index, Subindex));
       end if;
    end Set_Heartbeat_Consumer_Period;
 

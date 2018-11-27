@@ -40,7 +40,7 @@ package body ACO.Protocols.Error_Control is
       Period : constant Natural := EC_Ref.Od.Get_Heartbeat_Producer_Period;
    begin
       if Period > 0 then
-         EC_Ref.Event_Manager.Set (Alarm_Access (This), T_Now + Milliseconds (Period));
+         EC_Ref.Timers.Set (Alarm_Access (This), T_Now + Milliseconds (Period));
          EC_Ref.Send_Heartbeat (EC_Ref.Od.Get_Node_State);
       end if;
    end Signal;
@@ -53,7 +53,7 @@ package body ACO.Protocols.Error_Control is
       Immediately : constant Time := Clock;
    begin
       if Period > 0 then
-         This.Event_Manager.Set
+         This.Timers.Set
             (Alarm       => This.Producer_Alarm'Unchecked_Access,
              Signal_Time => Immediately);
       end if;
@@ -62,7 +62,7 @@ package body ACO.Protocols.Error_Control is
    procedure Heartbeat_Producer_Stop (This : in out EC)
    is
    begin
-      This.Event_Manager.Cancel (This.Producer_Alarm'Unchecked_Access);
+      This.Timers.Cancel (This.Producer_Alarm'Unchecked_Access);
    end Heartbeat_Producer_Stop;
 
    overriding
@@ -137,7 +137,7 @@ package body ACO.Protocols.Error_Control is
             EC_Ref.Monitor.Restart;
 
          when Heartbeat_Producer_Index =>
-            if EC_Ref.Event_Manager.Is_Pending (EC_Ref.Producer_Alarm'Access) then
+            if EC_Ref.Timers.Is_Pending (EC_Ref.Producer_Alarm'Access) then
                EC_Ref.Heartbeat_Producer_Stop;
                EC_Ref.Heartbeat_Producer_Start;
             end if;
@@ -151,7 +151,7 @@ package body ACO.Protocols.Error_Control is
        T_Now : in     Ada.Real_Time.Time)
    is
    begin
-      This.Event_Manager.Process (T_Now);
+      This.Timers.Process (T_Now);
       This.Monitor.Update_Alarms (T_Now);
    end Periodic_Actions;
 

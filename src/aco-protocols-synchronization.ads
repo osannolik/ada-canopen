@@ -63,7 +63,7 @@ private
       (Od     : not null access ACO.OD.Object_Dictionary'Class;
        Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
    record
-      Event_Manager : Alarms.Alarm_Manager;
+      Timers : Alarms.Alarm_Manager;
       Producer_Alarm : aliased Sync_Producer_Alarm (SYNC'Access);
       Counter : Counter_Type := Counter_Type'First;
       Entry_Update : aliased Entry_Update_Subscriber (SYNC'Access);

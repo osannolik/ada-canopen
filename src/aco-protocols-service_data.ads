@@ -115,7 +115,7 @@ private
        Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
    record
       Sessions : Session_Manager;
-      Timeouts : Alarms.Alarm_Manager;
+      Timers   : Alarms.Alarm_Manager;
       Alarms   : Alarm_Array := (others => (SDO'Access, No_Endpoint_Id));
    end record;
 
