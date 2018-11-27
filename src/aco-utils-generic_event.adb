@@ -5,7 +5,7 @@ package body ACO.Utils.Generic_Event is
        return Natural
    is
    begin
-      return This.Queue.Count;
+      return This.Queue.Length;
    end Events_Waiting;
 
    procedure Put
@@ -13,7 +13,7 @@ package body ACO.Utils.Generic_Event is
        Data : in     Item_Type)
    is
    begin
-      This.Queue.Put_Blocking (Data);
+      This.Queue.Put (Data);
    end Put;
 
    procedure Process
@@ -22,7 +22,7 @@ package body ACO.Utils.Generic_Event is
       Data : Item_Type;
    begin
       while not This.Queue.Is_Empty loop
-         This.Queue.Get_Blocking (Data);
+         This.Queue.Get (Data);
          PS.Pub (This).Update (Data);
       end loop;
    end Process;
