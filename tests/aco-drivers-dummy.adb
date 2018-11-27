@@ -1,14 +1,14 @@
 package body ACO.Drivers.Dummy is
 
    overriding
-   procedure Await_Message
+   procedure Receive_Message_Blocking
      (This : in out Dummy_Driver;
       Msg  :    out Message)
    is
       pragma Unreferenced (This, Msg);
    begin
       null;
-   end Await_Message;
+   end Receive_Message_Blocking;
 
    overriding
    procedure Send_Message
@@ -25,6 +25,15 @@ package body ACO.Drivers.Dummy is
    begin
       This.Tx_Buffer.Clear;
    end Initialize;
+
+   overriding
+   function Is_Message_Pending
+      (This : Dummy_Driver)
+       return Boolean
+   is
+   begin
+      return This.Nof_Sent > 0;
+   end Is_Message_Pending;
 
    procedure Get_First_Sent
      (This : in out Dummy_Driver;

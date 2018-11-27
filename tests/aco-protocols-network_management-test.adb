@@ -7,8 +7,7 @@ package body ACO.Protocols.Network_Management.Test is
 
    use ACO.States;
 
-   OD_Data : aliased ACO.OD.Example.Dictionary_Data;
-   OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+   OD : aliased ACO.OD.Example.Dictionary;
 
    Expected_Transitions : constant array (State, State) of State :=
    --  Current    Request: Initializing,    Pre_Operational, Operational,     Stopped,         Unknown_State

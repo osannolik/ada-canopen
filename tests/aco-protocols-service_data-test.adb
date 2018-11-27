@@ -47,8 +47,7 @@ package body ACO.Protocols.Service_Data.Test is
    is
       use ACO.OD_Types.Entries;
 
-      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
-      OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      OD      : aliased ACO.OD.Example.Dictionary;
       Driver  : aliased ACO.Drivers.Dummy.Dummy_Driver;
       S       : SDO (OD'Access, Driver'Access);
    begin
@@ -94,8 +93,7 @@ package body ACO.Protocols.Service_Data.Test is
    is
       use ACO.OD_Types.Entries;
 
-      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
-      OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      OD      : aliased ACO.OD.Example.Dictionary;
       Driver  : aliased ACO.Drivers.Dummy.Dummy_Driver;
       S       : SDO (OD'Access, Driver'Access);
 
@@ -146,8 +144,7 @@ package body ACO.Protocols.Service_Data.Test is
    is
       use ACO.OD.Example;
 
-      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
-      OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      OD      : aliased ACO.OD.Example.Dictionary;
       Driver  : aliased ACO.Drivers.Dummy.Dummy_Driver;
       S       : SDO (OD'Access, Driver'Access);
    begin
@@ -212,8 +209,7 @@ package body ACO.Protocols.Service_Data.Test is
    is
       use ACO.OD.Example;
 
-      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
-      OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      OD      : aliased ACO.OD.Example.Dictionary;
       Driver  : aliased ACO.Drivers.Dummy.Dummy_Driver;
       S       : SDO (OD'Access, Driver'Access);
 
@@ -304,8 +300,7 @@ package body ACO.Protocols.Service_Data.Test is
    is
       use ACO.OD.Example;
 
-      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
-      OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      OD      : aliased ACO.OD.Example.Dictionary;
       Driver  : aliased ACO.Drivers.Dummy.Dummy_Driver;
       S       : SDO (OD'Access, Driver'Access);
       Timeout : constant := ACO.Configuration.SDO_Session_Timeout_Ms;
@@ -473,8 +468,7 @@ package body ACO.Protocols.Service_Data.Test is
    is
       use ACO.OD.Example;
 
-      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
-      OD      : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      OD      : aliased ACO.OD.Example.Dictionary;
       Driver  : aliased ACO.Drivers.Dummy.Dummy_Driver;
       S       : SDO (OD'Access, Driver'Access);
       Timeout : constant := ACO.Configuration.SDO_Session_Timeout_Ms;

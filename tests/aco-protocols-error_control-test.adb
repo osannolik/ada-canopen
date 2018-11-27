@@ -59,8 +59,7 @@ package body ACO.Protocols.Error_Control.Test is
    end Heartbeat_Consumer_Test;
 
    procedure Heartbeat_Producer_Test (Period : in Natural) is
-      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
-      OD     : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      OD     : aliased ACO.OD.Example.Dictionary;
       Driver : aliased ACO.Drivers.Dummy.Dummy_Driver;
       E      : EC (Id, OD'Access, Driver'Access);
 

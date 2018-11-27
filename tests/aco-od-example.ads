@@ -4,7 +4,7 @@ with ACO.Generic_Entry_Types;
 package ACO.OD.Example is
    --  Shall be generated based on an EDS file
 
-   type Dictionary_Data is new Object_Data_Base with private;
+   type Dictionary is new Object_Dictionary with private;
 
    use ACO.OD_Types.Entries;
 
@@ -176,7 +176,8 @@ private
        11 => SDO_Clients'Access);
 
 
-   function Index_Map (This : Dictionary_Data; Index : Object_Index)
+   overriding
+   function Index_Map (This : Dictionary; Index : Object_Index)
                        return Index_Type
    is (case Index is
           when 16#1000# => 0,
@@ -194,9 +195,10 @@ private
           when others   => No_Index);
 
 
-   function Objects (This : Dictionary_Data) return Profile_Objects_Ref is
+   overriding
+   function Objects (This : Dictionary) return Profile_Objects_Ref is
       (Com_Profile'Access);
 
-   type Dictionary_Data is new Object_Data_Base with null record;
+   type Dictionary is new Object_Dictionary with null record;
 
 end ACO.OD.Example;

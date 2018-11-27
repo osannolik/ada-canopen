@@ -5,8 +5,8 @@ package ACO.Drivers.Dummy is
    type Dummy_Driver is new Driver with private;
 
    overriding
-   procedure Await_Message (This : in out Dummy_Driver;
-                            Msg  :    out Message);
+   procedure Receive_Message_Blocking (This : in out Dummy_Driver;
+                                       Msg  :    out Message);
    overriding
    procedure Send_Message
      (This : in out Dummy_Driver;
@@ -14,6 +14,11 @@ package ACO.Drivers.Dummy is
 
    overriding
    procedure Initialize (This : in out Dummy_Driver);
+
+   overriding
+   function Is_Message_Pending
+      (This : Dummy_Driver)
+       return Boolean;
 
    procedure Get_First_Sent
      (This : in out Dummy_Driver;

@@ -43,8 +43,7 @@ package body ACO.Protocols.Synchronization.Test is
    end Sync_Consumer_Test;
 
    procedure Sync_Producer_Test (Period : in Natural) is
-      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
-      OD     : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      OD     : aliased ACO.OD.Example.Dictionary;
       Driver : aliased ACO.Drivers.Dummy.Dummy_Driver;
       S      : SYNC (OD'Access, Driver'Access);
 
@@ -90,8 +89,7 @@ package body ACO.Protocols.Synchronization.Test is
       use Interfaces;
       use ACO.States;
 
-      OD_Data : aliased ACO.OD.Example.Dictionary_Data;
-      OD     : aliased ACO.OD.Object_Dictionary (OD_Data'Access);
+      OD     : aliased ACO.OD.Example.Dictionary;
       Driver : aliased ACO.Drivers.Dummy.Dummy_Driver;
       S      : SYNC (OD'Access, Driver'Access);
 
