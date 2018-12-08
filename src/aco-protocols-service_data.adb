@@ -21,15 +21,19 @@ package body ACO.Protocols.Service_Data is
    is
       pragma Unreferenced (T_Now);
 
-      Session : constant SDO_Session := This.SDO_Ref.Sessions.Get (This.Id);
+      Session : SDO_Session := This.SDO_Ref.Sessions.Get (This.Id);
    begin
       This.SDO_Ref.SDO_Log
-         (ACO.Log.Info, "Session timed out for service " & Session.Service'Img);
+         (ACO.Log.Info,
+          "Session timed out for service " & Session.Service'Img & This.Id'Img);
+
       This.SDO_Ref.Send_Abort
          (Endpoint => Session.Endpoint,
           Error    => SDO_Protocol_Timed_Out,
           Index    => Session.Index);
-      This.SDO_Ref.Sessions.Clear (This.Id);
+
+      Session.Status := Error;
+      This.SDO_Ref.Sessions.Put (Session);
    end Signal;
 
    procedure Start_Alarm
@@ -139,8 +143,7 @@ package body ACO.Protocols.Service_Data is
              Error => Error);
       else
          declare
-            Session : constant SDO_Session :=
-               Create_Download (Endpoint, Index);
+            Session : constant SDO_Session := Create_Download (Endpoint, Index);
          begin
             This.Sessions.Put (Session);
             This.Start_Alarm (Endpoint);
@@ -297,11 +300,13 @@ package body ACO.Protocols.Service_Data is
          Data : Data_Array (0 .. Bytes_To_Send - 1);
          Resp : Upload_Segment_Resp;
       begin
-         Session.Is_Complete := (Bytes_To_Send = Bytes_Remain);
+         if Bytes_To_Send = Bytes_Remain then
+            Session.Status := Complete;
+         end if;
 
          This.Sessions.Get_Buffer (Endpoint.Id, Data);
          Resp := Create (Toggle      => Session.Toggle,
-                         Is_Complete => Session.Is_Complete,
+                         Is_Complete => ACO.SDO_Sessions.Is_Complete (Session),
                          Data        => Data);
          This.Send_SDO (Endpoint => Endpoint,
                         Raw_Data => Resp.Raw);
@@ -309,7 +314,7 @@ package body ACO.Protocols.Service_Data is
             (ACO.Log.Debug, "Server: Sent data segment of length" & Bytes_To_Send'Img);
       end;
 
-      if Session.Is_Complete then
+      if ACO.SDO_Sessions.Is_Complete (Session) then
          This.Stop_Alarm (Endpoint);
          This.Sessions.Clear (Endpoint.Id);
       else
@@ -424,16 +429,14 @@ package body ACO.Protocols.Service_Data is
       if Bytes_Remain = 0 then
          This.SDO_Log (ACO.Log.Debug, "Client: Expedited download completed");
          This.Stop_Alarm (Endpoint);
-         This.Sessions.Clear (Endpoint.Id);
+         Session.Status := Complete;
+      else
+         This.Start_Alarm (Endpoint);
 
-         return;
+         Session.Toggle := False;
+
+         This.Client_Send_Data_Segment (Endpoint, Session.Toggle);
       end if;
-
-      This.Start_Alarm (Endpoint);
-
-      Session.Toggle := False;
-
-      This.Client_Send_Data_Segment (Endpoint, Session.Toggle);
 
       This.Sessions.Put (Session);
    end Client_Download_Init;
@@ -445,9 +448,10 @@ package body ACO.Protocols.Service_Data is
    is
       use ACO.SDO_Commands;
 
-      Resp  : constant Upload_Initiate_Resp := Convert (Msg);
-      Index : constant Entry_Index := Get_Index (Msg);
-      Error : Error_Type := Nothing;
+      Resp    : constant Upload_Initiate_Resp := Convert (Msg);
+      Index   : constant Entry_Index := Get_Index (Msg);
+      Error   : Error_Type := Nothing;
+      Session : SDO_Session;
    begin
       if not Resp.Is_Size_Indicated then
          Error := Command_Specifier_Not_Valid_Or_Unknown;
@@ -455,21 +459,12 @@ package body ACO.Protocols.Service_Data is
          Error := General_Error;
       end if;
 
-      if Error /= Nothing then
-         This.Send_Abort (Endpoint, Error, Index);
-         This.Stop_Alarm (Endpoint);
-         This.Sessions.Clear (Endpoint.Id);
+      Session := This.Sessions.Get (Endpoint.Id);
 
-         return;
-      end if;
+      if Error = Nothing then
+         if Resp.Is_Expedited then
+            Session.Status := Complete;
 
-      declare
-         Session : SDO_Session := This.Sessions.Get (Endpoint.Id);
-         Cmd : Upload_Segment_Cmd;
-      begin
-         Session.Is_Complete := Resp.Is_Expedited;
-
-         if Session.Is_Complete then
             This.Sessions.Put_Buffer
                (Id   => Endpoint.Id,
                 Data => Resp.Data (0 .. 3 - Natural (Resp.Nof_No_Data)));
@@ -482,15 +477,22 @@ package body ACO.Protocols.Service_Data is
 
             Session.Toggle := False;
 
-            Cmd := Create (Session.Toggle);
-
-            This.Send_SDO (Endpoint, Cmd.Raw);
+            declare
+               Cmd : constant Upload_Segment_Cmd := Create (Session.Toggle);
+            begin
+               This.Send_SDO (Endpoint, Cmd.Raw);
+            end;
 
             This.Start_Alarm (Endpoint);
          end if;
+      else
+         Session.Status := ACO.SDO_Sessions.Error;
 
-         This.Sessions.Put (Session);
-      end;
+         This.Send_Abort (Endpoint, Error, Index);
+         This.Stop_Alarm (Endpoint);
+      end if;
+
+      This.Sessions.Put (Session);
    end Client_Upload_Init;
 
    procedure Client_Upload_Segment
@@ -502,38 +504,38 @@ package body ACO.Protocols.Service_Data is
 
       Resp : constant Upload_Segment_Resp := Convert (Msg);
       Session : SDO_Session;
-      Cmd : Upload_Segment_Cmd;
    begin
       Session := This.Sessions.Get (Endpoint.Id);
 
-      if Resp.Toggle /= Session.Toggle then
+      if Resp.Toggle = Session.Toggle then
+         This.Sessions.Put_Buffer
+            (Id   => Endpoint.Id,
+             Data => Resp.Data (0 .. 6 - Natural (Resp.Nof_No_Data)));
+
+         if Resp.Is_Complete then
+            Session.Status := Complete;
+
+            This.Stop_Alarm (Endpoint);
+            This.SDO_Log (ACO.Log.Debug, "Client: Segmented upload completed");
+            --  NOTE: Do not end session here, let poller do that
+         else
+            Session.Toggle := not Session.Toggle;
+
+            declare
+               Cmd : constant Upload_Segment_Cmd := Create (Session.Toggle);
+            begin
+               This.Send_SDO (Endpoint, Cmd.Raw);
+            end;
+
+            This.Start_Alarm (Endpoint);
+         end if;
+      else
+         Session.Status := Error;
+
          This.Send_Abort (Endpoint => Endpoint,
                           Error    => Toggle_Bit_Not_Altered,
                           Index    => Session.Index);
          This.Stop_Alarm (Endpoint);
-         This.Sessions.Clear (Endpoint.Id);
-
-         return;
-      end if;
-
-      This.Sessions.Put_Buffer
-         (Id   => Endpoint.Id,
-          Data => Resp.Data (0 .. 6 - Natural (Resp.Nof_No_Data)));
-
-      Session.Is_Complete := Resp.Is_Complete;
-
-      if Session.Is_Complete then
-         This.Stop_Alarm (Endpoint);
-         This.SDO_Log (ACO.Log.Debug, "Client: Segmented upload completed");
-         --  NOTE: Do not end session here, let poller do that
-      else
-         Session.Toggle := not Session.Toggle;
-
-         Cmd := Create (Session.Toggle);
-
-         This.Send_SDO (Endpoint, Cmd.Raw);
-
-         This.Start_Alarm (Endpoint);
       end if;
 
       This.Sessions.Put (Session);
@@ -550,29 +552,27 @@ package body ACO.Protocols.Service_Data is
       Session      : SDO_Session := This.Sessions.Get (Endpoint.Id);
       Bytes_Remain : constant Natural := This.Sessions.Length_Buffer (Endpoint.Id);
    begin
-      if Resp.Toggle /= Session.Toggle then
+      if Resp.Toggle = Session.Toggle then
+         if Bytes_Remain = 0 then
+            Session.Status := Complete;
+
+            This.SDO_Log (ACO.Log.Debug, "Client: Segmented download completed");
+            This.Stop_Alarm (Endpoint);
+         else
+            Session.Toggle := not Session.Toggle;
+
+            This.Client_Send_Data_Segment (Endpoint, Session.Toggle);
+
+            This.Start_Alarm (Endpoint);
+         end if;
+      else
+         Session.Status := Error;
+
          This.Send_Abort (Endpoint => Endpoint,
                           Error    => Toggle_Bit_Not_Altered,
                           Index    => Session.Index);
          This.Stop_Alarm (Endpoint);
-         This.Sessions.Clear (Endpoint.Id);
-
-         return;
       end if;
-
-      if Bytes_Remain = 0 then
-         This.SDO_Log (ACO.Log.Debug, "Client: Segmented download completed");
-         This.Stop_Alarm (Endpoint);
-         This.Sessions.Clear (Endpoint.Id);
-
-         return;
-      end if;
-
-      This.Start_Alarm (Endpoint);
-
-      Session.Toggle := not Session.Toggle;
-
-      This.Client_Send_Data_Segment (Endpoint, Session.Toggle);
 
       This.Sessions.Put (Session);
    end Client_Download_Segment;
@@ -617,7 +617,19 @@ package body ACO.Protocols.Service_Data is
          (ACO.Log.Error,
           Error'Img & " (" & Hex_Str (Code (Resp)) & ") on " & Image (Endpoint));
 
-      This.Sessions.Clear (Endpoint.Id);
+      case Endpoint.Role is
+         when Server =>
+            This.Sessions.Clear (Endpoint.Id);
+
+         when Client =>
+            declare
+               Session : SDO_Session := This.Sessions.Get (Endpoint.Id);
+            begin
+               Session.Status := ACO.SDO_Sessions.Error;
+               This.Sessions.Put (Session);
+            end;
+      end case;
+
       This.Stop_Alarm (Endpoint);
    end Abort_All;
 
@@ -712,11 +724,12 @@ package body ACO.Protocols.Service_Data is
    end Message_Received;
 
    procedure Write_Remote_Entry
-      (This     : in out SDO;
-       Node     : in     Node_Nr;
-       Index    : in     Object_Index;
-       Subindex : in     Object_Subindex;
-       An_Entry : in     Entry_Base'Class)
+      (This        : in out SDO;
+       Node        : in     Node_Nr;
+       Index       : in     Object_Index;
+       Subindex    : in     Object_Subindex;
+       An_Entry    : in     Entry_Base'Class;
+       Endpoint_Id :    out Endpoint_Nr)
    is
       use ACO.Configuration;
 
@@ -726,6 +739,8 @@ package body ACO.Protocols.Service_Data is
           Server_Parameters => This.Od.Get_SDO_Server_Parameters);
       Size : constant Natural := An_Entry.Data_Length;
    begin
+      Endpoint_Id := Endpoint.Id;
+
       if Endpoint.Id = No_Endpoint_Id then
          This.SDO_Log (ACO.Log.Warning,
                        "Node" & Node'Img & " is not a server for any Client");
@@ -796,24 +811,18 @@ package body ACO.Protocols.Service_Data is
       This.Start_Alarm (Endpoint);
    end Read_Remote_Entry;
 
-   function Is_Entry_Read_Complete
+   function Get_Status
       (This        : SDO;
-       Endpoint_Id : Valid_Endpoint_Nr)
-       return Boolean
+       Endpoint_Id : ACO.SDO_Sessions.Valid_Endpoint_Nr)
+       return ACO.SDO_Sessions.SDO_Status
    is
-      Session : constant SDO_Session := This.Sessions.Get (Endpoint_Id);
    begin
-      case Session.Service is
-         when Upload =>
-            return Session.Is_Complete;
-         when None | Download | Block_Download | Block_Upload =>
-            return False;
-      end case;
-   end Is_Entry_Read_Complete;
+      return This.Sessions.Get (Endpoint_Id).Status;
+   end Get_Status;
 
    procedure Get_Read_Entry
       (This        : in out SDO;
-       Endpoint_Id : in     Valid_Endpoint_Nr;
+       Endpoint_Id : in     ACO.SDO_Sessions.Valid_Endpoint_Nr;
        Read_Entry  : in out Entry_Base'Class)
    is
       Data : Data_Array (0 .. Read_Entry.Data_Length - 1);
@@ -822,6 +831,14 @@ package body ACO.Protocols.Service_Data is
       Read_Entry.Write (Byte_Array (Data));
       This.Sessions.Clear (Endpoint_Id);
    end Get_Read_Entry;
+
+   procedure Clear
+      (This        : in out SDO;
+       Endpoint_Id : in     ACO.SDO_Sessions.Valid_Endpoint_Nr)
+   is
+   begin
+      This.Sessions.Clear (Endpoint_Id);
+   end Clear;
 
    procedure Periodic_Actions
       (This  : in out SDO;

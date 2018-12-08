@@ -34,11 +34,12 @@ package ACO.Protocols.Service_Data is
        T_Now : in     Ada.Real_Time.Time);
 
    procedure Write_Remote_Entry
-      (This     : in out SDO;
-       Node     : in     Node_Nr;
-       Index    : in     Object_Index;
-       Subindex : in     Object_Subindex;
-       An_Entry : in     Entry_Base'Class);
+      (This        : in out SDO;
+       Node        : in     Node_Nr;
+       Index       : in     Object_Index;
+       Subindex    : in     Object_Subindex;
+       An_Entry    : in     Entry_Base'Class;
+       Endpoint_Id :    out Endpoint_Nr);
 
    procedure Read_Remote_Entry
       (This        : in out SDO;
@@ -47,16 +48,21 @@ package ACO.Protocols.Service_Data is
        Subindex    : in     Object_Subindex;
        Endpoint_Id :    out Endpoint_Nr);
 
-   function Is_Entry_Read_Complete
+   function Get_Status
       (This        : SDO;
-       Endpoint_Id : Valid_Endpoint_Nr)
-       return Boolean;
+       Endpoint_Id : ACO.SDO_Sessions.Valid_Endpoint_Nr)
+       return ACO.SDO_Sessions.SDO_Status;
 
    procedure Get_Read_Entry
       (This        : in out SDO;
-       Endpoint_Id : in     Valid_Endpoint_Nr;
+       Endpoint_Id : in     ACO.SDO_Sessions.Valid_Endpoint_Nr;
        Read_Entry  : in out Entry_Base'Class)
-      with Pre => This.Is_Entry_Read_Complete (Endpoint_Id);
+      with Pre => This.Get_Status (Endpoint_Id) = Complete;
+
+   procedure Clear
+      (This        : in out SDO;
+       Endpoint_Id : in     ACO.SDO_Sessions.Valid_Endpoint_Nr)
+      with Post => This.Get_Status (Endpoint_Id) = Pending;
 
 private
 

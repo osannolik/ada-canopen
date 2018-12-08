@@ -64,20 +64,20 @@ package ACO.SDO_Sessions is
        Server_Parameters : SDO_Parameter_Array)
        return Endpoint_Type;
 
+   type SDO_Status is
+      (Pending,
+       Complete,
+       Error);
 
    type SDO_Session (Service : Services := None) is record
       Endpoint : Endpoint_Type := No_Endpoint;
-      Index  : ACO.OD_Types.Entry_Index;
-      Toggle : Boolean := False;
-
-      case Service is
-         when None | Download | Block_Download | Block_Upload =>
-            null;
-
-        when Upload =>
-            Is_Complete : Boolean := False;
-      end case;
+      Index    : ACO.OD_Types.Entry_Index;
+      Toggle   : Boolean := False;
+      Status   : SDO_Status := Pending;
    end record;
+
+   function Is_Complete (Session : SDO_Session) return Boolean is
+      (Session.Status = Complete);
 
    function Create_Download
       (Endpoint : Endpoint_Type;

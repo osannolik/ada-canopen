@@ -57,15 +57,17 @@ package body ACO.Protocols.Service_Data.Test is
       declare
          Value : constant := 1000;
          E     : constant Entry_Base'Class := Entry_U16'(Create (RW, Value));
+         Endpoint_Id  : Endpoint_Nr;
          Msg : Message;
       begin
          --  As client, request to download entry to 0x1017 on node 1.
          --  Since entry size is <= 4 the download will be expedited.
          S.Write_Remote_Entry
-            (Node     => 1,
-             Index    => ACO.OD.Heartbeat_Producer_Index,
-             Subindex => 0,
-             An_Entry => E);
+            (Node        => 1,
+             Index       => ACO.OD.Heartbeat_Producer_Index,
+             Subindex    => 0,
+             An_Entry    => E,
+             Endpoint_Id => Endpoint_Id);
 
          --  As server, receive and process download init request
          Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
@@ -78,6 +80,12 @@ package body ACO.Protocols.Service_Data.Test is
          --  Nothing more should have been sent
          Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
                  "Client should not have sent a massage");
+
+         --  Write should be indicated as success
+         Assert (S.Get_Status (Endpoint_Id) = Complete,
+                 "Client has not completed expedited download");
+
+         S.Clear (Endpoint_Id);
 
          --  All sessions should be closed (service = None)
          Assert (For_All_Sessions_Check_State (S, None),
@@ -120,7 +128,7 @@ package body ACO.Protocols.Service_Data.Test is
       S.Message_Received (Msg);
 
       --  Read should be indicated as success
-      Assert (S.Is_Entry_Read_Complete (Endpoint_Id),
+      Assert (S.Get_Status (Endpoint_Id) = Complete,
               "Client has not completed upload");
 
       S.Get_Read_Entry (Endpoint_Id => Endpoint_Id,
@@ -153,15 +161,17 @@ package body ACO.Protocols.Service_Data.Test is
       declare
          Value : constant Device_Name_String := "A Super Duper";
          E     : constant Entry_Base'Class := Device_Name_Entry'(Create (RW, Value));
+         Endpoint_Id  : Endpoint_Nr;
          Msg : Message;
       begin
          --  As client, request to download entry to 0x1017 on node 1.
          --  Since entry size is <= 4 the download will be expedited.
          S.Write_Remote_Entry
-            (Node     => 1,
-             Index    => 16#1008#,
-             Subindex => 0,
-             An_Entry => E);
+            (Node        => 1,
+             Index       => 16#1008#,
+             Subindex    => 0,
+             An_Entry    => E,
+             Endpoint_Id => Endpoint_Id);
 
          --  As server, receive and process download init request
          Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
@@ -190,6 +200,12 @@ package body ACO.Protocols.Service_Data.Test is
          --  Nothing more should have been sent
          Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
                  "Client should not have sent a massage");
+
+         --  Write should be indicated as success
+         Assert (S.Get_Status (Endpoint_Id) = Complete,
+                 "Client has not completed segmented download");
+
+         S.Clear (Endpoint_Id);
 
          --  All sessions should be closed (service = None)
          Assert (For_All_Sessions_Check_State (S, None),
@@ -242,8 +258,8 @@ package body ACO.Protocols.Service_Data.Test is
       Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
       S.Message_Received (Msg);
 
-      --  Read should be indicated as NOT successful
-      Assert (not S.Is_Entry_Read_Complete (Endpoint_Id),
+      --  Read should still be indicated as pending
+      Assert (S.Get_Status (Endpoint_Id) = Pending,
               "Client has completed upload prematurely");
 
       --  As server, receive and process upload segment request
@@ -263,7 +279,7 @@ package body ACO.Protocols.Service_Data.Test is
       S.Message_Received (Msg);
 
       --  Read should be indicated as successful
-      Assert (S.Is_Entry_Read_Complete (Endpoint_Id),
+      Assert (S.Get_Status (Endpoint_Id) = Complete,
               "Client has not completed upload");
 
       S.Get_Read_Entry (Endpoint_Id => Endpoint_Id,
@@ -312,16 +328,18 @@ package body ACO.Protocols.Service_Data.Test is
       declare
          Value : constant Device_Name_String := "A Super Duper";
          E     : constant Entry_Base'Class := Device_Name_Entry'(Create (RW, Value));
+         Endpoint_Id  : Endpoint_Nr;
          Msg : Message;
       begin
          -----------------------------------------------------------------------
          --  # 1. First message lost or server not responding
          -----------------------------------------------------------------------
          S.Write_Remote_Entry
-            (Node     => 1,
-             Index    => 16#1008#,
-             Subindex => 0,
-             An_Entry => E);
+            (Node        => 1,
+             Index       => 16#1008#,
+             Subindex    => 0,
+             An_Entry    => E,
+             Endpoint_Id => Endpoint_Id);
 
          --  The message that got away...
          Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
@@ -338,6 +356,12 @@ package body ACO.Protocols.Service_Data.Test is
          Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
                  "Client should not have sent a massage");
 
+         --  Write status should be indicated as error
+         Assert (S.Get_Status (Endpoint_Id) = Error,
+                 "Client has not indicated error");
+
+         S.Clear (Endpoint_Id);
+
          --  All sessions should be closed (service = None)
          Assert (For_All_Sessions_Check_State (S, None),
                  "A session has not been ended properly");
@@ -346,10 +370,11 @@ package body ACO.Protocols.Service_Data.Test is
          --  # 2. Server response message lost or client not responding
          -----------------------------------------------------------------------
          S.Write_Remote_Entry
-            (Node     => 1,
-             Index    => 16#1008#,
-             Subindex => 0,
-             An_Entry => E);
+            (Node        => 1,
+             Index       => 16#1008#,
+             Subindex    => 0,
+             An_Entry    => E,
+             Endpoint_Id => Endpoint_Id);
 
          --  As server, receive and process download init request
          Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
@@ -370,6 +395,12 @@ package body ACO.Protocols.Service_Data.Test is
          Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
                  "Incorrect abort code");
 
+         --  Write status should be indicated as error
+         Assert (S.Get_Status (Endpoint_Id) = Error,
+                 "Client has not indicated error");
+
+         S.Clear (Endpoint_Id);
+
          --  Nothing more should have been sent
          Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
                  "Client should not have sent a massage");
@@ -382,10 +413,11 @@ package body ACO.Protocols.Service_Data.Test is
          --  # 3. Client segment data message lost or server not responding
          -----------------------------------------------------------------------
          S.Write_Remote_Entry
-            (Node     => 1,
-             Index    => 16#1008#,
-             Subindex => 0,
-             An_Entry => E);
+            (Node        => 1,
+             Index       => 16#1008#,
+             Subindex    => 0,
+             An_Entry    => E,
+             Endpoint_Id => Endpoint_Id);
 
          --  As server, receive and process download init request
          Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
@@ -410,6 +442,12 @@ package body ACO.Protocols.Service_Data.Test is
          Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
                  "Incorrect abort code");
 
+         --  Write status should be indicated as error
+         Assert (S.Get_Status (Endpoint_Id) = Error,
+                 "Client has not indicated error");
+
+         S.Clear (Endpoint_Id);
+
          --  Nothing more should have been sent
          Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
                  "Client should not have sent a massage");
@@ -422,10 +460,11 @@ package body ACO.Protocols.Service_Data.Test is
          --  # 4. Server segment response message lost or client not responding
          -----------------------------------------------------------------------
          S.Write_Remote_Entry
-            (Node     => 1,
-             Index    => 16#1008#,
-             Subindex => 0,
-             An_Entry => E);
+            (Node        => 1,
+             Index       => 16#1008#,
+             Subindex    => 0,
+             An_Entry    => E,
+             Endpoint_Id => Endpoint_Id);
 
          --  As server, receive and process download init request
          Dummy_Driver (S.Driver.all).Get_First_Sent (Msg);
@@ -453,6 +492,12 @@ package body ACO.Protocols.Service_Data.Test is
          S.Message_Received (Msg);
          Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
                  "Incorrect abort code");
+
+         --  Write status should be indicated as error
+         Assert (S.Get_Status (Endpoint_Id) = Error,
+                 "Client has not indicated error");
+
+         S.Clear (Endpoint_Id);
 
          --  Nothing more should have been sent
          Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
@@ -500,6 +545,12 @@ package body ACO.Protocols.Service_Data.Test is
       Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
               "Incorrect abort code");
 
+      --  Read status should be indicated as error
+      Assert (S.Get_Status (Endpoint_Id) = Error,
+              "Client has not indicated error");
+
+      S.Clear (Endpoint_Id);
+
       --  Nothing more should have been sent
       Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
               "Client should not have sent a massage");
@@ -535,6 +586,12 @@ package body ACO.Protocols.Service_Data.Test is
       S.Message_Received (Msg);
       Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
               "Incorrect abort code");
+
+      --  Read status should be indicated as error
+      Assert (S.Get_Status (Endpoint_Id) = Error,
+              "Client has not indicated error");
+
+      S.Clear (Endpoint_Id);
 
       --  Nothing more should have been sent
       Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
@@ -575,6 +632,12 @@ package body ACO.Protocols.Service_Data.Test is
       S.Message_Received (Msg);
       Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
               "Incorrect abort code");
+
+      --  Read status should be indicated as error
+      Assert (S.Get_Status (Endpoint_Id) = Error,
+              "Client has not indicated error");
+
+      S.Clear (Endpoint_Id);
 
       --  Nothing more should have been sent
       Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
@@ -619,6 +682,12 @@ package body ACO.Protocols.Service_Data.Test is
       S.Message_Received (Msg);
       Assert (To_Error (Msg) = SDO_Protocol_Timed_Out,
               "Incorrect abort code");
+
+      --  Read status should be indicated as error
+      Assert (S.Get_Status (Endpoint_Id) = Error,
+              "Client has not indicated error");
+
+      S.Clear (Endpoint_Id);
 
       --  Nothing more should have been sent
       Assert (Dummy_Driver (S.Driver.all).Nof_Sent = 0,
