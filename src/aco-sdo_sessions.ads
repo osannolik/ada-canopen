@@ -2,7 +2,7 @@ with ACO.Messages;
 with ACO.OD_Types;
 with ACO.Configuration;
 
-private with ACO.Utils.Generic_Ring_Buffer;
+private with ACO.Utils.DS.Generic_Queue;
 
 package ACO.SDO_Sessions is
 
@@ -134,13 +134,13 @@ package ACO.SDO_Sessions is
 
 private
 
-   package RB is new ACO.Utils.Generic_Ring_Buffer
+   package Q is new ACO.Utils.DS.Generic_Queue
       (Item_Type     => ACO.Messages.Data_Type,
        Max_Nof_Items => Max_Data_SDO_Transfer_Size);
 
    type Session_Array is array (Endpoint_Nr range <>) of SDO_Session;
 
-   type Buffer_Array is array (Endpoint_Nr range <>) of RB.Ring_Buffer;
+   type Buffer_Array is array (Endpoint_Nr range <>) of Q.Queue;
 
    type Session_Manager is tagged limited record
       List    : Session_Array (Valid_Endpoint_Nr'Range);

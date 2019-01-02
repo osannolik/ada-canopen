@@ -123,7 +123,7 @@ package body ACO.SDO_Sessions is
        Data : in     Data_Array)
    is
    begin
-      This.Buffers (Id).Put (RB.Item_Array (Data));
+      This.Buffers (Id).Put (Q.Item_Array (Data));
    end Put_Buffer;
 
    procedure Get_Buffer
@@ -132,7 +132,7 @@ package body ACO.SDO_Sessions is
        Data :    out Data_Array)
    is
    begin
-      This.Buffers (Id).Get (RB.Item_Array (Data));
+      This.Buffers (Id).Get (Q.Item_Array (Data));
    end Get_Buffer;
 
    function Length_Buffer
@@ -153,7 +153,7 @@ package body ACO.SDO_Sessions is
       if This.Buffers (Id).Is_Empty then
          return Empty_Data;
       else
-         return Data_Array (RB.Item_Array'(This.Buffers (Id).Peek));
+         return Data_Array (Q.Item_Array'(This.Buffers (Id).Peek));
       end if;
    end Peek_Buffer;
 

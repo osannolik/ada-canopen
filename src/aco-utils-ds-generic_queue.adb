@@ -1,15 +1,15 @@
-package body ACO.Utils.Generic_Ring_Buffer is
+package body ACO.Utils.DS.Generic_Queue is
 
-   function Is_Full (This : Ring_Buffer) return Boolean is
+   function Is_Full (This : Queue) return Boolean is
       (This.Count >= Max_Nof_Items);
 
-   function Is_Empty (This : Ring_Buffer) return Boolean is
+   function Is_Empty (This : Queue) return Boolean is
       (This.Count = 0);
 
-   function Length (This : Ring_Buffer) return Natural is
+   function Length (This : Queue) return Natural is
       (This.Count);
 
-   function Free_Slots (This : Ring_Buffer) return Natural is
+   function Free_Slots (This : Queue) return Natural is
       (Max_Nof_Items - This.Count);
 
    procedure Inc (I : in out Index)
@@ -19,7 +19,7 @@ package body ACO.Utils.Generic_Ring_Buffer is
    end Inc;
 
    procedure Put
-      (This : in out Ring_Buffer;
+      (This : in out Queue;
        Item : in     Item_Type)
    is
    begin
@@ -29,7 +29,7 @@ package body ACO.Utils.Generic_Ring_Buffer is
    end Put;
 
    procedure Put
-      (This  : in out Ring_Buffer;
+      (This  : in out Queue;
        Items : in     Item_Array)
    is
    begin
@@ -39,7 +39,7 @@ package body ACO.Utils.Generic_Ring_Buffer is
    end Put;
 
    procedure Get
-      (This : in out Ring_Buffer;
+      (This : in out Queue;
        Item :    out Item_Type)
    is
    begin
@@ -49,7 +49,7 @@ package body ACO.Utils.Generic_Ring_Buffer is
    end Get;
 
    procedure Get
-      (This  : in out Ring_Buffer;
+      (This  : in out Queue;
        Items :    out Item_Array)
    is
    begin
@@ -59,17 +59,17 @@ package body ACO.Utils.Generic_Ring_Buffer is
    end Get;
 
    procedure Flush
-      (This : in out Ring_Buffer)
+      (This : in out Queue)
    is
    begin
       This.Count := 0;
       This.Old := This.Next;
    end Flush;
 
-   function Peek (This : Ring_Buffer) return Item_Type is
+   function Peek (This : Queue) return Item_Type is
       (This.Items (This.Old));
 
-   function Peek (This : Ring_Buffer) return Item_Array
+   function Peek (This : Queue) return Item_Array
    is
       Items : Item_Array (Index'First .. Index'First + This.Count - 1);
       I : Index := This.Old;
@@ -81,4 +81,4 @@ package body ACO.Utils.Generic_Ring_Buffer is
       return Items;
    end Peek;
 
-end ACO.Utils.Generic_Ring_Buffer;
+end ACO.Utils.DS.Generic_Queue;

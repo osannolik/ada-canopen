@@ -1,5 +1,8 @@
 package body ACO.Utils.Generic_Pubsub is
 
+   function Nof_Subscribers (This : Pub) return Natural is
+      (This.N);
+
    procedure Update
      (This : in out Pub;
       Data : in     Item_Type)
@@ -28,8 +31,8 @@ package body ACO.Utils.Generic_Pubsub is
          exit when Found;
       end loop;
 
-      if not Found then
-         raise Already_Maximum_Nof_Subscribers;
+      if Found then
+         This.N := This.N + 1;
       end if;
    end Attach;
 
@@ -41,6 +44,7 @@ package body ACO.Utils.Generic_Pubsub is
       for I in This.Subscribers'Range loop
          if This.Subscribers (I) = Subscriber then
             This.Subscribers (I) := null;
+            This.N := This.N - 1;
          end if;
       end loop;
    end Detach;

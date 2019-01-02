@@ -9,7 +9,7 @@ package body ACO.Utils.Generic_Alarms is
    begin
       if not This.Alarm_List.Is_Empty then
          declare
-            Next : constant Alarm_Data := This.Alarm_List.Get_First;
+            Next : constant Alarm_Data := This.Alarm_List.First;
          begin
             if Next.Alarm_Ref /= No_Alarm and then
                Next.Signal_Time <= T_Now
@@ -41,7 +41,7 @@ package body ACO.Utils.Generic_Alarms is
       Signal_Time : in     Ada.Real_Time.Time)
    is
    begin
-      This.Alarm_List.Add ((Alarm, Signal_Time));
+      This.Alarm_List.Append ((Alarm, Signal_Time));
    end Set;
 
    function Is_Pending
@@ -50,19 +50,22 @@ package body ACO.Utils.Generic_Alarms is
       return Boolean
    is
    begin
-      return This.Alarm_List.Is_Item_In_List
+      return This.Alarm_List.Location
          ((Alarm_Ref   => Alarm,
-           Signal_Time => Ada.Real_Time.Time_Last));
+           Signal_Time => Ada.Real_Time.Time_Last)) /= Collection_Pack.No_Index;
    end Is_Pending;
 
    procedure Cancel
      (This  : in out Alarm_Manager;
       Alarm : in     Alarm_Access)
    is
-   begin
-      This.Alarm_List.Remove
+      I : constant Natural := This.Alarm_List.Location
          ((Alarm_Ref   => Alarm,
            Signal_Time => Ada.Real_Time.Time_Last));
+   begin
+      if I /= Collection_Pack.No_Index then
+         This.Alarm_List.Remove (I);
+      end if;
    end Cancel;
 
    function "<" (Left, Right : Alarm_Data) return Boolean

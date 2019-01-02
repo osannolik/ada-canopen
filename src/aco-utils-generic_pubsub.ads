@@ -20,11 +20,12 @@ package ACO.Utils.Generic_Pubsub is
      (This : in out Pub;
       Data : in     Item_Type);
 
+   function Nof_Subscribers (This : Pub) return Natural;
+
    procedure Attach
      (This       : in out Pub;
-      Subscriber : in     Sub_Access);
-
-   Already_Maximum_Nof_Subscribers : Exception;
+      Subscriber : in     Sub_Access)
+      with Pre => This.Nof_Subscribers < Max_Nof_Subscribers;
 
    procedure Detach
      (This       : in out Pub;
@@ -35,7 +36,8 @@ private
    type Subscriber_List is array (1 .. Max_Nof_Subscribers) of Sub_Access;
 
    type Pub is tagged limited record
-      Subscribers : Subscriber_List := (others => null); --  Protect?
+      Subscribers : Subscriber_List := (others => null);
+      N : Natural := 0;
    end record;
 
 end ACO.Utils.Generic_Pubsub;

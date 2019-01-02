@@ -1,5 +1,6 @@
 with Ada.Real_Time;
-private with ACO.Utils.Generic_Sorted_List;
+private with ACO.Utils.DS.Generic_Collection;
+private with ACO.Utils.DS.Generic_Collection.Sorted;
 
 generic
    Maximum_Nof_Alarms : Positive;
@@ -44,7 +45,7 @@ package ACO.Utils.Generic_Alarms is
 private
 
    type Alarm_Data is record
-      Alarm_Ref   : Alarm_Access       := null;
+      Alarm_Ref   : Alarm_Access       := No_Alarm;
       Signal_Time : Ada.Real_Time.Time := Ada.Real_Time.Time_Last;
    end record;
 
@@ -52,14 +53,18 @@ private
 
    function "=" (Left, Right : Alarm_Data) return Boolean;
 
-   package List_Pack is new ACO.Utils.Generic_Sorted_List
-      (Item_Type            => Alarm_Data,
-       "<"                  => "<",
-       "="                  => "=",
-       Maximum_Nof_Elements => Maximum_Nof_Alarms);
+   package Collection_Pack is new ACO.Utils.DS.Generic_Collection
+      (Item_Type => Alarm_Data,
+       "="       => "=");
+
+   package Sorted_Pack is new Collection_Pack.Sorted
+      ("<" => "<");
+
+   subtype Sorted_Collection is Sorted_Pack.Sorted_Collection
+      (Max_Size => Maximum_Nof_Alarms);
 
    type Alarm_Manager is tagged limited record
-      Alarm_List : List_Pack.Sorted_List;
+      Alarm_List : Sorted_Collection;
    end record;
 
 end ACO.Utils.Generic_Alarms;

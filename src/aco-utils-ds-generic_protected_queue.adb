@@ -1,7 +1,7 @@
-package body ACO.Utils.Generic_Protected_Buffer is
+package body ACO.Utils.DS.Generic_Protected_Queue is
 
    procedure Put_Blocking
-      (This : in out Protected_Buffer;
+      (This : in out Protected_Queue;
        Item : in     Item_Type)
    is
       Success : Boolean;
@@ -17,7 +17,7 @@ package body ACO.Utils.Generic_Protected_Buffer is
    end Put_Blocking;
 
    procedure Get_Blocking
-      (This : in out Protected_Buffer;
+      (This : in out Protected_Queue;
        Item :    out Item_Type)
    is
       Success : Boolean;
@@ -33,7 +33,7 @@ package body ACO.Utils.Generic_Protected_Buffer is
    end Get_Blocking;
 
    procedure Get
-      (This : in out Protected_Buffer;
+      (This : in out Protected_Queue;
        Item :    out Item_Type)
    is
       Success : Boolean;
@@ -43,7 +43,7 @@ package body ACO.Utils.Generic_Protected_Buffer is
    end Get;
 
    function Count
-      (This : Protected_Buffer)
+      (This : Protected_Queue)
        return Natural
    is
    begin
@@ -51,7 +51,7 @@ package body ACO.Utils.Generic_Protected_Buffer is
    end Count;
 
    function Is_Empty
-      (This : Protected_Buffer)
+      (This : Protected_Queue)
        return Boolean
    is
    begin
@@ -59,7 +59,7 @@ package body ACO.Utils.Generic_Protected_Buffer is
    end Is_Empty;
 
    function Is_Full
-      (This : Protected_Buffer)
+      (This : Protected_Queue)
        return Boolean
    is
    begin
@@ -73,11 +73,11 @@ package body ACO.Utils.Generic_Protected_Buffer is
           Success :    out Boolean)
       is
       begin
-         if Ring.Is_Full then
+         if Queue.Is_Full then
             Success := False;
          else
             Success := True;
-            Ring.Put (Item);
+            Queue.Put (Item);
          end if;
       end Put;
 
@@ -86,20 +86,20 @@ package body ACO.Utils.Generic_Protected_Buffer is
           Success : out Boolean)
       is
       begin
-         if Ring.Is_Empty then
+         if Queue.Is_Empty then
             Success := False;
          else
             Success := True;
-            Ring.Get (Item);
+            Queue.Get (Item);
          end if;
       end Get;
 
       function Nof_Items return Natural
       is
       begin
-         return Ring.Length;
+         return Queue.Length;
       end Nof_Items;
 
    end Buffer_Type;
 
-end ACO.Utils.Generic_Protected_Buffer;
+end ACO.Utils.DS.Generic_Protected_Queue;

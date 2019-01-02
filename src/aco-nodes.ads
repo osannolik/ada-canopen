@@ -65,7 +65,7 @@ private
       EC   : Error_Control.EC (Id, Od, Driver);
       SYNC : Synchronization.SYNC (Od, Driver);
       SDO  : Service_Data.SDO (Od, Driver);
-      Received_Messages : ACO.Messages.Buffer.Protected_Buffer;
+      Received_Messages : ACO.Messages.Buffer.Protected_Queue;
       Node_State_Change_Indication : aliased Node_State_Change_Subscriber (Node'Access);
       Start_Receiver_Task : Ada.Synchronous_Task_Control.Suspension_Object;
    end record;
