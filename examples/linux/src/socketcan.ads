@@ -53,6 +53,9 @@ package SocketCAN is
      (Socket : in Socket_Type;
       Name   : in String := "can0");
 
+   procedure Close_Socket
+      (Socket : in Socket_Type);
+
    procedure Send_Socket
      (Socket : in Socket_Type;
       Frame  : in Can_Frame);

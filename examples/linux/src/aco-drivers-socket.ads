@@ -9,17 +9,24 @@ package ACO.Drivers.Socket is
    overriding
    procedure Receive_Message_Blocking
       (This : in out CAN_Driver;
-       Msg  :    out Message);
+       Msg  :    out ACO.Messages.Message);
    overriding
    procedure Send_Message
-     (This : in out CAN_Driver;
-      Msg  : in     Message);
+      (This : in out CAN_Driver;
+       Msg  : in     ACO.Messages.Message);
 
    overriding
-   procedure Initialize (This : in out CAN_Driver);
+   procedure Initialize
+      (This : in out CAN_Driver);
 
    overriding
-   function Is_Message_Pending (This : CAN_Driver) return Boolean;
+   procedure Finalize
+      (This : in out CAN_Driver);
+
+   overriding
+   function Is_Message_Pending
+      (This : CAN_Driver)
+       return Boolean;
 
 private
 

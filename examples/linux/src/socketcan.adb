@@ -108,14 +108,12 @@ package body SocketCAN is
      (Socket : in     Socket_Type;
       Frame  :    out Can_Frame)
    is
-      use GNAT.Sockets.Thin_Common;
-
       Msg : aliased Can_Defs.C_Can_Frame;
       Mtu : constant C.int := Msg'Size / 8;
       Res : C.int;
    begin
       Res := C_Read (C.int (Socket), Msg'Address, Mtu);
-      if Res = Failure then
+      if Res = GNAT.Sockets.Thin_Common.Failure then
          raise SocketCAN_Error with
             "Failed to read message: read return value " & Res'Img;
       elsif Res /= Mtu then
@@ -139,13 +137,12 @@ package body SocketCAN is
    function Create_Socket (Protocol : Protocol_Type := RAW) return Socket_Type
    is
       use GNAT.Sockets.Thin;
-      use GNAT.Sockets.Thin_Common;
 
       Res : constant C.int := C_Socket (Domain   => Socket_Defs.PF_CAN,
                                         Typ      => Socket_Defs.SOCK_RAW,
                                         Protocol => Protocols (Protocol));
    begin
-      if Res = Failure then
+      if Res = GNAT.Sockets.Thin_Common.Failure then
          raise SocketCAN_Error with
             "Failed to create socket: socket return value " & Res'Img;
       end if;
@@ -158,7 +155,6 @@ package body SocketCAN is
       Name    : in String := "can0")
    is
       use GNAT.Sockets.Thin;
-      use GNAT.Sockets.Thin_Common;
 
       Index : constant C.int := C_Name_To_Index (C.To_C (Name));
    begin
@@ -175,11 +171,25 @@ package body SocketCAN is
          Res : constant C.int :=
             C_Bind (C.int (Socket), Sin'Address, Sin'Size / 8);
       begin
-         if Res = Failure then
+         if Res = GNAT.Sockets.Thin_Common.Failure then
             raise SocketCAN_Error with "Failed to bind " & Name;
          end if;
       end;
    end Bind_Socket;
+
+   procedure Close_Socket
+      (Socket : in Socket_Type)
+   is
+      use GNAT.Sockets.Thin;
+
+      Res : C.int;
+   begin
+      Res := C_Close (C.int (Socket));
+
+      if Res = GNAT.Sockets.Thin_Common.Failure then
+         raise SocketCAN_Error with "Failed to close: return value" & Res'Img;
+      end if;
+   end Close_Socket;
 
    function Is_Frame_Pending
       (Socket : Socket_Type)
