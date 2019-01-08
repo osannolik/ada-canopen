@@ -1,3 +1,7 @@
+private with System;
+private with ACO.Utils.DS.Generic_Collection;
+private with ACO.Utils.Scope_Locks;
+
 generic
    type Item_Type is private;
    Max_Nof_Subscribers : Positive;
@@ -20,7 +24,7 @@ package ACO.Utils.Generic_Pubsub is
      (This : in out Pub;
       Data : in     Item_Type);
 
-   function Nof_Subscribers (This : Pub) return Natural;
+   function Nof_Subscribers (This : in out Pub) return Natural;
 
    procedure Attach
      (This       : in out Pub;
@@ -33,11 +37,19 @@ package ACO.Utils.Generic_Pubsub is
 
 private
 
-   type Subscriber_List is array (1 .. Max_Nof_Subscribers) of Sub_Access;
+   package C is new ACO.Utils.DS.Generic_Collection
+      (Item_Type => Sub_Access,
+       "="       => "=");
 
    type Pub is tagged limited record
-      Subscribers : Subscriber_List := (others => null);
-      N : Natural := 0;
+      Subscribers : C.Collection (Max_Size => Max_Nof_Subscribers);
+      Mutex       : aliased ACO.Utils.Scope_Locks.Mutex (System.Priority'Last);
    end record;
+
+   type Sub_Array is array (Positive range <>) of Sub_Access;
+
+   function Get_Subscribers
+      (This : in out Pub)
+       return Sub_Array;
 
 end ACO.Utils.Generic_Pubsub;
