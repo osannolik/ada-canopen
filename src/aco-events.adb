@@ -1,7 +1,7 @@
 package body ACO.Events is
 
    procedure Process
-      (This : in out Event_Manager)
+      (This : in out Node_Event_Manager)
    is
    begin
       This.Entry_Updated.Process;

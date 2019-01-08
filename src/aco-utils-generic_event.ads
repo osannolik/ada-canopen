@@ -1,7 +1,7 @@
-with ACO.Configuration;
+with System;
 with ACO.Utils.Generic_Pubsub;
 
-private with ACO.Utils.DS.Generic_Queue;
+private with ACO.Utils.DS.Generic_Protected_Queue;
 
 generic
    type Item_Type is private;
@@ -11,36 +11,43 @@ package ACO.Utils.Generic_Event is
 
    pragma Preelaborate;
 
-   use ACO.Configuration;
-
-   package PS is new ACO.Utils.Generic_Pubsub (Item_Type, Max_Nof_Subscribers);
+   package PS is new ACO.Utils.Generic_Pubsub
+      (Item_Type           => Item_Type,
+       Max_Nof_Subscribers => Max_Nof_Subscribers);
 
    subtype Subscriber is PS.Sub;
 
    type Subscriber_Access is access all Subscriber'Class;
 
-   type Event_Publisher is limited new PS.Pub with private;
+   type Event_Publisher is limited new PS.Pub with null record;
+
+   type Queued_Event_Publisher
+      (Max_Nof_Events   : Positive;
+       Priority_Ceiling : System.Priority)
+   is new Event_Publisher with private;
 
    function Events_Waiting
-      (This : Event_Publisher)
+      (This : Queued_Event_Publisher)
        return Natural;
 
    procedure Put
-      (This : in out Event_Publisher;
+      (This : in out Queued_Event_Publisher;
        Data : in     Item_Type)
-      with Pre => This.Events_Waiting < Max_Nof_Event_Queue_Data_Items;
+      with Pre => This.Events_Waiting < This.Max_Nof_Events;
 
    procedure Process
-      (This : in out Event_Publisher);
+      (This : in out Queued_Event_Publisher);
 
 private
 
-   package B is new ACO.Utils.DS.Generic_Queue
-      (Item_Type     => Item_Type,
-       Max_Nof_Items => Max_Nof_Event_Queue_Data_Items);
+   package PQ is new ACO.Utils.DS.Generic_Protected_Queue
+      (Item_Type => Item_Type);
 
-   type Event_Publisher is limited new PS.Pub with record
-      Queue : B.Queue;
+   type Queued_Event_Publisher
+      (Max_Nof_Events   : Positive;
+       Priority_Ceiling : System.Priority)
+   is new Event_Publisher with record
+      Queue : PQ.Protected_Queue (Max_Nof_Events, Priority_Ceiling);
    end record;
 
 end ACO.Utils.Generic_Event;
