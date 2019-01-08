@@ -5,8 +5,6 @@ with ACO.OD;
 
 package ACO.Protocols is
 
-   pragma Preelaborate;
-
    type Protocol (Od : not null access ACO.OD.Object_Dictionary'Class) is
       abstract new Ada.Finalization.Limited_Controlled with private;
 

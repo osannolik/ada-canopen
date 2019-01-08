@@ -7,8 +7,6 @@ private with Interfaces;
 
 package ACO.Protocols.Network_Management is
 
-   pragma Preelaborate;
-
    use ACO.Messages;
 
    NMT_CAN_Id : constant Id_Type := 0;

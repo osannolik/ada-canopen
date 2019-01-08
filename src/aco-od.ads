@@ -6,8 +6,6 @@ with ACO.SDO_Sessions;
 
 package ACO.OD is
 
-   pragma Preelaborate;
-
    use ACO.OD_Types;
 
    subtype Comm_Profile_Index is Object_Index range 16#1000# .. 16#1FFF#;
@@ -20,7 +18,7 @@ package ACO.OD is
    SDO_Client_Base_Index       : constant := 16#1280#;
 
    type Object_Dictionary_Base is abstract tagged limited record
-      Events : ACO.Events.Event_Manager;
+      Events : ACO.Events.Node_Event_Manager;
    end record;
 
    type Object_Dictionary is abstract new Object_Dictionary_Base with private;
