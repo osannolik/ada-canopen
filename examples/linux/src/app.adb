@@ -1,11 +1,13 @@
 with Ada.Real_Time;
 with ACO.Drivers.Socket;
-with ACO.Nodes;
+with ACO.CANopen;
 with ACO.States;
+with ACO.Nodes.Locals;
 with ACO.OD;
 with ACO.Log;
 with Ada.Text_IO.Text_Streams;
 with ACO.OD.Example;
+with ACO.Configuration;
 
 with Ada.Text_IO;
 with Ada.Exceptions;
@@ -16,11 +18,13 @@ package body App is
 
    D : aliased ACO.Drivers.Socket.CAN_Driver;
 
-   N : aliased ACO.Nodes.Node (Id => 1, Od => O'Access, Driver => D'Access);
+   H : aliased ACO.CANopen.Handler (Driver => D'Access);
 
-   T : ACO.Nodes.Receiver_Task (N'Access);
+   N : aliased ACO.Nodes.Locals.Local
+      (Id => 1, Handler => H'Access, Od => O'Access);
 
-   W : ACO.Nodes.Periodic_Task (N'Access);
+   W : ACO.CANopen.Periodic_Task
+      (H'Access, Period_Ms => ACO.Configuration.Periodic_Task_Period_Ms);
 
    procedure Run
    is
@@ -39,9 +43,7 @@ package body App is
       Next_Release := Ada.Real_Time.Clock;
 
       loop
-         --  N.Get_Received_Messages (Block => False);
-
-         --  N.Periodic_Actions (T_Now => Next_Release);
+         --  H.Periodic_Actions (T_Now => Next_Release);
 
          Next_Release := Next_Release + Ada.Real_Time.Milliseconds (1);
          delay until Next_Release;
