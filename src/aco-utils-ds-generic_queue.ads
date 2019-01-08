@@ -1,12 +1,13 @@
 generic
    type Item_Type is private;
-   Max_Nof_Items : Positive;
 
 package ACO.Utils.DS.Generic_Queue is
 
    pragma Preelaborate;
 
-   type Queue is tagged limited private;
+   type Queue
+      (Max_Nof_Items : Positive)
+   is tagged limited private;
 
    type Item_Array is array (Natural range <>) of Item_Type;
 
@@ -54,16 +55,20 @@ package ACO.Utils.DS.Generic_Queue is
 
 private
 
-   subtype Index is Positive range 1 .. Max_Nof_Items;
+   subtype Index is Positive;
 
-   type Queue is tagged limited record
-      Items : Item_Array (Index);
+   type Queue
+      (Max_Nof_Items : Positive)
+   is tagged limited record
+      Items : Item_Array (1 .. Max_Nof_Items);
       Next  : Index   := Index'First;
       Old   : Index   := Index'First;
       Count : Natural := 0;
    end record;
 
-   procedure Inc (I : in out Index)
+   procedure Inc
+      (This : in     Queue;
+       I    : in out Index)
       with Inline;
 
 end ACO.Utils.DS.Generic_Queue;

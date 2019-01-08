@@ -16,6 +16,15 @@ package body ACO.Utils.DS.Generic_Protected_Queue is
       Ada.Synchronous_Task_Control.Set_True (This.Non_Empty);
    end Put_Blocking;
 
+   procedure Put
+      (This    : in out Protected_Queue;
+       Item    : in     Item_Type;
+       Success :    out Boolean)
+   is
+   begin
+      This.Buffer.Put (Item, Success);
+   end Put;
+
    procedure Get_Blocking
       (This : in out Protected_Queue;
        Item :    out Item_Type)
@@ -63,7 +72,7 @@ package body ACO.Utils.DS.Generic_Protected_Queue is
        return Boolean
    is
    begin
-      return This.Buffer.Nof_Items >= Max_Nof_Items;
+      return This.Buffer.Nof_Items >= This.Max_Nof_Items;
    end Is_Full;
 
    protected body Buffer_Type is

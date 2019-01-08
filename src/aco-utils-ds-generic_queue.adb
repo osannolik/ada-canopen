@@ -1,7 +1,7 @@
 package body ACO.Utils.DS.Generic_Queue is
 
    function Is_Full (This : Queue) return Boolean is
-      (This.Count >= Max_Nof_Items);
+      (This.Count >= This.Max_Nof_Items);
 
    function Is_Empty (This : Queue) return Boolean is
       (This.Count = 0);
@@ -10,12 +10,18 @@ package body ACO.Utils.DS.Generic_Queue is
       (This.Count);
 
    function Free_Slots (This : Queue) return Natural is
-      (Max_Nof_Items - This.Count);
+      (This.Max_Nof_Items - This.Count);
 
-   procedure Inc (I : in out Index)
+   procedure Inc
+      (This : in     Queue;
+       I    : in out Index)
    is
    begin
-      I := (if I >= Index'Last then Index'First else Index'Succ (I));
+      if I >= This.Items'Last then
+         I := This.Items'First;
+      else
+         I := Index'Succ (I);
+      end if;
    end Inc;
 
    procedure Put
@@ -24,7 +30,7 @@ package body ACO.Utils.DS.Generic_Queue is
    is
    begin
       This.Items (This.Next) := Item;
-      Inc (This.Next);
+      This.Inc (This.Next);
       This.Count := This.Count + 1;
    end Put;
 
@@ -44,7 +50,7 @@ package body ACO.Utils.DS.Generic_Queue is
    is
    begin
       Item := This.Items (This.Old);
-      Inc (This.Old);
+      This.Inc (This.Old);
       This.Count := This.Count - 1;
    end Get;
 
@@ -76,7 +82,7 @@ package body ACO.Utils.DS.Generic_Queue is
    begin
       for Item of Items loop
          Item := This.Items (I);
-         Inc (I);
+         This.Inc (I);
       end loop;
       return Items;
    end Peek;
