@@ -135,12 +135,12 @@ package ACO.SDO_Sessions is
 private
 
    package Q is new ACO.Utils.DS.Generic_Queue
-      (Item_Type     => ACO.Messages.Data_Type,
-       Max_Nof_Items => Max_Data_SDO_Transfer_Size);
+      (Item_Type => ACO.Messages.Data_Type);
 
    type Session_Array is array (Endpoint_Nr range <>) of SDO_Session;
 
-   type Buffer_Array is array (Endpoint_Nr range <>) of Q.Queue;
+   type Buffer_Array is array (Endpoint_Nr range <>) of
+      Q.Queue (Max_Nof_Items => Max_Data_SDO_Transfer_Size);
 
    type Session_Manager is tagged limited record
       List    : Session_Array (Valid_Endpoint_Nr'Range);
