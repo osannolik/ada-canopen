@@ -40,14 +40,14 @@ package body ACO.SDO_Sessions is
       I : Endpoint_Nr := Valid_Endpoint_Nr'First;
    begin
       for P of Client_Parameters loop
-         if Match_Condition (P, False) then
+         if Match_Condition (P, Is_Server => False) then
             return (Id => I, Role => Client, Parameters => P);
          end if;
          I := Endpoint_Nr'Succ (I);
       end loop;
 
       for P of Server_Parameters loop
-         if Match_Condition (P, True) then
+         if Match_Condition (P, Is_Server => True) then
             return (Id => I, Role => Server, Parameters => P);
          end if;
          I := Endpoint_Nr'Succ (I);

@@ -5,7 +5,7 @@ package body ACO.Utils.Generic_Alarms is
        T_Now : Ada.Real_Time.Time)
        return Alarm_Access
    is
-      use Ada.Real_Time;
+      use type Ada.Real_Time.Time;
    begin
       if not This.Alarm_List.Is_Empty then
          declare
