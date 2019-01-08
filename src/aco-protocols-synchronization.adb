@@ -45,7 +45,7 @@ package body ACO.Protocols.Synchronization is
       Overflow_Value : constant Sync_Counter :=
          This.Od.Get_Sync_Counter_Overflow;
    begin
-      This.Driver.Send_Message (This.Create_Sync (Overflow_Value));
+      This.Handler.Put (This.Create_Sync (Overflow_Value));
 
       if Overflow_Value > 1 then
          This.Counter_Increment (Overflow_Value);

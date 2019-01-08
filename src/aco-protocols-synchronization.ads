@@ -1,7 +1,7 @@
 with Ada.Real_Time;
+with ACO.CANopen;
 with ACO.Messages;
 with ACO.OD;
-with ACO.Drivers;
 with ACO.States;
 
 private with Interfaces;
@@ -16,9 +16,9 @@ package ACO.Protocols.Synchronization is
    SYNC_CAN_Id : constant Id_Type := 16#80#;
 
    type SYNC
-      (Od     : not null access ACO.OD.Object_Dictionary'Class;
-       Driver : not null access ACO.Drivers.Driver'Class) is
-      new Protocol with private;
+      (Handler : not null access ACO.CANopen.Handler'Class;
+       Od      : not null access ACO.OD.Object_Dictionary'Class)
+   is new Protocol with private;
 
    procedure Message_Received
      (This : in out SYNC;
@@ -60,9 +60,9 @@ private
        Data : in     ACO.OD_Types.Entry_Index);
 
    type SYNC
-      (Od     : not null access ACO.OD.Object_Dictionary'Class;
-       Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
-   record
+      (Handler : not null access ACO.CANopen.Handler'Class;
+       Od      : not null access ACO.OD.Object_Dictionary'Class)
+   is new Protocol (Od) with record
       Timers : Alarms.Alarm_Manager;
       Producer_Alarm : aliased Sync_Producer_Alarm (SYNC'Access);
       Counter : Counter_Type := Counter_Type'First;

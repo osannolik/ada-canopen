@@ -107,7 +107,7 @@ package body ACO.Protocols.Service_Data is
                  Data   => Raw_Data);
    begin
       This.SDO_Log (ACO.Log.Debug, "Sending " & Image (Msg));
-      This.Driver.Send_Message (Msg);
+      This.Handler.Put (Msg);
    end Send_SDO;
 
    procedure Server_Download_Init
@@ -739,7 +739,7 @@ package body ACO.Protocols.Service_Data is
           Server_Parameters => This.Od.Get_SDO_Server_Parameters);
       Size : constant Natural := An_Entry.Data_Length;
    begin
-      Endpoint_Id := Endpoint.Id;
+      Endpoint_Id := No_Endpoint_Id;
 
       if Endpoint.Id = No_Endpoint_Id then
          This.SDO_Log (ACO.Log.Warning,
@@ -754,6 +754,8 @@ package body ACO.Protocols.Service_Data is
                        "Size" & Size'Img & " bytes of entry is too large or 0");
          return;
       end if;
+
+      Endpoint_Id := Endpoint.Id;
 
       This.Sessions.Clear_Buffer (Endpoint.Id);
 

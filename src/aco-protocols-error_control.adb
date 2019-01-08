@@ -16,7 +16,7 @@ package body ACO.Protocols.Error_Control is
        Node_State : in     ACO.States.State)
    is
    begin
-      This.Driver.Send_Message (Create_Heartbeat (Node_State, This.Id));
+      This.Handler.Put (Create_Heartbeat (Node_State, This.Id));
    end Send_Heartbeat;
 
    procedure Send_Bootup

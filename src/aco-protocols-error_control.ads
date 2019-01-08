@@ -1,6 +1,6 @@
 with Ada.Real_Time;
+with ACO.CANopen;
 with ACO.Messages;
-with ACO.Drivers;
 with ACO.OD;
 
 private with ACO.States;
@@ -18,10 +18,10 @@ package ACO.Protocols.Error_Control is
    EC_Id : constant Function_Code := 16#E#;
 
    type EC
-      (Id     : Node_Nr;
-       Od     : not null access ACO.OD.Object_Dictionary'Class;
-       Driver : not null access ACO.Drivers.Driver'Class) is
-      new Protocol with private;
+      (Id      : Node_Nr;
+       Handler : not null access ACO.CANopen.Handler'Class;
+       Od      : not null access ACO.OD.Object_Dictionary'Class)
+   is new Protocol with private;
 
    procedure Message_Received
      (This : in out EC;
@@ -94,10 +94,10 @@ private
        Data : in     ACO.OD_Types.Entry_Index);
 
    type EC
-      (Id     : Node_Nr;
-       Od     : not null access ACO.OD.Object_Dictionary'Class;
-       Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
-   record
+      (Id      : Node_Nr;
+       Handler : not null access ACO.CANopen.Handler'Class;
+       Od      : not null access ACO.OD.Object_Dictionary'Class)
+   is new Protocol (Od) with record
       Timers : Alarms.Alarm_Manager;
       Producer_Alarm : aliased Heartbeat_Producer_Alarm (EC'Access);
       Monitor : ACO.Slave_Monitors.Slave_Monitor (Od);

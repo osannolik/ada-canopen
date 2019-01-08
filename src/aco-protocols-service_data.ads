@@ -1,8 +1,8 @@
 with Ada.Real_Time;
+with ACO.CANopen;
 with ACO.Messages;
 with ACO.OD;
 with ACO.OD_Types;
-with ACO.Drivers;
 with ACO.States;
 with ACO.SDO_Sessions;
 
@@ -21,8 +21,8 @@ package ACO.Protocols.Service_Data is
    SDO_C2S_Id : constant Function_Code := 16#C#;
 
    type SDO
-      (Od     : not null access ACO.OD.Object_Dictionary'Class;
-       Driver : not null access ACO.Drivers.Driver'Class)
+      (Handler : not null access ACO.CANopen.Handler'Class;
+       Od      : not null access ACO.OD.Object_Dictionary'Class)
    is new Protocol with private;
 
    procedure Message_Received
@@ -117,9 +117,9 @@ private
    type Alarm_Array is array (Valid_Endpoint_Nr'Range) of aliased Alarm;
 
    type SDO
-      (Od     : not null access ACO.OD.Object_Dictionary'Class;
-       Driver : not null access ACO.Drivers.Driver'Class) is new Protocol (Od) with
-   record
+      (Handler : not null access ACO.CANopen.Handler'Class;
+       Od      : not null access ACO.OD.Object_Dictionary'Class)
+   is new Protocol (Od) with record
       Sessions : Session_Manager;
       Timers   : Alarms.Alarm_Manager;
       Alarms   : Alarm_Array := (others => (SDO'Access, No_Endpoint_Id));
