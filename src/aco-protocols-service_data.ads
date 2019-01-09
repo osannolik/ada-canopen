@@ -23,7 +23,12 @@ package ACO.Protocols.Service_Data is
    type SDO
       (Handler : not null access ACO.CANopen.Handler'Class;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
-   is new Protocol with private;
+   is abstract new Protocol with private;
+
+   procedure Handle_Message
+      (This     : in out SDO;
+       Msg      : in     Message;
+       Endpoint : in     Endpoint_Type) is abstract;
 
    procedure Message_Received
      (This : in out SDO;
@@ -33,31 +38,10 @@ package ACO.Protocols.Service_Data is
       (This  : in out SDO;
        T_Now : in     Ada.Real_Time.Time);
 
-   procedure Write_Remote_Entry
-      (This        : in out SDO;
-       Node        : in     Node_Nr;
-       Index       : in     Object_Index;
-       Subindex    : in     Object_Subindex;
-       An_Entry    : in     Entry_Base'Class;
-       Endpoint_Id :    out Endpoint_Nr);
-
-   procedure Read_Remote_Entry
-      (This        : in out SDO;
-       Node        : in     Node_Nr;
-       Index       : in     Object_Index;
-       Subindex    : in     Object_Subindex;
-       Endpoint_Id :    out Endpoint_Nr);
-
    function Get_Status
       (This        : SDO;
        Endpoint_Id : ACO.SDO_Sessions.Valid_Endpoint_Nr)
        return ACO.SDO_Sessions.SDO_Status;
-
-   procedure Get_Read_Entry
-      (This        : in out SDO;
-       Endpoint_Id : in     ACO.SDO_Sessions.Valid_Endpoint_Nr;
-       Read_Entry  : in out Entry_Base'Class)
-      with Pre => This.Get_Status (Endpoint_Id) = Complete;
 
    procedure Clear
       (This        : in out SDO;
@@ -119,7 +103,7 @@ private
    type SDO
       (Handler : not null access ACO.CANopen.Handler'Class;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
-   is new Protocol (Od) with record
+   is abstract new Protocol (Od) with record
       Sessions : Session_Manager;
       Timers   : Alarms.Alarm_Manager;
       Alarms   : Alarm_Array := (others => (SDO'Access, No_Endpoint_Id));
@@ -144,56 +128,6 @@ private
       (This     : in out SDO;
        Endpoint : in     Endpoint_Type);
 
-   procedure Message_Received_For_Server
-      (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
-
-   procedure Server_Download_Init
-      (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
-
-   procedure Server_Download_Segment
-      (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
-
-   procedure Server_Upload_Init
-      (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
-
-   procedure Server_Upload_Segment
-      (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
-
-   procedure Message_Received_For_Client
-      (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
-
-   procedure Client_Download_Init
-      (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
-
-   procedure Client_Upload_Init
-      (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
-
-   procedure Client_Upload_Segment
-      (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
-
-   procedure Client_Download_Segment
-      (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
-
    procedure Abort_All
       (This     : in out SDO;
        Msg      : in     Message;
@@ -209,11 +143,6 @@ private
       (This     : in out SDO;
        Endpoint : in     Endpoint_Type;
        Raw_Data : in     Msg_Data);
-
-   procedure Client_Send_Data_Segment
-      (This     : in out SDO;
-       Endpoint : in     Endpoint_Type;
-       Toggle   : in     Boolean);
 
    procedure Send_Abort
       (This     : in out SDO;

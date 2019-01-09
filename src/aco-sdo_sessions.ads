@@ -140,7 +140,7 @@ private
    type Session_Array is array (Endpoint_Nr range <>) of SDO_Session;
 
    type Buffer_Array is array (Endpoint_Nr range <>) of
-      Q.Queue (Max_Nof_Items => Max_Data_SDO_Transfer_Size);
+      Q.Queue (Max_Nof_Items => Max_SDO_Transfer_Size);
 
    type Session_Manager is tagged limited record
       List    : Session_Array (Valid_Endpoint_Nr'Range);

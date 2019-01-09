@@ -20,7 +20,7 @@ package ACO.Configuration is
    Messages_Buffer_Ceiling : constant System.Priority := System.Max_Priority;
 
    Max_Nof_Simultaneous_SDO_Sessions : constant := 4;
-   Max_Data_SDO_Transfer_Size        : constant := 32;
+   Max_SDO_Transfer_Size             : constant := 32;
 
    SDO_Session_Timeout_Ms : constant := 3000;
 

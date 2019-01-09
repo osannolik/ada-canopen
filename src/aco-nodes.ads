@@ -7,10 +7,6 @@ with ACO.OD_Types;
 with Ada.Real_Time;
 
 private with ACO.Events;
-private with ACO.Protocols.Network_Management;
-private with ACO.Protocols.Error_Control;
-private with ACO.Protocols.Synchronization;
-private with ACO.Protocols.Service_Data;
 
 package ACO.Nodes is
 
@@ -35,15 +31,15 @@ private
 
    procedure On_Message_Dispatch
       (This : in out Node_Base;
-       Msg  : in     ACO.Messages.Message);
+       Msg  : in     ACO.Messages.Message) is null;
 
    procedure Periodic_Actions
       (This  : in out Node_Base;
-       T_Now : in     Ada.Real_Time.Time);
+       T_Now : in     Ada.Real_Time.Time) is null;
 
 
    type Tick_Subscriber
-      (Node_Ref : not null access Node_Base)
+      (Node_Ref : not null access Node_Base'Class)
    is new ACO.Events.Periodic_Tick.Subscriber with null record;
 
    overriding
@@ -52,7 +48,7 @@ private
        Data : in     Ada.Real_Time.Time);
 
    type Message_Subscriber
-      (Node_Ref : not null access Node_Base)
+      (Node_Ref : not null access Node_Base'Class)
    is new ACO.Events.New_Message.Subscriber with null record;
 
    overriding
@@ -65,10 +61,6 @@ private
        Handler : not null access ACO.CANopen.Handler'Class;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
    is abstract new Ada.Finalization.Limited_Controlled with record
-      NMT  : ACO.Protocols.Network_Management.NMT (Od);
-      EC   : ACO.Protocols.Error_Control.EC (Id, Handler, Od);
-      SYNC : ACO.Protocols.Synchronization.SYNC (Handler, Od);
-      SDO  : ACO.Protocols.Service_Data.SDO (Handler, Od);
       Periodic_Action_Indication : aliased Tick_Subscriber (Node_Base'Access);
       New_Message_Indication : aliased Message_Subscriber (Node_Base'Access);
    end record;
