@@ -4,8 +4,8 @@ with ACO.States;
 with ACO.Messages;
 with ACO.OD;
 with ACO.OD_Types;
-with Ada.Real_Time;
 
+private with Ada.Real_Time;
 private with ACO.Events;
 
 package ACO.Nodes is

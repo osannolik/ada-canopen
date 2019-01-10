@@ -17,27 +17,27 @@ private
    overriding
    procedure Handle_Message
       (This     : in out Server;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
+       Msg      : in     ACO.Messages.Message;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type);
 
    procedure Upload_Init
       (This     : in out Server;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
+       Msg      : in     ACO.Messages.Message;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type);
 
    procedure Upload_Segment
       (This     : in out Server;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
+       Msg      : in     ACO.Messages.Message;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type);
 
    procedure Download_Init
       (This     : in out Server;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
+       Msg      : in     ACO.Messages.Message;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type);
 
    procedure Download_Segment
       (This     : in out Server;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
+       Msg      : in     ACO.Messages.Message;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type);
 
 end ACO.Protocols.Service_Data.Servers;

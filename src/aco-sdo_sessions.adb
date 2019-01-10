@@ -1,11 +1,13 @@
 package body ACO.SDO_Sessions is
 
    function Get_Endpoint
-      (Rx_CAN_Id         : Id_Type;
+      (Rx_CAN_Id         : ACO.Messages.Id_Type;
        Client_Parameters : SDO_Parameter_Array;
        Server_Parameters : SDO_Parameter_Array)
        return Endpoint_Type
    is
+      use type ACO.Messages.Id_Type;
+
       function Is_Rx_CAN_Id
          (P : SDO_Parameters; Is_Server : Boolean) return Boolean
       is
@@ -16,11 +18,13 @@ package body ACO.SDO_Sessions is
    end Get_Endpoint;
 
    function Get_Endpoint
-      (Server_Node       : Node_Nr;
+      (Server_Node       : ACO.Messages.Node_Nr;
        Client_Parameters : SDO_Parameter_Array;
        Server_Parameters : SDO_Parameter_Array)
        return Endpoint_Type
    is
+      use type ACO.Messages.Node_Nr;
+
       function Is_Server_Node_Of_Client
          (P : SDO_Parameters; Is_Server : Boolean) return Boolean
       is
@@ -120,7 +124,7 @@ package body ACO.SDO_Sessions is
    procedure Put_Buffer
       (This : in out Session_Manager;
        Id   : in     Valid_Endpoint_Nr;
-       Data : in     Data_Array)
+       Data : in     ACO.Messages.Data_Array)
    is
    begin
       This.Buffers (Id).Put (Q.Item_Array (Data));
@@ -129,7 +133,7 @@ package body ACO.SDO_Sessions is
    procedure Get_Buffer
       (This : in out Session_Manager;
        Id   : in     Valid_Endpoint_Nr;
-       Data :    out Data_Array)
+       Data :    out ACO.Messages.Data_Array)
    is
    begin
       This.Buffers (Id).Get (Q.Item_Array (Data));
@@ -147,13 +151,13 @@ package body ACO.SDO_Sessions is
    function Peek_Buffer
       (This : Session_Manager;
        Id   : Valid_Endpoint_Nr)
-       return Data_Array
+       return ACO.Messages.Data_Array
    is
    begin
       if This.Buffers (Id).Is_Empty then
-         return Empty_Data;
+         return ACO.Messages.Empty_Data;
       else
-         return Data_Array (Q.Item_Array'(This.Buffers (Id).Peek));
+         return ACO.Messages.Data_Array (Q.Item_Array'(This.Buffers (Id).Peek));
       end if;
    end Peek_Buffer;
 

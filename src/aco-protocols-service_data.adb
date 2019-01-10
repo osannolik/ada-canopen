@@ -21,7 +21,8 @@ package body ACO.Protocols.Service_Data is
    is
       pragma Unreferenced (T_Now);
 
-      Session : SDO_Session := This.SDO_Ref.Sessions.Get (This.Id);
+      Session : ACO.SDO_Sessions.SDO_Session :=
+         This.SDO_Ref.Sessions.Get (This.Id);
    begin
       This.SDO_Ref.SDO_Log
          (ACO.Log.Info,
@@ -32,41 +33,41 @@ package body ACO.Protocols.Service_Data is
           Error    => SDO_Protocol_Timed_Out,
           Index    => Session.Index);
 
-      Session.Status := Error;
+      Session.Status := ACO.SDO_Sessions.Error;
       This.SDO_Ref.Sessions.Put (Session);
    end Signal;
 
    procedure Start_Alarm
-      (This     : in out SDO;
-       Endpoint : in     Endpoint_Type)
+      (This : in out SDO;
+       Id   : in     ACO.SDO_Sessions.Valid_Endpoint_Nr)
    is
       use Ada.Real_Time, ACO.Configuration;
 
-      Timeout_Alarm : Alarm renames This.Alarms (Endpoint.Id);
+      Timeout_Alarm : Alarm renames This.Alarms (Id);
    begin
       if This.Timers.Is_Pending (Timeout_Alarm'Unchecked_Access) then
          This.Timers.Cancel (Timeout_Alarm'Unchecked_Access);
       end if;
 
-      Timeout_Alarm.Id := Endpoint.Id;
+      Timeout_Alarm.Id := Id;
       This.Timers.Set
          (Alarm       => Timeout_Alarm'Unchecked_Access,
           Signal_Time => Clock + Milliseconds (SDO_Session_Timeout_Ms));
    end Start_Alarm;
 
    procedure Stop_Alarm
-      (This     : in out SDO;
-       Endpoint : in     Endpoint_Type)
+      (This : in out SDO;
+       Id   : in     ACO.SDO_Sessions.Valid_Endpoint_Nr)
    is
    begin
-      This.Timers.Cancel (This.Alarms (Endpoint.Id)'Unchecked_Access);
+      This.Timers.Cancel (This.Alarms (Id)'Unchecked_Access);
    end Stop_Alarm;
 
    procedure Send_Abort
       (This     : in out SDO;
-       Endpoint : in     Endpoint_Type;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type;
        Error    : in     Error_Type;
-       Index    : in     Entry_Index := (0,0))
+       Index    : in     ACO.OD_Types.Entry_Index := (0,0))
    is
       use ACO.SDO_Commands;
 
@@ -78,15 +79,16 @@ package body ACO.Protocols.Service_Data is
 
    procedure Write
       (This  : in out SDO;
-       Index : in     Entry_Index;
-       Data  : in     Data_Array;
+       Index : in     ACO.OD_Types.Entry_Index;
+       Data  : in     ACO.Messages.Data_Array;
        Error :    out Error_Type)
    is
       --  TODO:
       --  Need a more efficient way to write large amount of data (Domain type)
-      Ety : Entry_Base'Class := This.Od.Get_Entry (Index.Object, Index.Sub);
+      Ety : ACO.OD_Types.Entry_Base'Class :=
+         This.Od.Get_Entry (Index.Object, Index.Sub);
    begin
-      Ety.Write (Byte_Array (Data));
+      Ety.Write (ACO.OD_Types.Byte_Array (Data));
       This.Od.Set_Entry (Ety, Index.Object, Index.Sub);
       Error := Nothing;
    exception
@@ -97,16 +99,16 @@ package body ACO.Protocols.Service_Data is
 
    procedure Send_SDO
       (This     : in out SDO;
-       Endpoint : in     Endpoint_Type;
-       Raw_Data : in     Msg_Data)
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type;
+       Raw_Data : in     ACO.Messages.Msg_Data)
    is
-      Msg : constant Message :=
-         Create (CAN_Id => Tx_CAN_Id (Endpoint),
-                 RTR    => False,
-                 DLC    => 8,
-                 Data   => Raw_Data);
+      Msg : constant ACO.Messages.Message :=
+         ACO.Messages.Create (CAN_Id => ACO.SDO_Sessions.Tx_CAN_Id (Endpoint),
+                              RTR    => False,
+                              DLC    => 8,
+                              Data   => Raw_Data);
    begin
-      This.SDO_Log (ACO.Log.Debug, "Sending " & Image (Msg));
+      This.SDO_Log (ACO.Log.Debug, "Sending " & ACO.Messages.Image (Msg));
       This.Handler.Put (Msg);
    end Send_SDO;
 
@@ -130,11 +132,12 @@ package body ACO.Protocols.Service_Data is
 
    procedure Abort_All
       (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type)
+       Msg      : in     ACO.Messages.Message;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type)
    is
       use ACO.SDO_Commands;
       use type ACO.SDO_Commands.Abort_Code_Type;
+      use type ACO.SDO_Sessions.Endpoint_Role;
 
       Resp : constant Abort_Cmd := Convert (Msg);
       Error : Error_Type := Unknown;
@@ -148,27 +151,29 @@ package body ACO.Protocols.Service_Data is
 
       This.SDO_Log
          (ACO.Log.Error,
-          Error'Img & " (" & Hex_Str (Code (Resp)) & ") on " & Image (Endpoint));
+          Error'Img & " (" & Hex_Str (Code (Resp)) & ") on " &
+          ACO.SDO_Sessions.Image (Endpoint));
 
       case Endpoint.Role is
-         when Server =>
+         when ACO.SDO_Sessions.Server =>
             This.Sessions.Clear (Endpoint.Id);
 
-         when Client =>
+         when ACO.SDO_Sessions.Client =>
             declare
-               Session : SDO_Session := This.Sessions.Get (Endpoint.Id);
+               Session : ACO.SDO_Sessions.SDO_Session :=
+                  This.Sessions.Get (Endpoint.Id);
             begin
                Session.Status := ACO.SDO_Sessions.Error;
                This.Sessions.Put (Session);
             end;
       end case;
 
-      This.Stop_Alarm (Endpoint);
+      This.Stop_Alarm (Endpoint.Id);
    end Abort_All;
 
    procedure Message_Received
      (This : in out SDO;
-      Msg  : in     Message)
+      Msg  : in     ACO.Messages.Message)
    is
       use ACO.States;
    begin
@@ -181,32 +186,42 @@ package body ACO.Protocols.Service_Data is
       end case;
 
       declare
-         Endpoint : constant Endpoint_Type := Get_Endpoint
-            (Rx_CAN_Id         => CAN_Id (Msg),
-             Client_Parameters => This.Od.Get_SDO_Client_Parameters,
-             Server_Parameters => This.Od.Get_SDO_Server_Parameters);
+         Endpoint : constant ACO.SDO_Sessions.Endpoint_Type :=
+            ACO.SDO_Sessions.Get_Endpoint
+               (Rx_CAN_Id         => ACO.Messages.CAN_Id (Msg),
+                Client_Parameters => This.Od.Get_SDO_Client_Parameters,
+                Server_Parameters => This.Od.Get_SDO_Server_Parameters);
       begin
-         if Endpoint.Id /= No_Endpoint_Id then
+         if Endpoint.Id /= ACO.SDO_Sessions.No_Endpoint_Id then
             SDO'Class (This).Handle_Message (Msg, Endpoint);
          end if;
       end;
    end Message_Received;
 
    function Get_Status
-      (This        : SDO;
-       Endpoint_Id : ACO.SDO_Sessions.Valid_Endpoint_Nr)
+      (This : SDO;
+       Id   : ACO.SDO_Sessions.Valid_Endpoint_Nr)
        return ACO.SDO_Sessions.SDO_Status
    is
    begin
-      return This.Sessions.Get (Endpoint_Id).Status;
+      return This.Sessions.Get (Id).Status;
    end Get_Status;
 
-   procedure Clear
-      (This        : in out SDO;
-       Endpoint_Id : in     ACO.SDO_Sessions.Valid_Endpoint_Nr)
+   function Is_Complete
+      (This : SDO;
+       Id   : ACO.SDO_Sessions.Valid_Endpoint_Nr)
+       return Boolean
    is
    begin
-      This.Sessions.Clear (Endpoint_Id);
+      return ACO.SDO_Sessions.Is_Complete (This.Sessions.Get (Id));
+   end Is_Complete;
+
+   procedure Clear
+      (This : in out SDO;
+       Id   : in     ACO.SDO_Sessions.Valid_Endpoint_Nr)
+   is
+   begin
+      This.Sessions.Clear (Id);
    end Clear;
 
    procedure Periodic_Actions

@@ -8,9 +8,6 @@ package ACO.SDO_Sessions is
 
    pragma Preelaborate;
 
-   use ACO.Messages;
-   use ACO.Configuration;
-
    type Session_Manager is tagged limited private;
 
    type Services is
@@ -27,12 +24,12 @@ package ACO.SDO_Sessions is
    No_Endpoint_Id : constant Endpoint_Nr := Endpoint_Nr'First;
 
    subtype Valid_Endpoint_Nr is Endpoint_Nr range
-      Endpoint_Nr'First + 1 ..  Max_Nof_Simultaneous_SDO_Sessions;
+      No_Endpoint_Id + 1 ..  ACO.Configuration.Max_Nof_Simultaneous_SDO_Sessions;
 
    type SDO_Parameters is record
-      CAN_Id_C2S : Id_Type := 0;
-      CAN_Id_S2C : Id_Type := 0;
-      Node       : Node_Nr;
+      CAN_Id_C2S : ACO.Messages.Id_Type := 0;
+      CAN_Id_S2C : ACO.Messages.Id_Type := 0;
+      Node       : ACO.Messages.Node_Nr;
    end record;
 
    type SDO_Parameter_Array is array (Natural range <>) of SDO_Parameters;
@@ -45,7 +42,7 @@ package ACO.SDO_Sessions is
 
    No_Endpoint : Endpoint_Type;
 
-   function Tx_CAN_Id (Endpoint : Endpoint_Type) return Id_Type is
+   function Tx_CAN_Id (Endpoint : Endpoint_Type) return ACO.Messages.Id_Type is
       (case Endpoint.Role is
           when Server => Endpoint.Parameters.CAN_Id_S2C,
           when Client => Endpoint.Parameters.CAN_Id_C2S);
@@ -53,13 +50,13 @@ package ACO.SDO_Sessions is
    function Image (Endpoint : Endpoint_Type) return String;
 
    function Get_Endpoint
-      (Rx_CAN_Id         : Id_Type;
+      (Rx_CAN_Id         : ACO.Messages.Id_Type;
        Client_Parameters : SDO_Parameter_Array;
        Server_Parameters : SDO_Parameter_Array)
        return Endpoint_Type;
 
    function Get_Endpoint
-      (Server_Node       : Node_Nr;
+      (Server_Node       : ACO.Messages.Node_Nr;
        Client_Parameters : SDO_Parameter_Array;
        Server_Parameters : SDO_Parameter_Array)
        return Endpoint_Type;
@@ -114,7 +111,7 @@ package ACO.SDO_Sessions is
    procedure Put_Buffer
       (This : in out Session_Manager;
        Id   : in     Valid_Endpoint_Nr;
-       Data : in     Data_Array);
+       Data : in     ACO.Messages.Data_Array);
 
    function Length_Buffer
       (This : Session_Manager;
@@ -124,13 +121,13 @@ package ACO.SDO_Sessions is
    procedure Get_Buffer
       (This : in out Session_Manager;
        Id   : in     Valid_Endpoint_Nr;
-       Data :    out Data_Array)
+       Data :    out ACO.Messages.Data_Array)
       with Pre => Data'Length <= This.Length_Buffer (Id);
 
    function Peek_Buffer
       (This : Session_Manager;
        Id   : Valid_Endpoint_Nr)
-       return Data_Array;
+       return ACO.Messages.Data_Array;
 
 private
 
@@ -140,7 +137,7 @@ private
    type Session_Array is array (Endpoint_Nr range <>) of SDO_Session;
 
    type Buffer_Array is array (Endpoint_Nr range <>) of
-      Q.Queue (Max_Nof_Items => Max_SDO_Transfer_Size);
+      Q.Queue (Max_Nof_Items => ACO.Configuration.Max_SDO_Transfer_Size);
 
    type Session_Manager is tagged limited record
       List    : Session_Array (Valid_Endpoint_Nr'Range);

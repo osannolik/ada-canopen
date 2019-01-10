@@ -2,23 +2,19 @@ with Ada.Real_Time;
 with ACO.CANopen;
 with ACO.Messages;
 with ACO.OD;
-with ACO.OD_Types;
-with ACO.States;
 with ACO.SDO_Sessions;
 
 private with ACO.Log;
 private with ACO.Utils.Generic_Alarms;
 private with ACO.Configuration;
 private with ACO.SDO_Commands;
+private with ACO.OD_Types;
+private with ACO.States;
 
 package ACO.Protocols.Service_Data is
 
-   use ACO.Messages;
-   use ACO.OD_Types;
-   use ACO.SDO_Sessions;
-
-   SDO_S2C_Id : constant Function_Code := 16#B#;
-   SDO_C2S_Id : constant Function_Code := 16#C#;
+   SDO_S2C_Id : constant ACO.Messages.Function_Code := 16#B#;
+   SDO_C2S_Id : constant ACO.Messages.Function_Code := 16#C#;
 
    type SDO
       (Handler : not null access ACO.CANopen.Handler'Class;
@@ -27,26 +23,30 @@ package ACO.Protocols.Service_Data is
 
    procedure Handle_Message
       (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type) is abstract;
+       Msg      : in     ACO.Messages.Message;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type) is abstract;
 
    procedure Message_Received
      (This : in out SDO;
-      Msg  : in     Message);
+      Msg  : in     ACO.Messages.Message);
 
    procedure Periodic_Actions
       (This  : in out SDO;
        T_Now : in     Ada.Real_Time.Time);
 
    function Get_Status
-      (This        : SDO;
-       Endpoint_Id : ACO.SDO_Sessions.Valid_Endpoint_Nr)
+      (This : SDO;
+       Id   : ACO.SDO_Sessions.Valid_Endpoint_Nr)
        return ACO.SDO_Sessions.SDO_Status;
 
+   function Is_Complete
+      (This : SDO;
+       Id   : ACO.SDO_Sessions.Valid_Endpoint_Nr)
+       return Boolean;
+
    procedure Clear
-      (This        : in out SDO;
-       Endpoint_Id : in     ACO.SDO_Sessions.Valid_Endpoint_Nr)
-      with Post => This.Get_Status (Endpoint_Id) = Pending;
+      (This : in out SDO;
+       Id   : in     ACO.SDO_Sessions.Valid_Endpoint_Nr);
 
 private
 
@@ -90,7 +90,7 @@ private
 
    type Alarm (SDO_Ref : access SDO'Class := null) is new Alarms.Alarm_Type with
       record
-         Id : Endpoint_Nr := No_Endpoint_Id;
+         Id : ACO.SDO_Sessions.Endpoint_Nr := ACO.SDO_Sessions.No_Endpoint_Id;
       end record;
 
    overriding
@@ -98,15 +98,17 @@ private
       (This  : access Alarm;
        T_Now : in     Ada.Real_Time.Time);
 
-   type Alarm_Array is array (Valid_Endpoint_Nr'Range) of aliased Alarm;
+   type Alarm_Array is array (ACO.SDO_Sessions.Valid_Endpoint_Nr'Range)
+      of aliased Alarm;
 
    type SDO
       (Handler : not null access ACO.CANopen.Handler'Class;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
    is abstract new Protocol (Od) with record
-      Sessions : Session_Manager;
+      Sessions : ACO.SDO_Sessions.Session_Manager;
       Timers   : Alarms.Alarm_Manager;
-      Alarms   : Alarm_Array := (others => (SDO'Access, No_Endpoint_Id));
+      Alarms   : Alarm_Array :=
+         (others => (SDO'Access, ACO.SDO_Sessions.No_Endpoint_Id));
    end record;
 
    overriding
@@ -121,32 +123,32 @@ private
       Message : in     String);
 
    procedure Start_Alarm
-      (This     : in out SDO;
-       Endpoint : in     Endpoint_Type);
+      (This : in out SDO;
+       Id   : in     ACO.SDO_Sessions.Valid_Endpoint_Nr);
 
    procedure Stop_Alarm
-      (This     : in out SDO;
-       Endpoint : in     Endpoint_Type);
+      (This : in out SDO;
+       Id   : in     ACO.SDO_Sessions.Valid_Endpoint_Nr);
 
    procedure Abort_All
       (This     : in out SDO;
-       Msg      : in     Message;
-       Endpoint : in     Endpoint_Type);
+       Msg      : in     ACO.Messages.Message;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type);
 
    procedure Write
       (This    : in out SDO;
        Index   : in     ACO.OD_Types.Entry_Index;
-       Data    : in     Data_Array;
+       Data    : in     ACO.Messages.Data_Array;
        Error   :    out Error_Type);
 
    procedure Send_SDO
       (This     : in out SDO;
-       Endpoint : in     Endpoint_Type;
-       Raw_Data : in     Msg_Data);
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type;
+       Raw_Data : in     ACO.Messages.Msg_Data);
 
    procedure Send_Abort
       (This     : in out SDO;
-       Endpoint : in     Endpoint_Type;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type;
        Error    : in     Error_Type;
        Index    : in     ACO.OD_Types.Entry_Index := (0,0));
 
