@@ -1,7 +1,7 @@
 with AUnit;
 with AUnit.Simple_Test_Cases;
 
-package ACO.Protocols.Error_Control.Test is
+package Remote_Node_Test is
 
    type Test is new AUnit.Simple_Test_Cases.Test_Case with null record;
 
@@ -9,4 +9,4 @@ package ACO.Protocols.Error_Control.Test is
 
    procedure Run_Test (T : in out Test);
 
-end ACO.Protocols.Error_Control.Test;
+end Remote_Node_Test;

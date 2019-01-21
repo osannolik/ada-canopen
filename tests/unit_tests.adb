@@ -1,9 +1,6 @@
 with Generic_Table_Test;
 with Generic_Collection_Test;
-with ACO.Protocols.Network_Management.Test;
-with ACO.Protocols.Error_Control.Test;
-with ACO.Protocols.Synchronization.Test;
-with ACO.Protocols.Service_Data.Test;
+with Remote_Node_Test;
 
 package body Unit_Tests is
 
@@ -12,10 +9,7 @@ package body Unit_Tests is
    begin
       Ret.Add_Test (new Generic_Table_Test.Test);
       Ret.Add_Test (new Generic_Collection_Test.Test);
-      Ret.Add_Test (new ACO.Protocols.Network_Management.Test.Test);
-      Ret.Add_Test (new ACO.Protocols.Error_Control.Test.Test);
-      Ret.Add_Test (new ACO.Protocols.Synchronization.Test.Test);
-      Ret.Add_Test (new ACO.Protocols.Service_Data.Test.Test);
+      Ret.Add_Test (new Remote_Node_Test.Test);
       return Ret;
    end Suite;
 

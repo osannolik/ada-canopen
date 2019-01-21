@@ -107,7 +107,7 @@ private
 
    --  0x1017 Producer Heartbeat Time
 
-   Producer_Hbt_Var : aliased Entry_U16 := Create (RW, 500);
+   Producer_Hbt_Var : aliased Entry_U16 := Create (RW, 10);
 
    Producer_Hbt_Data : aliased Entry_Array :=
       (0 => Producer_Hbt_Var'Access);

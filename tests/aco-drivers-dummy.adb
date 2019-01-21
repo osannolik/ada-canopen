@@ -3,28 +3,36 @@ package body ACO.Drivers.Dummy is
    overriding
    procedure Receive_Message_Blocking
      (This : in out Dummy_Driver;
-      Msg  :    out Message)
+      Msg  :    out ACO.Messages.Message)
    is
-      pragma Unreferenced (This, Msg);
    begin
-      null;
+      This.Get_First_Sent (Msg);
    end Receive_Message_Blocking;
 
    overriding
    procedure Send_Message
      (This : in out Dummy_Driver;
-      Msg  : in     Message)
+      Msg  : in     ACO.Messages.Message)
    is
    begin
       This.Tx_Buffer.Append (Msg);
    end Send_Message;
 
    overriding
-   procedure Initialize (This : in out Dummy_Driver)
+   procedure Initialize
+      (This : in out Dummy_Driver)
    is
    begin
       This.Tx_Buffer.Clear;
    end Initialize;
+
+   overriding
+   procedure Finalize
+      (This : in out Dummy_Driver)
+   is
+   begin
+      This.Tx_Buffer.Clear;
+   end Finalize;
 
    overriding
    function Is_Message_Pending
@@ -37,7 +45,7 @@ package body ACO.Drivers.Dummy is
 
    procedure Get_First_Sent
      (This : in out Dummy_Driver;
-      Msg  :    out Message)
+      Msg  :    out ACO.Messages.Message)
    is
    begin
       if Natural (This.Tx_Buffer.Length) > 0 then

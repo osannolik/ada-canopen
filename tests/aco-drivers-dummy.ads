@@ -5,15 +5,21 @@ package ACO.Drivers.Dummy is
    type Dummy_Driver is new Driver with private;
 
    overriding
-   procedure Receive_Message_Blocking (This : in out Dummy_Driver;
-                                       Msg  :    out Message);
+   procedure Receive_Message_Blocking
+      (This : in out Dummy_Driver;
+       Msg  :    out ACO.Messages.Message);
    overriding
    procedure Send_Message
      (This : in out Dummy_Driver;
-      Msg  : in     Message);
+      Msg  : in     ACO.Messages.Message);
 
    overriding
-   procedure Initialize (This : in out Dummy_Driver);
+   procedure Initialize
+      (This : in out Dummy_Driver);
+
+   overriding
+   procedure Finalize
+      (This : in out Dummy_Driver);
 
    overriding
    function Is_Message_Pending
@@ -22,13 +28,16 @@ package ACO.Drivers.Dummy is
 
    procedure Get_First_Sent
      (This : in out Dummy_Driver;
-      Msg  :    out Message);
+      Msg  :    out ACO.Messages.Message);
 
    function Nof_Sent (This : Dummy_Driver) return Natural;
 
 private
 
-   package V_Message is new Ada.Containers.Vectors (Natural, Message);
+   use type ACO.Messages.Message;
+
+   package V_Message is new Ada.Containers.Vectors
+      (Natural, ACO.Messages.Message);
 
    subtype Message_Vec is V_Message.Vector;
 
