@@ -1,20 +1,17 @@
 package ACO.Protocols.Service_Data.Servers is
 
    type Server
-      (Handler : not null access ACO.CANopen.Handler'Class;
+      (Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
-   is new SDO with private;
+   is abstract new SDO with private;
 
 private
 
    type Server
-      (Handler : not null access ACO.CANopen.Handler'Class;
+      (Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
-   is new SDO (Handler, Od) with record
-      null;
-   end record;
+   is abstract new SDO (Handler, Od) with null record;
 
-   overriding
    procedure Handle_Message
       (This     : in out Server;
        Msg      : in     ACO.Messages.Message;

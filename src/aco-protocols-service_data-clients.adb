@@ -272,10 +272,7 @@ package body ACO.Protocols.Service_Data.Clients is
       use type ACO.SDO_Sessions.Services;
 
       Endpoint : constant ACO.SDO_Sessions.Endpoint_Type :=
-         ACO.SDO_Sessions.Get_Endpoint
-            (Server_Node       => Node,
-             Client_Parameters => This.Od.Get_SDO_Client_Parameters,
-             Server_Parameters => This.Od.Get_SDO_Server_Parameters);
+         Client'Class (This).Get_Endpoint (Server_Node => Node);
       Size : constant Natural := An_Entry.Data_Length;
    begin
       Endpoint_Id := ACO.SDO_Sessions.No_Endpoint_Id;
@@ -330,10 +327,7 @@ package body ACO.Protocols.Service_Data.Clients is
       use type ACO.SDO_Sessions.Services;
 
       Endpoint : constant ACO.SDO_Sessions.Endpoint_Type :=
-         ACO.SDO_Sessions.Get_Endpoint
-            (Server_Node       => Node,
-             Client_Parameters => This.Od.Get_SDO_Client_Parameters,
-             Server_Parameters => This.Od.Get_SDO_Server_Parameters);
+         Client'Class (This).Get_Endpoint (Server_Node => Node);
       Cmd : ACO.SDO_Commands.Upload_Initiate_Cmd;
    begin
       Endpoint_Id := Endpoint.Id;

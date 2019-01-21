@@ -3,9 +3,14 @@ with ACO.OD_Types;
 package ACO.Protocols.Service_Data.Clients is
 
    type Client
-      (Handler : not null access ACO.CANopen.Handler'Class;
+      (Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
-   is new SDO with private;
+   is abstract new SDO with private;
+
+   function Get_Endpoint
+      (This        : Client;
+       Server_Node : ACO.Messages.Node_Nr)
+       return ACO.SDO_Sessions.Endpoint_Type is abstract;
 
    procedure Write_Remote_Entry
       (This        : in out Client;
@@ -31,13 +36,10 @@ package ACO.Protocols.Service_Data.Clients is
 private
 
    type Client
-      (Handler : not null access ACO.CANopen.Handler'Class;
+      (Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
-   is new SDO (Handler, Od) with record
-      null;
-   end record;
+   is abstract new SDO (Handler, Od) with null record;
 
-   overriding
    procedure Handle_Message
       (This     : in out Client;
        Msg      : in     ACO.Messages.Message;

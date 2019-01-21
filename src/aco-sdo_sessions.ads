@@ -42,24 +42,7 @@ package ACO.SDO_Sessions is
 
    No_Endpoint : Endpoint_Type;
 
-   function Tx_CAN_Id (Endpoint : Endpoint_Type) return ACO.Messages.Id_Type is
-      (case Endpoint.Role is
-          when Server => Endpoint.Parameters.CAN_Id_S2C,
-          when Client => Endpoint.Parameters.CAN_Id_C2S);
-
    function Image (Endpoint : Endpoint_Type) return String;
-
-   function Get_Endpoint
-      (Rx_CAN_Id         : ACO.Messages.Id_Type;
-       Client_Parameters : SDO_Parameter_Array;
-       Server_Parameters : SDO_Parameter_Array)
-       return Endpoint_Type;
-
-   function Get_Endpoint
-      (Server_Node       : ACO.Messages.Node_Nr;
-       Client_Parameters : SDO_Parameter_Array;
-       Server_Parameters : SDO_Parameter_Array)
-       return Endpoint_Type;
 
    type SDO_Status is
       (Pending,
@@ -143,12 +126,5 @@ private
       List    : Session_Array (Valid_Endpoint_Nr'Range);
       Buffers : Buffer_Array (Valid_Endpoint_Nr'Range);
    end record;
-
-   function Get_Matching_Endpoint
-      (Match_Condition   : not null access
-          function (P : SDO_Parameters; Is_Server : Boolean) return Boolean;
-       Client_Parameters : SDO_Parameter_Array;
-       Server_Parameters : SDO_Parameter_Array)
-       return Endpoint_Type;
 
 end ACO.SDO_Sessions;

@@ -98,15 +98,16 @@ package body ACO.Protocols.Service_Data is
    end Write;
 
    procedure Send_SDO
-      (This     : in out SDO;
+      (This     : in out SDO'Class;
        Endpoint : in     ACO.SDO_Sessions.Endpoint_Type;
        Raw_Data : in     ACO.Messages.Msg_Data)
    is
       Msg : constant ACO.Messages.Message :=
-         ACO.Messages.Create (CAN_Id => ACO.SDO_Sessions.Tx_CAN_Id (Endpoint),
-                              RTR    => False,
-                              DLC    => 8,
-                              Data   => Raw_Data);
+         ACO.Messages.Create
+            (CAN_Id => This.Tx_CAN_Id (Endpoint.Parameters),
+             RTR    => False,
+             DLC    => 8,
+             Data   => Raw_Data);
    begin
       This.SDO_Log (ACO.Log.Debug, "Sending " & ACO.Messages.Image (Msg));
       This.Handler.Put (Msg);
@@ -171,8 +172,19 @@ package body ACO.Protocols.Service_Data is
       This.Stop_Alarm (Endpoint.Id);
    end Abort_All;
 
+   overriding
+   function Is_Valid
+      (This : in out SDO;
+       Msg  : in     ACO.Messages.Message)
+       return Boolean
+   is
+   begin
+      return SDO'Class (This).Get_Endpoint (ACO.Messages.CAN_Id (Msg)).Id /=
+         ACO.SDO_Sessions.No_Endpoint_Id;
+   end Is_Valid;
+
    procedure Message_Received
-     (This : in out SDO;
+     (This : in out SDO'Class;
       Msg  : in     ACO.Messages.Message)
    is
       use ACO.States;
@@ -187,14 +199,9 @@ package body ACO.Protocols.Service_Data is
 
       declare
          Endpoint : constant ACO.SDO_Sessions.Endpoint_Type :=
-            ACO.SDO_Sessions.Get_Endpoint
-               (Rx_CAN_Id         => ACO.Messages.CAN_Id (Msg),
-                Client_Parameters => This.Od.Get_SDO_Client_Parameters,
-                Server_Parameters => This.Od.Get_SDO_Server_Parameters);
+            This.Get_Endpoint (Rx_CAN_Id => ACO.Messages.CAN_Id (Msg));
       begin
-         if Endpoint.Id /= ACO.SDO_Sessions.No_Endpoint_Id then
-            SDO'Class (This).Handle_Message (Msg, Endpoint);
-         end if;
+         This.Handle_Message (Msg, Endpoint);
       end;
    end Message_Received;
 
@@ -231,20 +238,6 @@ package body ACO.Protocols.Service_Data is
    begin
       This.Timers.Process (T_Now);
    end Periodic_Actions;
-
-   overriding
-   procedure Initialize (This : in out SDO)
-   is
-   begin
-      Protocol (This).Initialize;
-   end Initialize;
-
-   overriding
-   procedure Finalize (This : in out SDO)
-   is
-   begin
-      Protocol (This).Finalize;
-   end Finalize;
 
    procedure SDO_Log
      (This    : in out SDO;

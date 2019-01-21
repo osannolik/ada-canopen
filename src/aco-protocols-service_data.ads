@@ -17,18 +17,35 @@ package ACO.Protocols.Service_Data is
    SDO_C2S_Id : constant ACO.Messages.Function_Code := 16#C#;
 
    type SDO
-      (Handler : not null access ACO.CANopen.Handler'Class;
+      (Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
    is abstract new Protocol with private;
 
-   procedure Handle_Message
-      (This     : in out SDO;
-       Msg      : in     ACO.Messages.Message;
-       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type) is abstract;
+   function Tx_CAN_Id
+      (This      : SDO;
+       Parameter : ACO.SDO_Sessions.SDO_Parameters)
+       return ACO.Messages.Id_Type is abstract;
+
+   function Rx_CAN_Id
+      (This      : SDO;
+       Parameter : ACO.SDO_Sessions.SDO_Parameters)
+       return ACO.Messages.Id_Type is abstract;
+
+   function Get_Endpoint
+      (This      : SDO;
+       Rx_CAN_Id : ACO.Messages.Id_Type)
+       return ACO.SDO_Sessions.Endpoint_Type is abstract;
+
+   overriding
+   function Is_Valid
+      (This : in out SDO;
+       Msg  : in     ACO.Messages.Message)
+       return Boolean;
 
    procedure Message_Received
-     (This : in out SDO;
-      Msg  : in     ACO.Messages.Message);
+     (This : in out SDO'Class;
+      Msg  : in     ACO.Messages.Message)
+      with Pre => This.Is_Valid (Msg);
 
    procedure Periodic_Actions
       (This  : in out SDO;
@@ -79,19 +96,15 @@ private
        Failed_To_Transfer_Or_Store_Data                      => 16#0800_0020#,
        Failed_To_Transfer_Or_Store_Data_Due_To_Local_Control => 16#0800_0021#);
 
-   overriding
-   procedure Initialize (This : in out SDO);
-
-   overriding
-   procedure Finalize (This : in out SDO);
 
    package Alarms is new ACO.Utils.Generic_Alarms
       (Configuration.Max_Nof_Simultaneous_SDO_Sessions);
 
-   type Alarm (SDO_Ref : access SDO'Class := null) is new Alarms.Alarm_Type with
-      record
-         Id : ACO.SDO_Sessions.Endpoint_Nr := ACO.SDO_Sessions.No_Endpoint_Id;
-      end record;
+   type Alarm
+      (SDO_Ref : access SDO'Class := null)
+   is new Alarms.Alarm_Type with record
+      Id : ACO.SDO_Sessions.Endpoint_Nr := ACO.SDO_Sessions.No_Endpoint_Id;
+   end record;
 
    overriding
    procedure Signal
@@ -102,8 +115,9 @@ private
       of aliased Alarm;
 
    type SDO
-      (Handler : not null access ACO.CANopen.Handler'Class;
+      (Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
+       --Wrap    : not null access SDO_Wrapper_Base'Class)
    is abstract new Protocol (Od) with record
       Sessions : ACO.SDO_Sessions.Session_Manager;
       Timers   : Alarms.Alarm_Manager;
@@ -116,6 +130,11 @@ private
      (This     : in out SDO;
       Previous : in     ACO.States.State;
       Current  : in     ACO.States.State);
+
+   procedure Handle_Message
+      (This     : in out SDO;
+       Msg      : in     ACO.Messages.Message;
+       Endpoint : in     ACO.SDO_Sessions.Endpoint_Type) is null;
 
    procedure SDO_Log
      (This    : in out SDO;
@@ -142,7 +161,7 @@ private
        Error   :    out Error_Type);
 
    procedure Send_SDO
-      (This     : in out SDO;
+      (This     : in out SDO'Class;
        Endpoint : in     ACO.SDO_Sessions.Endpoint_Type;
        Raw_Data : in     ACO.Messages.Msg_Data);
 
