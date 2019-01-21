@@ -19,11 +19,24 @@ package ACO.Events is
 
    package New_Message is new ACO.Utils.Generic_Event
       (Item_Type           => ACO.Messages.Message,
-       Max_Nof_Subscribers => 16);
+       Max_Nof_Subscribers => 8);
 
    package Periodic_Tick is new ACO.Utils.Generic_Event
       (Item_Type           => Ada.Real_Time.Time,
        Max_Nof_Subscribers => 4);
+
+   type Heartbeat_Data is record
+      Id    : ACO.Messages.Node_Nr;
+      State : ACO.States.State;
+   end record;
+
+   package Node_Heartbeat is new ACO.Utils.Generic_Event
+      (Item_Type           => Heartbeat_Data,
+       Max_Nof_Subscribers => 2);
+
+   package Heartbeat_Timeout is new ACO.Utils.Generic_Event
+      (Item_Type           => ACO.Messages.Node_Nr,
+       Max_Nof_Subscribers => 2);
 
    type Event_Manager is tagged limited record
       Received_Message : New_Message.Event_Publisher;
@@ -38,6 +51,12 @@ package ACO.Events is
          (Max_Nof_Events   => Max_Nof_Event_Queue_Data_Items,
           Priority_Ceiling => Event_Queue_Ceiling);
       Entry_Updated       : Entry_Update.Queued_Event_Publisher
+         (Max_Nof_Events   => Max_Nof_Event_Queue_Data_Items,
+          Priority_Ceiling => Event_Queue_Ceiling);
+      Heartbeat_Received  : Node_Heartbeat.Queued_Event_Publisher
+         (Max_Nof_Events   => Max_Nof_Event_Queue_Data_Items,
+          Priority_Ceiling => Event_Queue_Ceiling);
+      Heartbeat_Timed_Out : Heartbeat_Timeout.Queued_Event_Publisher
          (Max_Nof_Events   => Max_Nof_Event_Queue_Data_Items,
           Priority_Ceiling => Event_Queue_Ceiling);
    end record;
