@@ -1,41 +1,37 @@
-with Ada.Real_Time;
-with ACO.CANopen;
 with ACO.Messages;
 with ACO.OD;
 
 private with ACO.States;
 private with ACO.Log;
-private with ACO.Utils.Generic_Alarms;
 private with Interfaces;
-private with ACO.OD_Types;
-private with ACO.Slave_Monitors;
 
 package ACO.Protocols.Error_Control is
 
-   use ACO.Messages;
-   use ACO.OD;
-
-   EC_Id : constant Function_Code := 16#E#;
+   EC_Id : constant ACO.Messages.Function_Code := 16#E#;
 
    type EC
-      (Id      : Node_Nr;
-       Handler : not null access ACO.CANopen.Handler'Class;
-       Od      : not null access ACO.OD.Object_Dictionary'Class)
+      (Id : ACO.Messages.Node_Nr;
+       Od : not null access ACO.OD.Object_Dictionary'Class)
    is new Protocol with private;
+
+   overriding
+   function Is_Valid
+      (This : in out EC;
+       Msg  : in     ACO.Messages.Message)
+       return Boolean;
 
    procedure Message_Received
      (This : in out EC;
-      Msg  : in     Message);
-
-   procedure Periodic_Actions
-      (This  : in out EC;
-       T_Now : in     Ada.Real_Time.Time);
+      Msg  : in     ACO.Messages.Message)
+      with Pre => This.Is_Valid (Msg);
 
 private
 
-   package Commands is
-      use ACO.States;
+   package EC_Commands is
       use Interfaces;
+      use ACO.States;
+      use type ACO.Messages.Node_Nr;
+      use type ACO.Messages.Function_Code;
 
       type EC_State is new Interfaces.Unsigned_8;
 
@@ -50,71 +46,51 @@ private
           Operational                  => Op,
           Stopped                      => Stop);
 
-      function Get_EC_State (Msg : Message) return EC_State is
+      function Get_EC_State (Msg : ACO.Messages.Message) return EC_State is
          (EC_State (Msg.Data (0)));
 
-      function Get_State (Msg : Message) return ACO.States.State is
-         (case Msg.Data(0) is
+      function To_State (S : EC_State) return ACO.States.State is
+         (case S is
              when Bootup => Initializing,
              when Pre_Op => Pre_Operational,
              when Op     => Operational,
              when Stop   => Stopped,
              when others => Unknown_State);
 
-      function Is_Valid_Command (Msg : Message) return Boolean is
-         (Msg.Length = EC_State'Size / 8 and then Node_Id (Msg) /= 0);
+      function Get_State (Msg : ACO.Messages.Message) return ACO.States.State is
+         (To_State (Get_EC_State (Msg)));
 
-      function Is_Bootup (Msg : Message) return Boolean is
+      function Is_Valid_Command
+         (Msg : ACO.Messages.Message; Id : ACO.Messages.Node_Nr)
+          return Boolean
+      is
+         (ACO.Messages.Func_Code (Msg) = EC_Id and then
+          ACO.Messages.Node_Id (Msg) = Id and then
+          Msg.Length = EC_State'Size / 8);
+
+      function Is_Bootup (S : EC_State) return Boolean is
+         (S = Bootup);
+
+      function Is_Bootup (Msg : ACO.Messages.Message) return Boolean is
          (Get_EC_State (Msg) = Bootup);
 
-   end Commands;
-
-   overriding
-   procedure Initialize (This : in out EC);
-
-   overriding
-   procedure Finalize (This : in out EC);
-
-   package Alarms is new ACO.Utils.Generic_Alarms (1);
-
-   type Heartbeat_Producer_Alarm (EC_Ref : not null access EC) is
-      new Alarms.Alarm_Type with null record;
-
-   overriding
-   procedure Signal
-      (This  : access Heartbeat_Producer_Alarm;
-       T_Now : in     Ada.Real_Time.Time);
-
-   type Entry_Update_Subscriber (EC_Ref : not null access EC) is
-      new ACO.Events.Entry_Update.Subscriber with null record;
-
-   overriding
-   procedure Update
-      (This : access Entry_Update_Subscriber;
-       Data : in     ACO.OD_Types.Entry_Index);
+   end EC_Commands;
 
    type EC
-      (Id      : Node_Nr;
-       Handler : not null access ACO.CANopen.Handler'Class;
-       Od      : not null access ACO.OD.Object_Dictionary'Class)
-   is new Protocol (Od) with record
-      Timers : Alarms.Alarm_Manager;
-      Producer_Alarm : aliased Heartbeat_Producer_Alarm (EC'Access);
-      Monitor : ACO.Slave_Monitors.Slave_Monitor (Od);
-      Entry_Update : aliased Entry_Update_Subscriber (EC'Access);
-   end record;
-
-   procedure Send_Bootup (This : in out EC);
-
-   procedure Heartbeat_Producer_Start (This : in out EC);
-
-   procedure Heartbeat_Producer_Stop (This : in out EC);
+      (Id : ACO.Messages.Node_Nr;
+       Od : not null access ACO.OD.Object_Dictionary'Class)
+   is new Protocol (Od) with null record;
 
    overriding
    procedure On_State_Change
-     (This     : in out EC;
-      Previous : in     ACO.States.State;
-      Current  : in     ACO.States.State);
+      (This     : in out EC;
+       Previous : in     ACO.States.State;
+       Current  : in     ACO.States.State) is null;
+
+   procedure On_Heartbeat
+      (This      : in out EC;
+       Id        : in     ACO.Messages.Node_Nr;
+       Hbt_State : in     EC_Commands.EC_State) is null;
 
    procedure EC_Log
      (This    : in out EC;

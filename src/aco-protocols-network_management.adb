@@ -1,66 +1,98 @@
 package body ACO.Protocols.Network_Management is
 
-   procedure Set_State
-     (This  : in out NMT;
-      State : in     ACO.States.State)
+   function Is_Allowed_Transition
+      (Current : ACO.States.State;
+       Next    : ACO.States.State)
+       return Boolean
    is
       use ACO.States;
-
-      Current : constant ACO.States.State := This.Od.Get_Node_State;
-      Next    : ACO.States.State := Current;
    begin
       case Current is
-         when Pre_Operational | Operational | Stopped =>
-            Next := State;
-
          when Initializing =>
-            if State = Pre_Operational then
-               Next := State;
-            end if;
+            return Next = Pre_Operational;
 
-         when Unknown_State =>
-            --  ?
-            Next := State;
+         when Pre_Operational | Operational | Stopped | Unknown_State =>
+            return True;
       end case;
+   end Is_Allowed_Transition;
 
-      if Next /= Current then
-         This.Od.Set_Node_State (Next);
-      end if;
+   procedure Set
+      (This  : in out NMT;
+       State : in     ACO.States.State)
+   is
+      use ACO.States;
+   begin
+      This.Od.Set_Node_State (State);
 
-      case Next is
+      case State is
          when Initializing =>
             This.Od.Set_Node_State (Pre_Operational);
 
          when Pre_Operational | Operational | Stopped | Unknown_State =>
             null;
       end case;
-   end Set_State;
+   end Set;
+
+   function Get
+      (This  : NMT)
+       return ACO.States.State
+   is
+   begin
+      return This.Od.Get_Node_State;
+   end Get;
 
    overriding
-   procedure On_State_Change
-     (This     : in out NMT;
-      Previous : in     ACO.States.State;
-      Current  : in     ACO.States.State)
+   function Is_Valid
+      (This : in out NMT;
+       Msg  : in     ACO.Messages.Message)
+       return Boolean
    is
+      pragma Unreferenced (This);
+
+      use type ACO.Messages.Id_Type;
    begin
-      This.NMT_Log (ACO.Log.Info, Previous'Img & " => " & Current'Img);
-   end On_State_Change;
+      return ACO.Messages.CAN_Id (Msg) = NMT_CAN_Id;
+   end Is_Valid;
+
+   procedure On_NMT_Command
+      (This : in out NMT;
+       Msg  : in     ACO.Messages.Message)
+   is
+      use ACO.States;
+      use type ACO.Messages.Node_Nr;
+
+      Cmd : constant NMT_Commands.NMT_Command :=
+         NMT_Commands.To_NMT_Command (Msg);
+   begin
+      if Cmd.Node_Id = This.Id or else
+         Cmd.Node_Id = ACO.Messages.Broadcast_Id
+      then
+         case Cmd.Command_Specifier is
+            when NMT_Commands.Start =>
+               This.Set (Operational);
+
+            when NMT_Commands.Stop =>
+               This.Set (Stopped);
+
+            when NMT_Commands.Pre_Op =>
+               This.Set (Pre_Operational);
+
+            when NMT_Commands.Reset_Node | NMT_Commands.Reset_Communication =>
+               This.Set (Initializing);
+
+            when others =>
+               null;
+         end case;
+      end if;
+   end On_NMT_Command;
 
    procedure Message_Received
-     (This    : in out NMT;
-      Msg     : in     Message;
-      Node_Id : in     Node_Nr)
+     (This : in out NMT;
+      Msg  : in     ACO.Messages.Message)
    is
-      use Commands;
       use ACO.States;
-
-      Cmd : NMT_Command;
    begin
-      if not Is_Valid_Command (Msg) then
-         return;
-      end if;
-
-      case This.Od.Get_Node_State is
+      case This.Get is
          when Initializing | Unknown_State =>
             return;
 
@@ -68,29 +100,9 @@ package body ACO.Protocols.Network_Management is
             null;
       end case;
 
-      Cmd := To_NMT_Command (Msg);
-
-      if Cmd.Node_Id = Node_Id or else
-         Cmd.Node_Id = Broadcast_Id
-      then
-         case Cmd.Command_Specifier is
-            when Start =>
-               This.Set_State (Operational);
-
-            when Stop =>
-               This.Set_State (Stopped);
-
-            when Pre_Op =>
-               This.Set_State (Pre_Operational);
-
-            when Reset_Node | Reset_Communication =>
-               This.Set_State (Initializing);
-
-            when others =>
-               null;
-         end case;
+      if NMT_Commands.Is_Valid_Command (Msg) then
+         This.On_NMT_Command (Msg);
       end if;
-
    end Message_Received;
 
    procedure NMT_Log

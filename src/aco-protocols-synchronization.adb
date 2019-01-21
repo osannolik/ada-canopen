@@ -1,9 +1,9 @@
 package body ACO.Protocols.Synchronization is
 
-   function To_Ms_From_100us (T : Natural) return Natural is
-      (T / 10);
+   function To_Ms_From_100us (T : Natural) return Natural is (T / 10);
 
-   procedure Counter_Reset (This : in out SYNC)
+   procedure Counter_Reset
+      (This : in out SYNC)
    is
    begin
       This.Counter := Counter_Type'First;
@@ -21,26 +21,30 @@ package body ACO.Protocols.Synchronization is
       end if;
    end Counter_Increment;
 
-   function Is_Counter_Expected (This : in out SYNC) return Boolean is
+   function Is_Counter_Expected
+      (This : in out SYNC)
+       return Boolean
+   is
       (This.Od.Get_Sync_Counter_Overflow > 1);
 
    function Create_Sync
      (This           : in out SYNC;
       Overflow_Value : in     Sync_Counter)
-      return Message
+      return ACO.Messages.Message
    is
-      Data : constant Data_Array :=
+      Data : constant ACO.Messages.Data_Array :=
          (if Overflow_Value > 1 then
-             (Msg_Data'First => This.Counter)
+             (ACO.Messages.Msg_Data'First => This.Counter)
           else
-             Empty_Data);
+             ACO.Messages.Empty_Data);
    begin
-      return Create (CAN_Id => SYNC_CAN_Id,
-                     RTR    => False,
-                     Data   => Data);
+      return ACO.Messages.Create (CAN_Id => SYNC_CAN_Id,
+                                  RTR    => False,
+                                  Data   => Data);
    end Create_Sync;
 
-   procedure Send_Sync (This : in out SYNC)
+   procedure Send_Sync
+      (This : in out SYNC)
    is
       Overflow_Value : constant Sync_Counter :=
          This.Od.Get_Sync_Counter_Overflow;
@@ -57,7 +61,7 @@ package body ACO.Protocols.Synchronization is
       (This  : access Sync_Producer_Alarm;
        T_Now : in     Ada.Real_Time.Time)
    is
-      use Ada.Real_Time;
+      use type Ada.Real_Time.Time;
       use Alarms;
 
       SYNC_Ref : access SYNC renames This.SYNC_Ref;
@@ -66,12 +70,14 @@ package body ACO.Protocols.Synchronization is
          To_Ms_From_100us (SYNC_Ref.Od.Get_Communication_Cycle_Period);
    begin
       if Period > 0 then
-         SYNC_Ref.Timers.Set (Alarm_Access (This), T_Now + Milliseconds (Period));
+         SYNC_Ref.Timers.Set
+            (Alarm_Access (This), T_Now + Ada.Real_Time.Milliseconds (Period));
          SYNC_Ref.Send_Sync;
       end if;
    end Signal;
 
-   procedure Sync_Producer_Start (This : in out SYNC)
+   procedure Sync_Producer_Start
+      (This : in out SYNC)
    is
       use Ada.Real_Time;
 
@@ -85,7 +91,8 @@ package body ACO.Protocols.Synchronization is
       end if;
    end Sync_Producer_Start;
 
-   procedure Sync_Producer_Stop (This : in out SYNC)
+   procedure Sync_Producer_Stop
+      (This : in out SYNC)
    is
    begin
       This.Timers.Cancel (This.Producer_Alarm'Unchecked_Access);
@@ -135,9 +142,22 @@ package body ACO.Protocols.Synchronization is
       end if;
    end Update;
 
+   overriding
+   function Is_Valid
+      (This : in out SYNC;
+       Msg  : in     ACO.Messages.Message)
+       return Boolean
+   is
+      use type ACO.Messages.Id_Type;
+
+      pragma Unreferenced (This);
+   begin
+      return ACO.Messages.CAN_Id (Msg) = SYNC_CAN_Id;
+   end Is_Valid;
+
    procedure Message_Received
      (This : in out SYNC;
-      Msg  : in     Message)
+      Msg  : in     ACO.Messages.Message)
    is
    begin
       if This.Is_Counter_Expected and Msg.Length /= 1 then
@@ -156,7 +176,8 @@ package body ACO.Protocols.Synchronization is
    end Periodic_Actions;
 
    overriding
-   procedure Initialize (This : in out SYNC)
+   procedure Initialize
+      (This : in out SYNC)
    is
    begin
       Protocol (This).Initialize;
@@ -165,7 +186,8 @@ package body ACO.Protocols.Synchronization is
    end Initialize;
 
    overriding
-   procedure Finalize (This : in out SYNC)
+   procedure Finalize
+      (This : in out SYNC)
    is
    begin
       Protocol (This).Finalize;

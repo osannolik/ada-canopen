@@ -1,4 +1,3 @@
-with ACO.Messages;
 with ACO.OD;
 with ACO.States;
 
@@ -7,45 +6,60 @@ private with Interfaces;
 
 package ACO.Protocols.Network_Management is
 
-   use ACO.Messages;
+   NMT_CAN_Id : constant ACO.Messages.Id_Type := 0;
 
-   NMT_CAN_Id : constant Id_Type := 0;
+   type NMT
+      (Id : ACO.Messages.Node_Nr;
+       Od : not null access ACO.OD.Object_Dictionary'Class)
+   is abstract new Protocol (Od) with null record;
 
-   type NMT (Od : not null access ACO.OD.Object_Dictionary'Class) is
-      new Protocol (Od) with null record;
+   overriding
+   function Is_Valid
+      (This : in out NMT;
+       Msg  : in     ACO.Messages.Message)
+       return Boolean;
 
    procedure Message_Received
-     (This    : in out NMT;
-      Msg     : in     Message;
-      Node_Id : in     Node_Nr);
+      (This : in out NMT;
+       Msg  : in     ACO.Messages.Message)
+      with Pre => This.Is_Valid (Msg);
 
-   procedure Set_State
-     (This  : in out NMT;
-      State : in     ACO.States.State);
+   function Is_Allowed_Transition
+      (Current : ACO.States.State;
+       Next    : ACO.States.State)
+       return Boolean;
+
+   procedure Set
+      (This  : in out NMT;
+       State : in     ACO.States.State)
+      with Pre => Is_Allowed_Transition (This.Od.Get_Node_State, State);
+
+   function Get
+      (This  : NMT)
+       return ACO.States.State;
 
 private
 
-   overriding
    procedure On_State_Change
-     (This     : in out NMT;
-      Previous : in     ACO.States.State;
-      Current  : in     ACO.States.State);
+      (This     : in out NMT;
+       Previous : in     ACO.States.State;
+       Current  : in     ACO.States.State) is null;
 
    procedure NMT_Log
      (This    : in out NMT;
       Level   : in     ACO.Log.Log_Level;
       Message : in     String);
 
-   package Commands is
+   package NMT_Commands is
       type Cmd_Spec_Type is new Interfaces.Unsigned_8;
 
       type NMT_Command (As_Raw : Boolean := False) is record
          case As_Raw is
             when True =>
-               Raw : Data_Array (0 .. 1);
+               Raw : ACO.Messages.Data_Array (0 .. 1);
             when False =>
                Command_Specifier : Cmd_Spec_Type;
-               Node_Id           : Node_Nr;
+               Node_Id           : ACO.Messages.Node_Nr;
          end case;
       end record
          with Unchecked_Union, Size => 16;
@@ -69,14 +83,29 @@ private
           Cmd = Reset_Node or else
           Cmd = Reset_Communication);
 
-      function To_NMT_Command (Msg : Message) return NMT_Command is
+      To_CMD_Spec : constant array (ACO.States.State) of Cmd_Spec_Type :=
+         (ACO.States.Initializing | ACO.States.Unknown_State => Reset_Node,
+          ACO.States.Pre_Operational                         => Pre_Op,
+          ACO.States.Operational                             => Start,
+          ACO.States.Stopped                                 => Stop);
+
+      function To_NMT_Command (Msg : ACO.Messages.Message) return NMT_Command is
          ((As_Raw => True,
            Raw    => Msg.Data (0 .. 1)));
 
-      function Is_Valid_Command (Msg : Message) return Boolean is
+      function To_Msg (Cmd : NMT_Command) return ACO.Messages.Message is
+         (ACO.Messages.Create (CAN_Id => NMT_CAN_Id,
+                               RTR    => False,
+                               Data   => Cmd.Raw));
+
+      function Is_Valid_Command (Msg : ACO.Messages.Message) return Boolean is
          ((Msg.Length = NMT_Command'Size / 8) and then
           Is_Valid_Cmd_Spec (To_NMT_Command (Msg).Command_Specifier));
 
-   end Commands;
+   end NMT_Commands;
+
+   procedure On_NMT_Command
+      (This : in out NMT;
+       Msg  : in     ACO.Messages.Message);
 
 end ACO.Protocols.Network_Management;

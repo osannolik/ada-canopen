@@ -1,177 +1,37 @@
 package body ACO.Protocols.Error_Control is
 
-   function Create_Heartbeat
-     (Node_State : ACO.States.State;
-      Node_Id    : Node_Nr)
-      return Message
-   is
-      (Create (Code => EC_Id,
-               Node => Node_Id,
-               RTR  => False,
-               Data => (Msg_Data'First =>
-                           Data_Type (Commands.To_EC_State (Node_State)))));
-
-   procedure Send_Heartbeat
-      (This       : in out EC;
-       Node_State : in     ACO.States.State)
-   is
-   begin
-      This.Handler.Put (Create_Heartbeat (Node_State, This.Id));
-   end Send_Heartbeat;
-
-   procedure Send_Bootup
-     (This : in out EC)
-   is
-   begin
-      This.EC_Log (ACO.Log.Debug, "Sending bootup for node" & This.Id'Img);
-      This.Send_Heartbeat (ACO.States.Initializing);
-   end Send_Bootup;
-
    overriding
-   procedure Signal
-      (This  : access Heartbeat_Producer_Alarm;
-       T_Now : in     Ada.Real_Time.Time)
+   function Is_Valid
+      (This : in out EC;
+       Msg  : in     ACO.Messages.Message)
+       return Boolean
    is
-      use Ada.Real_Time;
-      use Alarms;
+      pragma Unreferenced (This);
 
-      EC_Ref : access EC renames This.EC_Ref;
-
-      Period : constant Natural := EC_Ref.Od.Get_Heartbeat_Producer_Period;
+      use type ACO.Messages.Function_Code;
    begin
-      if Period > 0 then
-         EC_Ref.Timers.Set (Alarm_Access (This), T_Now + Milliseconds (Period));
-         EC_Ref.Send_Heartbeat (EC_Ref.Od.Get_Node_State);
-      end if;
-   end Signal;
-
-   procedure Heartbeat_Producer_Start (This : in out EC)
-   is
-      use Ada.Real_Time;
-
-      Period : constant Natural := This.Od.Get_Heartbeat_Producer_Period;
-      Immediately : constant Time := Clock;
-   begin
-      if Period > 0 then
-         This.Timers.Set
-            (Alarm       => This.Producer_Alarm'Unchecked_Access,
-             Signal_Time => Immediately);
-      end if;
-   end Heartbeat_Producer_Start;
-
-   procedure Heartbeat_Producer_Stop (This : in out EC)
-   is
-   begin
-      This.Timers.Cancel (This.Producer_Alarm'Unchecked_Access);
-   end Heartbeat_Producer_Stop;
-
-   overriding
-   procedure On_State_Change
-     (This     : in out EC;
-      Previous : in     ACO.States.State;
-      Current  : in     ACO.States.State)
-   is
-      use ACO.States;
-   begin
-      case Current is
-         when Initializing | Unknown_State =>
-            This.Heartbeat_Producer_Stop;
-
-         when Pre_Operational =>
-            if Previous = Initializing then
-               This.Send_Bootup;
-               This.Heartbeat_Producer_Start;
-            end if;
-
-         when Operational | Stopped =>
-            null;
-      end case;
-   end On_State_Change;
+      return ACO.Messages.Func_Code (Msg) = EC_Id;
+   end Is_Valid;
 
    procedure Message_Received
      (This : in out EC;
-      Msg  : in     Message)
+      Msg  : in     ACO.Messages.Message)
    is
-      use Commands;
       use ACO.States;
-
-      Id : Node_Nr;
    begin
-      if not Is_Valid_Command (Msg) then
-         return;
-      end if;
-
-      case This.Od.Get_Node_State is
-         when Initializing | Unknown_State =>
-            return;
-
-         when Pre_Operational | Operational | Stopped =>
-            null;
-      end case;
-
-      Id := Node_Id (Msg);
-
-      if Id /= Not_A_Slave then
+      if EC_Commands.Is_Valid_Command (Msg, This.Id) then
          declare
-            Slave_State : constant ACO.States.State := Commands.Get_State (Msg);
+            Hbt_State : constant EC_Commands.EC_State :=
+               EC_Commands.Get_EC_State (Msg);
+            Id : constant ACO.Messages.Node_Nr := ACO.Messages.Node_Id (Msg);
          begin
-            if This.Monitor.Is_Monitored (Id) then
-               This.Monitor.Update_State (Id, Slave_State);
-            elsif Is_Bootup (Msg) then
-               This.Monitor.Start (Id, Slave_State);
-            end if;
+            This.Od.Events.Heartbeat_Received.Put
+               ((Id    => Id,
+                 State => EC_Commands.To_State (Hbt_State)));
+            This.On_Heartbeat (Id, Hbt_State);
          end;
       end if;
    end Message_Received;
-
-   overriding
-   procedure Update
-      (This : access Entry_Update_Subscriber;
-       Data : in     ACO.OD_Types.Entry_Index)
-   is
-      use type ACO.OD_Types.Object_Index;
-      EC_Ref : access EC renames This.EC_Ref;
-   begin
-      case Data.Object is
-         when Heartbeat_Consumer_Index =>
-            EC_Ref.Monitor.Restart;
-
-         when Heartbeat_Producer_Index =>
-            if EC_Ref.Timers.Is_Pending (EC_Ref.Producer_Alarm'Access) then
-               EC_Ref.Heartbeat_Producer_Stop;
-               EC_Ref.Heartbeat_Producer_Start;
-            end if;
-
-         when others => null;
-      end case;
-   end Update;
-
-   procedure Periodic_Actions
-      (This  : in out EC;
-       T_Now : in     Ada.Real_Time.Time)
-   is
-   begin
-      This.Timers.Process (T_Now);
-      This.Monitor.Update_Alarms (T_Now);
-   end Periodic_Actions;
-
-   overriding
-   procedure Initialize (This : in out EC)
-   is
-   begin
-      Protocol (This).Initialize;
-
-      This.Od.Events.Entry_Updated.Attach (This.Entry_Update'Unchecked_Access);
-   end Initialize;
-
-   overriding
-   procedure Finalize (This : in out EC)
-   is
-   begin
-      Protocol (This).Finalize;
-
-      This.Od.Events.Entry_Updated.Detach (This.Entry_Update'Unchecked_Access);
-   end Finalize;
 
    procedure EC_Log
      (This    : in out EC;

@@ -1,6 +1,5 @@
 with Ada.Real_Time;
 with ACO.CANopen;
-with ACO.Messages;
 with ACO.OD;
 with ACO.States;
 
@@ -11,18 +10,22 @@ private with ACO.OD_Types;
 
 package ACO.Protocols.Synchronization is
 
-   use ACO.Messages;
-
-   SYNC_CAN_Id : constant Id_Type := 16#80#;
+   SYNC_CAN_Id : constant ACO.Messages.Id_Type := 16#80#;
 
    type SYNC
-      (Handler : not null access ACO.CANopen.Handler'Class;
+      (Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
    is new Protocol with private;
 
+   overriding
+   function Is_Valid
+      (This : in out SYNC;
+       Msg  : in     ACO.Messages.Message)
+       return Boolean;
+
    procedure Message_Received
      (This : in out SYNC;
-      Msg  : in     Message);
+      Msg  : in     ACO.Messages.Message);
 
    procedure Periodic_Actions
       (This  : in out SYNC;
@@ -40,8 +43,9 @@ private
 
    package Alarms is new ACO.Utils.Generic_Alarms (1);
 
-   type Sync_Producer_Alarm (SYNC_Ref : not null access SYNC) is
-      new Alarms.Alarm_Type with null record;
+   type Sync_Producer_Alarm
+      (SYNC_Ref : not null access SYNC)
+   is new Alarms.Alarm_Type with null record;
 
    overriding
    procedure Signal
@@ -51,8 +55,9 @@ private
    subtype Counter_Type is
       Interfaces.Unsigned_8 range 1 .. Interfaces.Unsigned_8'Last;
 
-   type Entry_Update_Subscriber (Sync_Ref : not null access SYNC) is
-      new ACO.Events.Entry_Update.Subscriber with null record;
+   type Entry_Update_Subscriber
+      (Sync_Ref : not null access SYNC)
+   is new ACO.Events.Entry_Update.Subscriber with null record;
 
    overriding
    procedure Update
@@ -60,7 +65,7 @@ private
        Data : in     ACO.OD_Types.Entry_Index);
 
    type SYNC
-      (Handler : not null access ACO.CANopen.Handler'Class;
+      (Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
    is new Protocol (Od) with record
       Timers : Alarms.Alarm_Manager;

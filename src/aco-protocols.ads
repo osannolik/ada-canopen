@@ -1,5 +1,6 @@
 with Ada.Finalization;
 with ACO.States;
+with ACO.Messages;
 with ACO.Events;
 with ACO.OD;
 
@@ -9,6 +10,11 @@ package ACO.Protocols is
       abstract new Ada.Finalization.Limited_Controlled with private;
 
    type Protocol_Access is access all Protocol'Class;
+
+   function Is_Valid
+      (This : in out Protocol;
+       Msg  : in     ACO.Messages.Message)
+       return Boolean is abstract;
 
    procedure On_State_Change
      (This     : in out Protocol;
