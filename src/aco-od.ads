@@ -43,6 +43,12 @@ package ACO.OD is
        Subindex : Object_Subindex)
        return Boolean;
 
+   function Maximum_Nof_Entries
+      (This  : Object_Dictionary;
+       Index : Object_Index)
+       return Natural
+      with Pre => This.Object_Exist (Index);
+
    function Is_Entry_Compatible
       (This     : Object_Dictionary;
        An_Entry : Entry_Base'Class;
@@ -93,8 +99,7 @@ package ACO.OD is
    function Get_Heartbeat_Consumer_Period
       (This    : Object_Dictionary;
        Node_Id : ACO.Messages.Node_Nr)
-       return Natural
-      with Pre => This.Object_Exist (Heartbeat_Consumer_Index);
+       return Natural;
 
    procedure Set_Heartbeat_Producer_Period
       (This    : in out Object_Dictionary;
@@ -103,8 +108,7 @@ package ACO.OD is
 
    function Get_Heartbeat_Producer_Period
       (This : Object_Dictionary)
-       return Natural
-      with Pre => This.Entry_Exist (Heartbeat_Producer_Index, 0);
+       return Natural;
 
    procedure Set_Communication_Cycle_Period
       (This    : in out Object_Dictionary;

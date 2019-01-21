@@ -30,6 +30,12 @@ package body ACO.OD is
          Subindex in This.Objects (Arr_Idx).Entries'Range;
    end Entry_Exist;
 
+   function Maximum_Nof_Entries
+      (This  : Object_Dictionary;
+       Index : Object_Index)
+       return Natural
+   is (This.Object (Index).Entries'Length);
+
    function Is_Entry_Compatible
       (This     : Object_Dictionary;
        An_Entry : Entry_Base'Class;
@@ -186,8 +192,12 @@ package body ACO.OD is
    is
       Period : U16;
    begin
-      Period := Entry_U16 (This.Get_Entry (Heartbeat_Producer_Index, 0)).Read;
-      return Natural (Period);
+      if This.Entry_Exist (Heartbeat_Producer_Index, 0) then
+         Period := Entry_U16 (This.Get_Entry (Heartbeat_Producer_Index, 0)).Read;
+         return Natural (Period);
+      else
+         return 0;
+      end if;
    end Get_Heartbeat_Producer_Period;
 
    procedure Set_Communication_Cycle_Period
