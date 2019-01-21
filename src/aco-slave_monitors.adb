@@ -5,6 +5,7 @@ package body ACO.Slave_Monitors is
        Node_Id : ACO.Messages.Slave_Node_Nr)
        return Boolean
    is
+      use type ACO.Messages.Node_Nr;
    begin
       for Alarm of This.Slaves loop
          if Alarm.Node_Id = Node_Id then
@@ -18,8 +19,9 @@ package body ACO.Slave_Monitors is
    function Get_State
       (This    : Slave_Monitor;
        Node_Id : ACO.Messages.Slave_Node_Nr)
-       return State
+       return ACO.States.State
    is
+      use type ACO.Messages.Node_Nr;
    begin
       for Alarm of This.Slaves loop
          if Alarm.Node_Id = Node_Id then
@@ -27,7 +29,7 @@ package body ACO.Slave_Monitors is
          end if;
       end loop;
 
-      return Unknown_State;
+      return ACO.States.Unknown_State;
    end Get_State;
 
    overriding
@@ -37,30 +39,35 @@ package body ACO.Slave_Monitors is
    is
       pragma Unreferenced (T_Now);
    begin
-      This.Node_Id := Not_A_Slave;
       This.Slave_State := (Previous => This.Slave_State.Current,
-                           Current  => Unknown_State);
-      if This.Monitor_Ref /= null then
-         This.Monitor_Ref.Od.Events.Slave_State_Change.Put (This.Slave_State);
+                           Current  => ACO.States.Unknown_State);
+      if This.Ref /= null then
+         This.Ref.Od.Events.Slave_State_Change.Put (This.Slave_State);
+         This.Ref.Od.Events.Heartbeat_Timed_Out.Put (This.Node_Id);
       end if;
+
+      This.Node_Id := ACO.Messages.Not_A_Slave;
    end Signal;
 
    procedure Restart
       (This : in out Slave_Monitor)
    is
-      use Ada.Real_Time;
+      use type Ada.Real_Time.Time;
+      use type ACO.Messages.Node_Nr;
+
       Period : Natural;
    begin
       for Alarm of This.Slaves loop
-         if Alarm.Node_Id /= Not_A_Slave then
+         if Alarm.Node_Id /= ACO.Messages.Not_A_Slave then
             This.Manager.Cancel (Alarm'Unchecked_Access);
             Period := This.Od.Get_Heartbeat_Consumer_Period (Alarm.Node_Id);
 
             if Period > 0 then
                This.Manager.Set
-                  (Alarm'Unchecked_Access, Clock + Milliseconds (Period));
+                  (Alarm'Unchecked_Access,
+                   Ada.Real_Time.Clock + Ada.Real_Time.Milliseconds (Period));
             else
-               Alarm.Node_Id := Not_A_Slave;
+               Alarm.Node_Id := ACO.Messages.Not_A_Slave;
             end if;
          end if;
       end loop;
@@ -69,19 +76,22 @@ package body ACO.Slave_Monitors is
    procedure Start
       (This        : in out Slave_Monitor;
        Node_Id     : in     ACO.Messages.Slave_Node_Nr;
-       Slave_State : in     State)
+       Slave_State : in     ACO.States.State)
    is
-      use Ada.Real_Time;
+      use type Ada.Real_Time.Time;
+      use type ACO.Messages.Node_Nr;
+
       Period : constant Natural := This.Od.Get_Heartbeat_Consumer_Period (Node_Id);
    begin
       if Period > 0 then
          for Alarm of This.Slaves loop
-            if Alarm.Node_Id = Not_A_Slave then
+            if Alarm.Node_Id = ACO.Messages.Not_A_Slave then
                Alarm.Node_Id := Node_Id;
-               Alarm.Slave_State := (Previous => Unknown_State,
+               Alarm.Slave_State := (Previous => ACO.States.Unknown_State,
                                      Current  => Slave_State);
                This.Manager.Set
-                  (Alarm'Unchecked_Access, Clock + Milliseconds (Period));
+                  (Alarm'Unchecked_Access,
+                   Ada.Real_Time.Clock + Ada.Real_Time.Milliseconds (Period));
                This.Od.Events.Slave_State_Change.Put (Alarm.Slave_State);
 
                exit;
@@ -93,9 +103,11 @@ package body ACO.Slave_Monitors is
    procedure Update_State
       (This        : in out Slave_Monitor;
        Node_Id     : in     ACO.Messages.Slave_Node_Nr;
-       Slave_State : in     State)
+       Slave_State : in     ACO.States.State)
    is
-      use Ada.Real_Time;
+      use type Ada.Real_Time.Time;
+      use type ACO.Messages.Node_Nr;
+
       Period : constant Natural := This.Od.Get_Heartbeat_Consumer_Period (Node_Id);
    begin
       for Alarm of This.Slaves loop
@@ -106,10 +118,11 @@ package body ACO.Slave_Monitors is
                Alarm.Slave_State := (Previous => Alarm.Slave_State.Current,
                                      Current  => Slave_State);
                This.Manager.Set
-                  (Alarm'Unchecked_Access, Clock + Milliseconds (Period));
+                  (Alarm'Unchecked_Access,
+                   Ada.Real_Time.Clock + Ada.Real_Time.Milliseconds (Period));
                This.Od.Events.Slave_State_Change.Put (Alarm.Slave_State);
             else
-               Alarm.Node_Id := Not_A_Slave;
+               Alarm.Node_Id := ACO.Messages.Not_A_Slave;
             end if;
 
             exit;

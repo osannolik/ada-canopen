@@ -8,8 +8,6 @@ private with ACO.Configuration;
 
 package ACO.Slave_Monitors is
 
-   use ACO.States;
-
    type Slave_Monitor (Od : not null access ACO.OD.Object_Dictionary'Class) is
       tagged limited private;
 
@@ -23,7 +21,7 @@ package ACO.Slave_Monitors is
    function Get_State
       (This    : Slave_Monitor;
        Node_Id : ACO.Messages.Slave_Node_Nr)
-       return State
+       return ACO.States.State
       with Pre => This.Is_Monitored (Node_Id);
 
    procedure Restart
@@ -32,13 +30,13 @@ package ACO.Slave_Monitors is
    procedure Start
       (This        : in out Slave_Monitor;
        Node_Id     : in     ACO.Messages.Slave_Node_Nr;
-       Slave_State : in     State)
+       Slave_State : in     ACO.States.State)
       with Pre => not This.Is_Monitored (Node_Id);
 
    procedure Update_State
       (This        : in out Slave_Monitor;
        Node_Id     : in     ACO.Messages.Slave_Node_Nr;
-       Slave_State : in     State)
+       Slave_State : in     ACO.States.State)
       with Pre => This.Is_Monitored (Node_Id);
 
    procedure Update_Alarms
@@ -46,17 +44,15 @@ package ACO.Slave_Monitors is
        T_Now : in     Ada.Real_Time.Time);
 
 private
-   use ACO.Configuration;
-   use ACO.Messages;
 
    package Alarms is new ACO.Utils.Generic_Alarms
-      (Maximum_Nof_Alarms => Max_Nof_Heartbeat_Slaves);
+      (Maximum_Nof_Alarms => ACO.Configuration.Max_Nof_Heartbeat_Slaves);
 
-   type Slave_Alarm (Monitor_Ref : access Slave_Monitor'Class := null) is
-      new Alarms.Alarm_Type with
-   record
-      Node_Id     : Node_Nr;
-      Slave_State : State_Transition;
+   type Slave_Alarm
+      (Ref : access Slave_Monitor := null)
+   is new Alarms.Alarm_Type with record
+      Node_Id     : ACO.Messages.Node_Nr;
+      Slave_State : ACO.States.State_Transition;
    end record;
 
    overriding
@@ -70,10 +66,10 @@ private
       tagged limited
    record
       Manager : Alarms.Alarm_Manager;
-      Slaves : Slaves_Array (1 .. Max_Nof_Heartbeat_Slaves) :=
+      Slaves : Slaves_Array (1 .. ACO.Configuration.Max_Nof_Heartbeat_Slaves) :=
          (others => (Slave_Monitor'Access,
-                     Not_A_Slave,
-                     (Unknown_State, Unknown_State)));
+                     ACO.Messages.Not_A_Slave,
+                     (ACO.States.Unknown_State, ACO.States.Unknown_State)));
    end record;
 
 end ACO.Slave_Monitors;
