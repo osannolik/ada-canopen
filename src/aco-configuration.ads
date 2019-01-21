@@ -13,7 +13,6 @@ package ACO.Configuration is
    Max_Nof_Event_Queue_Data_Items : constant := 4;
    Event_Queue_Ceiling : constant System.Priority := System.Max_Priority;
 
-   Periodic_Task_Period_Ms : constant := 1;
    Periodic_Task_Priority  : constant System.Priority := System.Max_Priority;
 
    Messages_Buffer_Size    : constant := 8;

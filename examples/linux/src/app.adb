@@ -3,11 +3,10 @@ with ACO.Drivers.Socket;
 with ACO.CANopen;
 with ACO.States;
 with ACO.Nodes.Locals;
-with ACO.OD;
+with ACO.Nodes.Remotes;
+with ACO.OD.Example;
 with ACO.Log;
 with Ada.Text_IO.Text_Streams;
-with ACO.OD.Example;
-with ACO.Configuration;
 
 with Ada.Text_IO;
 with Ada.Exceptions;
@@ -20,11 +19,12 @@ package body App is
 
    H : aliased ACO.CANopen.Handler (Driver => D'Access);
 
-   N : aliased ACO.Nodes.Locals.Local
-      (Id => 1, Handler => H'Access, Od => O'Access);
+   N : ACO.Nodes.Locals.Local (Id => 1, Handler => H'Access, Od => O'Access);
 
-   W : ACO.CANopen.Periodic_Task
-      (H'Access, Period_Ms => ACO.Configuration.Periodic_Task_Period_Ms);
+   R : ACO.Nodes.Remotes.Remote (Id => 1, Handler => H'Access, Od => O'Access);
+   pragma Unreferenced (R);
+
+   W : ACO.CANopen.Periodic_Task (H'Access, Period_Ms => 1);
 
    procedure Run
    is

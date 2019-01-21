@@ -12,17 +12,27 @@ package ACO.Nodes is
 
    type Node_Base
       (Id      : ACO.Messages.Node_Nr;
-       Handler : not null access ACO.CANopen.Handler'Class;
+       Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
    is abstract new Ada.Finalization.Limited_Controlled with private;
 
    procedure Set_State
       (This  : in out Node_Base;
        State : in     ACO.States.State) is abstract;
+   --  Local: Set state in OD, maybe send boot
+   --  Remote: Set state in OD, send nmt command to node id of remote
+
+   function Get_State
+      (This  : Node_Base)
+       return ACO.States.State is abstract;
+   --  Local: Get state from OD
+   --  Remote: Get state from OD
+
+   procedure Start
+      (This : in out Node_Base) is abstract;
 
    procedure Write
       (This     : in out Node_Base;
-       Node     : in     ACO.Messages.Node_Nr;
        Index    : in     ACO.OD_Types.Object_Index;
        Subindex : in     ACO.OD_Types.Object_Subindex;
        An_Entry : in     ACO.OD_Types.Entry_Base'Class) is abstract;
@@ -58,7 +68,7 @@ private
 
    type Node_Base
       (Id      : ACO.Messages.Node_Nr;
-       Handler : not null access ACO.CANopen.Handler'Class;
+       Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
    is abstract new Ada.Finalization.Limited_Controlled with record
       Periodic_Action_Indication : aliased Tick_Subscriber (Node_Base'Access);
