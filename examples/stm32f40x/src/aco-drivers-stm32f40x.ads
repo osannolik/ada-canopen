@@ -5,18 +5,32 @@ with System;
 package ACO.Drivers.Stm32f40x is
    use STM32.CAN;
 
-   type CAN_Driver (Device : not null access CAN_Controller) is new Driver with private;
+   type CAN_Driver
+     (Device : not null access CAN_Controller)
+   is new Driver with private;
 
    overriding
-   procedure Await_Message (This : in out CAN_Driver;
-                            Msg  :    out Message);
+   procedure Receive_Message_Blocking
+     (This : in out CAN_Driver;
+      Msg  :    out ACO.Messages.Message);
+
    overriding
    procedure Send_Message
      (This : in out CAN_Driver;
-      Msg  : in     Message);
+      Msg  : in     ACO.Messages.Message);
 
    overriding
-   procedure Initialize (This : in out CAN_Driver);
+   procedure Initialize
+     (This : in out CAN_Driver);
+
+   overriding
+   procedure Finalize
+     (This : in out CAN_Driver) is null;
+
+   overriding
+   function Is_Message_Pending
+     (This : CAN_Driver)
+      return Boolean;
 
    package CAN_ISR is
       function Tx_Interrupt_Id (Device : not null access CAN_Controller)
@@ -51,12 +65,15 @@ package ACO.Drivers.Stm32f40x is
          procedure Enable_Receiver
             (Fifo : in Fifo_Nr);
 
+         function Is_Message_Pending
+           return Boolean;
+
       private
 
          Tx_Buffer : Message_Buffer;
+         Rx_Buffer : Message_Buffer;
 
-         Rx_Msg : CAN_Message;
-         New_Message : Boolean := False;
+         Is_Rx_Pending : Boolean := False;
 
          procedure Send;
 
@@ -86,10 +103,11 @@ package ACO.Drivers.Stm32f40x is
 
 private
 
-   type CAN_Driver (Device : not null access CAN_Controller) is new Driver with
-      record
-         Controller : CAN_ISR.Controller (Device);
-      end record;
+   type CAN_Driver
+     (Device : not null access CAN_Controller)
+   is new Driver with record
+      Controller : CAN_ISR.Controller (Device);
+   end record;
 
    function Convert (D : STM32.CAN.Message_Data)
                      return ACO.Messages.Data_Array

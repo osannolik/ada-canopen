@@ -27,29 +27,30 @@ package body ACO.Drivers.Stm32f40x is
    end Convert;
 
    overriding
-   procedure Await_Message
+   procedure Receive_Message_Blocking
      (This : in out CAN_Driver;
-      Msg  :    out Message)
+      Msg  :    out ACO.Messages.Message)
    is
       Rx_Msg : CAN_Message;
    begin
       --  Suspend until new CAN message is received
       This.Controller.Receive_Message (Rx_Msg);
 
-      Msg := Create (CAN_Id => Id_Type (Rx_Msg.Std_ID),
-                     RTR    => Rx_Msg.Rtr,
-                     DLC    => Data_Length (Rx_Msg.Dlc),
-                     Data   => Convert (Rx_Msg.Data));
-   end Await_Message;
+      Msg := ACO.Messages.Create
+        (CAN_Id => ACO.Messages.Id_Type (Rx_Msg.Std_ID),
+         RTR    => Rx_Msg.Rtr,
+         DLC    => ACO.Messages.Data_Length (Rx_Msg.Dlc),
+         Data   => Convert (Rx_Msg.Data));
+   end Receive_Message_Blocking;
 
    overriding
    procedure Send_Message
      (This : in out CAN_Driver;
-      Msg  : in     Message)
+      Msg  : in     ACO.Messages.Message)
    is
       Success : Boolean;
       Tx_Msg : constant CAN_Message :=
-         (Std_ID => Standard_Id (CAN_Id (Msg)),
+         (Std_ID => Standard_Id (ACO.Messages.CAN_Id (Msg)),
           Ext_ID => 0,
           Ide    => False,
           Rtr    => Msg.RTR,
@@ -119,6 +120,15 @@ package body ACO.Drivers.Stm32f40x is
 
       This.Controller.Enable_Receiver (Fifo_X);
    end Initialize;
+
+   overriding
+   function Is_Message_Pending
+     (This : CAN_Driver)
+      return Boolean
+   is
+   begin
+      return This.Controller.Is_Message_Pending;
+   end Is_Message_Pending;
 
    package body CAN_ISR is
       function Tx_Interrupt_Id
@@ -221,11 +231,12 @@ package body ACO.Drivers.Stm32f40x is
          end Transmit_Message;
 
          entry Receive_Message
-            (Message : out CAN_Message) when New_Message
+            (Message : out CAN_Message) when Is_Rx_Pending
          is
          begin
-            Message := Rx_Msg;
-            New_Message := False;
+            Get_Next_Message (Rx_Buffer, Message);
+
+            Is_Rx_Pending := (Nof_Messages (Rx_Buffer) > 0);
          end Receive_Message;
 
          procedure Enable_Receiver
@@ -262,6 +273,13 @@ package body ACO.Drivers.Stm32f40x is
             end loop;
          end Send;
 
+         function Is_Message_Pending
+           return Boolean
+         is
+         begin
+            return Is_Rx_Pending;
+         end Is_Message_Pending;
+
          procedure IRQ_Handler is
             use HAL;
             CAN : CAN_Controller renames Device.all;
@@ -281,17 +299,21 @@ package body ACO.Drivers.Stm32f40x is
                Nof_Msg_In_Fifo (CAN, FIFO_0) > 0
             then
                --  Get message from fifo 0
-               Rx_Msg := Read_Rx_Message (CAN, FIFO_0);
-               Release_Fifo (CAN, FIFO_0);
-               New_Message := True;
+               if Nof_Messages (Rx_Buffer) < Max_Nof_Messages then
+                  Put_Message (Rx_Buffer, Read_Rx_Message (CAN, FIFO_0));
+                  Release_Fifo (CAN, FIFO_0);
+                  Is_Rx_Pending := True;
+               end if;
 
             elsif Interrupt_Enabled (CAN, FIFO_1_Message_Pending) and then
                Nof_Msg_In_Fifo (CAN, FIFO_1) > 0
             then
                --  Get message from fifo 1
-               Rx_Msg := Read_Rx_Message (CAN, FIFO_1);
-               Release_Fifo (CAN, FIFO_1);
-               New_Message := True;
+               if Nof_Messages (Rx_Buffer) < Max_Nof_Messages then
+                  Put_Message (Rx_Buffer, Read_Rx_Message (CAN, FIFO_1));
+                  Release_Fifo (CAN, FIFO_0);
+                  Is_Rx_Pending := True;
+               end if;
             end if;
          end IRQ_Handler;
 

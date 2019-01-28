@@ -2,37 +2,37 @@ with Ada.Real_Time;
 with ACO.Drivers.Stm32f40x;
 with STM32.Device;
 with ACO.Nodes;
-with ACO.States;
 with ACO.OD.Example;
+with ACO.CANopen;
+with ACO.Nodes.Locals;
 
 package body App is
 
-   O_Data : aliased ACO.OD.Example.Dictionary_Data;
-
-   O : aliased ACO.OD.Object_Dictionary (O_Data'Access);
-
    D : aliased ACO.Drivers.Stm32f40x.CAN_Driver (STM32.Device.CAN_1'Access);
 
-   N : aliased ACO.Nodes.Node (Id => 1, Od => O'Access, Driver => D'Access);
+   H : aliased ACO.CANopen.Handler (Driver => D'Access);
 
-   T : ACO.Nodes.Receiver_Task (N'Access);
+   T : ACO.CANopen.Periodic_Task (H'Access, 10);
 
-   W : ACO.Nodes.Periodic_Task (N'Access);
+   O : aliased ACO.OD.Example.Dictionary;
 
    procedure Run
    is
       use Ada.Real_Time;
+
+      N : ACO.Nodes.Locals.Local (Id => 1, Handler => H'Access, Od => O'Access);
 
       Next_Release : Time := Clock;
    begin
 
       D.Initialize;
 
-      N.Set_State (ACO.States.Initializing);
+      N.Start;
 
       loop
+         --  H.Periodic_Actions (T_Now => Next_Release);
 
-         Next_Release := Next_Release + Milliseconds (500);
+         Next_Release := Next_Release + Milliseconds (10);
          delay until Next_Release;
       end loop;
    end Run;
