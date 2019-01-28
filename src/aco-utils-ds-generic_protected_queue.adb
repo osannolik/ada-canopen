@@ -72,7 +72,7 @@ package body ACO.Utils.DS.Generic_Protected_Queue is
        return Boolean
    is
    begin
-      return This.Buffer.Nof_Items >= This.Max_Nof_Items;
+      return This.Buffer.Nof_Items >= Maximum_Nof_Items;
    end Is_Full;
 
    protected body Buffer_Type is

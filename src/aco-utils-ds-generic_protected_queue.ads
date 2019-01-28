@@ -5,6 +5,7 @@ private with ACO.Utils.DS.Generic_Queue;
 
 generic
    type Item_Type is private;
+   Maximum_Nof_Items : Positive;
 
 package ACO.Utils.DS.Generic_Protected_Queue is
    --  A protected queue
@@ -12,8 +13,7 @@ package ACO.Utils.DS.Generic_Protected_Queue is
    pragma Preelaborate;
 
    type Protected_Queue
-      (Max_Nof_Items : Positive;
-       Ceiling       : System.Priority)
+      (Ceiling : System.Priority)
    is tagged limited private;
 
    procedure Put_Blocking
@@ -51,8 +51,7 @@ private
    package Q is new ACO.Utils.DS.Generic_Queue (Item_Type);
 
    protected type Buffer_Type
-      (Max_Nof_Items : Positive;
-       Ceiling       : System.Priority)
+      (Ceiling : System.Priority)
    is
 
       procedure Put
@@ -68,14 +67,13 @@ private
    private
       pragma Priority (Ceiling);
 
-      Queue : Q.Queue (Max_Nof_Items => Max_Nof_Items);
+      Queue : Q.Queue (Max_Nof_Items => Maximum_Nof_Items);
    end Buffer_Type;
 
    type Protected_Queue
-      (Max_Nof_Items : Positive;
-       Ceiling       : System.Priority)
+      (Ceiling : System.Priority)
    is tagged limited record
-      Buffer    : Buffer_Type (Max_Nof_Items, Ceiling);
+      Buffer    : Buffer_Type (Ceiling);
       Non_Full  : Ada.Synchronous_Task_Control.Suspension_Object;
       Non_Empty : Ada.Synchronous_Task_Control.Suspension_Object;
    end record;

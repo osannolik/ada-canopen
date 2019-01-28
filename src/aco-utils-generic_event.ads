@@ -5,7 +5,8 @@ private with ACO.Utils.DS.Generic_Protected_Queue;
 
 generic
    type Item_Type is private;
-   Max_Nof_Subscribers : Positive;
+   Max_Nof_Subscribers   : Positive;
+   Max_Nof_Queued_Events : Positive;
 
 package ACO.Utils.Generic_Event is
 
@@ -22,8 +23,7 @@ package ACO.Utils.Generic_Event is
    type Event_Publisher is limited new PS.Pub with null record;
 
    type Queued_Event_Publisher
-      (Max_Nof_Events   : Positive;
-       Priority_Ceiling : System.Priority)
+      (Priority_Ceiling : System.Priority)
    is new Event_Publisher with private;
 
    function Events_Waiting
@@ -33,7 +33,7 @@ package ACO.Utils.Generic_Event is
    procedure Put
       (This : in out Queued_Event_Publisher;
        Data : in     Item_Type)
-      with Pre => This.Events_Waiting < This.Max_Nof_Events;
+      with Pre => This.Events_Waiting < Max_Nof_Queued_Events;
 
    procedure Process
       (This : in out Queued_Event_Publisher);
@@ -41,13 +41,13 @@ package ACO.Utils.Generic_Event is
 private
 
    package PQ is new ACO.Utils.DS.Generic_Protected_Queue
-      (Item_Type => Item_Type);
+     (Item_Type         => Item_Type,
+      Maximum_Nof_Items => Max_Nof_Queued_Events);
 
    type Queued_Event_Publisher
-      (Max_Nof_Events   : Positive;
-       Priority_Ceiling : System.Priority)
+      (Priority_Ceiling : System.Priority)
    is new Event_Publisher with record
-      Queue : PQ.Protected_Queue (Max_Nof_Events, Priority_Ceiling);
+      Queue : PQ.Protected_Queue (Priority_Ceiling);
    end record;
 
 end ACO.Utils.Generic_Event;
