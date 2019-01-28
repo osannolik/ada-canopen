@@ -17,7 +17,6 @@ package body ACO.Protocols.Error_Control is
      (This : in out EC;
       Msg  : in     ACO.Messages.Message)
    is
-      use ACO.States;
    begin
       if EC_Commands.Is_Valid_Command (Msg, This.Id) then
          declare

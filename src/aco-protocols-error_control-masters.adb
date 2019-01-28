@@ -62,8 +62,6 @@ package body ACO.Protocols.Error_Control.Masters is
    procedure Heartbeat_Producer_Start
       (This : in out Master)
    is
-      use type Ada.Real_Time.Time;
-
       Period : constant Natural := This.Od.Get_Heartbeat_Producer_Period;
       Immediately : constant Ada.Real_Time.Time := Ada.Real_Time.Clock;
    begin
@@ -122,8 +120,6 @@ package body ACO.Protocols.Error_Control.Masters is
       (This : access Entry_Update_Subscriber;
        Data : in     ACO.OD_Types.Entry_Index)
    is
-      use type ACO.OD_Types.Object_Index;
-
       Ref : access Master renames This.Ref;
    begin
       case Data.Object is

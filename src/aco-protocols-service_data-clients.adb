@@ -67,7 +67,6 @@ package body ACO.Protocols.Service_Data.Clients is
        Endpoint : in     ACO.SDO_Sessions.Endpoint_Type)
    is
       pragma Unreferenced (Msg);
-      use ACO.SDO_Commands;
 
       Id           : constant ACO.SDO_Sessions.Valid_Endpoint_Nr := Endpoint.Id;
       Session      : ACO.SDO_Sessions.SDO_Session := This.Sessions.Get (Id);
