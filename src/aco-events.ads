@@ -52,7 +52,7 @@ package ACO.Events is
 
    type SDO_Status_Data is record
       Endpoint_Id : ACO.SDO_Sessions.Endpoint_Nr;
-      Status      : ACO.SDO_Sessions.SDO_Result;
+      Result      : ACO.SDO_Sessions.SDO_Result;
    end record;
 
    package SDO_Status is new ACO.Utils.Generic_Event

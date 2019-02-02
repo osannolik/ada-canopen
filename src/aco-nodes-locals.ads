@@ -31,7 +31,17 @@ package ACO.Nodes.Locals is
       (This     : in out Local;
        Index    : in     ACO.OD_Types.Object_Index;
        Subindex : in     ACO.OD_Types.Object_Subindex;
-       An_Entry : in     ACO.OD_Types.Entry_Base'Class);
+       An_Entry : in     ACO.OD_Types.Entry_Base'Class)
+      with Pre => This.Od.Entry_Exist (Index, Subindex) and then
+                  This.Od.Is_Entry_Compatible (An_Entry, Index, Subindex);
+
+   --  overriding
+   function Read
+      (This     : Local;
+       Index    : ACO.OD_Types.Object_Index;
+       Subindex : ACO.OD_Types.Object_Subindex)
+       return ACO.OD_Types.Entry_Base'Class
+      with Pre => This.Od.Entry_Exist (Index, Subindex);
 
 private
 
@@ -48,6 +58,12 @@ private
        Od      : not null access ACO.OD.Object_Dictionary'Class)
    is new ACO.Protocols.Service_Data.Servers.Server (Handler, Od)
    with null record;
+
+   overriding
+   procedure Result_Callback
+     (This    : in out Server_Only;
+      Session : in     ACO.SDO_Sessions.SDO_Session;
+      Result  : in     ACO.SDO_Sessions.SDO_Result);
 
    overriding
    function Tx_CAN_Id

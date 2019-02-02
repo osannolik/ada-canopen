@@ -23,6 +23,7 @@ package body ACO.Nodes.Locals is
       (This : in out Local)
    is
    begin
+      This.Handler.Start;
       This.Set_State (ACO.States.Initializing);
    end Start;
 
@@ -39,6 +40,18 @@ package body ACO.Nodes.Locals is
           Index     => Index,
           Subindex  => Subindex);
    end Write;
+
+   --  overriding
+   function Read
+      (This     : Local;
+       Index    : ACO.OD_Types.Object_Index;
+       Subindex : ACO.OD_Types.Object_Subindex)
+       return ACO.OD_Types.Entry_Base'Class
+   is
+   begin
+      return This.Od.Get_Entry (Index    => Index,
+                                Subindex => Subindex);
+   end Read;
 
    procedure On_Message_Dispatch
       (This : in out Local;
@@ -65,6 +78,20 @@ package body ACO.Nodes.Locals is
       This.SDO.Periodic_Actions (T_Now);
       This.SYNC.Periodic_Actions (T_Now);
    end Periodic_Actions;
+
+   overriding
+   procedure Result_Callback
+     (This    : in out Server_Only;
+      Session : in     ACO.SDO_Sessions.SDO_Session;
+      Result  : in     ACO.SDO_Sessions.SDO_Result)
+   is
+   begin
+      This.Od.Events.SDO_Status_Update.Put
+        ((Endpoint_Id => Session.Endpoint.Id,
+          Result      => Result));
+
+      This.Clear (Session.Endpoint.Id);
+   end Result_Callback;
 
    overriding
    function Tx_CAN_Id
@@ -97,7 +124,7 @@ package body ACO.Nodes.Locals is
    begin
       for P of Parameters loop
          if This.Rx_CAN_Id (P) = Rx_CAN_Id then
-            return (Id => I, Role => ACO.SDO_Sessions.Server, Parameters => P);
+            return (Id => I, Parameters => P);
          end if;
          I := ACO.SDO_Sessions.Endpoint_Nr'Succ (I);
       end loop;
@@ -105,41 +132,4 @@ package body ACO.Nodes.Locals is
       return ACO.SDO_Sessions.No_Endpoint;
    end Get_Endpoint;
 
-
---     procedure Write_Blocking
---        (This     : in out Node;
---         Node     : in     ACO.Messages.Node_Nr;
---         Index    : in     ACO.OD_Types.Object_Index;
---         Subindex : in     ACO.OD_Types.Object_Subindex;
---         An_Entry : in     ACO.OD_Types.Entry_Base'Class;
---         Success  :    out Boolean)
---     is
---        use type ACO.SDO_Sessions.SDO_Status;
---
---        E_Id : ACO.SDO_Sessions.Endpoint_Nr;
---        Status : ACO.SDO_Sessions.SDO_Status;
---     begin
---        This.SDO.Write_Remote_Entry
---           (Node        => Node,
---            Index       => Index,
---            Subindex    => Subindex,
---            An_Entry    => An_Entry,
---            Endpoint_Id => E_Id);
---
---        if E_Id in ACO.SDO_Sessions.Valid_Endpoint_Nr then
---           loop
---              This.Get_Received_Messages (Block => False);
---              This.Periodic_Actions (T_Now => Ada.Real_Time.Clock);
---
---              Status := This.SDO.Get_Status (E_Id);
---
---              exit when Status /= ACO.SDO_Sessions.Pending;
---           end loop;
---           This.SDO.Clear (E_Id);
---
---           Success := (Status = ACO.SDO_Sessions.Complete);
---        else
---           Success := False;
---        end if;
---     end Write_Blocking;
 end ACO.Nodes.Locals;
