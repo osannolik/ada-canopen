@@ -22,7 +22,7 @@ package body ACO.Protocols.Service_Data is
    begin
       This.Sessions.Put (Session);
 
-      if Status in ACO.SDO_Sessions.SDO_Result'Range then
+      if Status in ACO.SDO_Sessions.SDO_Result then
          This.Result_Callback (Session, Status);
       end if;
    end Indicate_Status;

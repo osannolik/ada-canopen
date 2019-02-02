@@ -27,16 +27,136 @@ package body ACO.Nodes.Remotes is
    end Get_State;
 
    overriding
+   procedure Start
+      (This : in out Remote)
+   is
+   begin
+      This.Handler.Start;
+   end Start;
+
+   procedure Suspend_Until_Result
+     (This   : in out SDO_Request;
+      Result :    out SDO_Result)
+   is
+   begin
+      if This.Id in ACO.SDO_Sessions.Valid_Endpoint_Nr then
+         declare
+            Request : Request_Data renames This.Node.SDO.Requests (This.Id);
+         begin
+            Ada.Synchronous_Task_Control.Suspend_Until_True (Request.Suspension);
+            Result := Request.Status;
+         end;
+      else
+         Result := ACO.SDO_Sessions.Error;
+      end if;
+   end Suspend_Until_Result;
+
+   function Request_Status
+     (This : SDO_Request)
+      return SDO_Status
+   is
+   begin
+      if This.Id in ACO.SDO_Sessions.Valid_Endpoint_Nr then
+         return This.Node.SDO.Requests (This.Id).Status;
+      else
+         return ACO.SDO_Sessions.Error;
+      end if;
+   end Request_Status;
+
    procedure Write
       (This     : in out Remote;
+       Request  : in out SDO_Request'Class;
        Index    : in     ACO.OD_Types.Object_Index;
        Subindex : in     ACO.OD_Types.Object_Subindex;
        An_Entry : in     ACO.OD_Types.Entry_Base'Class)
+   is
+   begin
+      This.SDO.Write_Remote_Entry
+         (Node        => This.Id,
+          Index       => Index,
+          Subindex    => Subindex,
+          An_Entry    => An_Entry,
+          Endpoint_Id => Request.Id);
+
+      if Request.Id in ACO.SDO_Sessions.Valid_Endpoint_Nr'Range then
+         declare
+            Req_Data : Request_Data renames This.SDO.Requests (Request.Id);
+         begin
+            Req_Data.Status := ACO.SDO_Sessions.Pending;
+            Req_Data.Operation := Write;
+            Ada.Synchronous_Task_Control.Set_False (Req_Data.Suspension);
+         end;
+      end if;
+   end Write;
+
+   overriding
+   procedure Write
+      (This       : in out Remote;
+       Index      : in     ACO.OD_Types.Object_Index;
+       Subindex   : in     ACO.OD_Types.Object_Subindex;
+       An_Entry   : in     ACO.OD_Types.Entry_Base'Class)
    is
       pragma Unreferenced (This, Index, Subindex, An_Entry);
    begin
       null;
    end Write;
+
+--     procedure Write
+--        (This       : in out Remote;
+--         Index      : in     ACO.OD_Types.Object_Index;
+--         Subindex   : in     ACO.OD_Types.Object_Subindex;
+--         An_Entry   : in     ACO.OD_Types.Entry_Base'Class)
+--     is
+--        use type ACO.SDO_Sessions.SDO_Status;
+--        use type Ada.Real_Time.Time;
+--
+--        Status : ACO.SDO_Sessions.SDO_Status;
+--        Endpoint_Id : ACO.SDO_Sessions.Endpoint_Nr;
+--     begin
+--        This.SDO.Write_Remote_Entry
+--           (Node        => This.Id,
+--            Index       => Index,
+--            Subindex    => Subindex,
+--            An_Entry    => An_Entry,
+--            Endpoint_Id => Endpoint_Id);
+--
+--
+--        if Timeout_Ms > 0 then
+--           delay until Ada.Real_Time.Clock + Ada.Real_Time.Milliseconds (Timeout_Ms);
+--        end if;
+--
+--
+--
+--
+--
+--        if Endpoint_Id in ACO.SDO_Sessions.Valid_Endpoint_Nr then
+--           loop
+--              This.Handler.Periodic_Actions (T_Now => Ada.Real_Time.Clock);
+--
+--              Status := This.SDO.Get_Status (Endpoint_Id);
+--
+--              exit when Status /= ACO.SDO_Sessions.Pending;
+--           end loop;
+--           This.SDO.Clear (Endpoint_Id);
+--
+--           Success := (Status = ACO.SDO_Sessions.Complete);
+--        else
+--           Success := False;
+--        end if;
+--     end Write;
+
+--     overriding
+--     function Read
+--        (This     : Remote;
+--         Index    : ACO.OD_Types.Object_Index;
+--         Subindex : ACO.OD_Types.Object_Subindex)
+--         return ACO.OD_Types.Entry_Base'Class
+--     is
+--        pragma Unreferenced (This, Index, Subindex);
+--     begin
+--        null;
+--     end Read;
+
 
    procedure Set_Heartbeat_Timeout
       (This    : in out Remote;
@@ -68,6 +188,31 @@ package body ACO.Nodes.Remotes is
       This.NMT.Periodic_Actions (T_Now);
       This.SDO.Periodic_Actions (T_Now);
    end Periodic_Actions;
+
+   overriding
+   procedure Result_Callback
+     (This    : in out Remote_Client;
+      Session : in     ACO.SDO_Sessions.SDO_Session;
+      Result  : in     ACO.SDO_Sessions.SDO_Result)
+   is
+      Request : Request_Data renames This.Requests (Session.Endpoint.Id);
+   begin
+      This.Od.Events.SDO_Status_Update.Put
+        ((Endpoint_Id => Session.Endpoint.Id,
+          Result      => Result));
+
+      Request.Status := Result;
+      Ada.Synchronous_Task_Control.Set_True (Request.Suspension);
+
+      case Request.Operation is
+         when Write =>
+            This.Clear (Session.Endpoint.Id);
+
+         when Read =>
+            null;
+
+      end case;
+   end Result_Callback;
 
    overriding
    function Tx_CAN_Id
@@ -124,7 +269,7 @@ package body ACO.Nodes.Remotes is
    begin
       for P of This.Od.Get_SDO_Server_Parameters loop
          if This.Tx_CAN_Id (P) = Tx_CAN_Id.Id then
-            return (Id => I, Role => ACO.SDO_Sessions.Client, Parameters => P);
+            return (Id => I, Parameters => P);
          end if;
          I := ACO.SDO_Sessions.Endpoint_Nr'Succ (I);
       end loop;
