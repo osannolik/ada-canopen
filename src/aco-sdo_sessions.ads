@@ -6,8 +6,6 @@ private with ACO.Utils.DS.Generic_Queue;
 
 package ACO.SDO_Sessions is
 
-   pragma Preelaborate;
-
    type Session_Manager is tagged limited private;
 
    type Services is
@@ -16,8 +14,6 @@ package ACO.SDO_Sessions is
        Upload,
        Block_Download,
        Block_Upload);
-
-   type Endpoint_Role is (Client, Server);
 
    subtype Endpoint_Nr is Integer range -1 .. Integer'Last;
 
@@ -29,18 +25,24 @@ package ACO.SDO_Sessions is
    type SDO_Parameters is record
       CAN_Id_C2S : ACO.Messages.Id_Type := 0;
       CAN_Id_S2C : ACO.Messages.Id_Type := 0;
-      Node       : ACO.Messages.Node_Nr;
+      Node       : ACO.Messages.Node_Nr := ACO.Messages.Not_A_Slave;
    end record;
+
+   No_SDO_Parameters : constant SDO_Parameters :=
+     (CAN_Id_C2S => 0,
+      CAN_Id_S2C => 0,
+      Node       => ACO.Messages.Not_A_Slave);
 
    type SDO_Parameter_Array is array (Natural range <>) of SDO_Parameters;
 
    type Endpoint_Type is record
       Id         : Endpoint_Nr   := No_Endpoint_Id;
-      Role       : Endpoint_Role := Client;
       Parameters : SDO_Parameters;
    end record;
 
-   No_Endpoint : Endpoint_Type;
+   No_Endpoint : constant Endpoint_Type :=
+     (Id         => No_Endpoint_Id,
+      Parameters => No_SDO_Parameters);
 
    function Image (Endpoint : Endpoint_Type) return String;
 
@@ -49,15 +51,13 @@ package ACO.SDO_Sessions is
        Complete,
        Error);
 
+   subtype SDO_Result is SDO_Status range Complete .. Error;
+
    type SDO_Session (Service : Services := None) is record
       Endpoint : Endpoint_Type := No_Endpoint;
-      Index    : ACO.OD_Types.Entry_Index;
+      Index    : ACO.OD_Types.Entry_Index := (0, 0);
       Toggle   : Boolean := False;
-      Status   : SDO_Status := Pending;
    end record;
-
-   function Is_Complete (Session : SDO_Session) return Boolean is
-      (Session.Status = Complete);
 
    function Create_Download
       (Endpoint : Endpoint_Type;

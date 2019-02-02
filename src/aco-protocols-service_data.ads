@@ -36,6 +36,11 @@ package ACO.Protocols.Service_Data is
        Rx_CAN_Id : ACO.Messages.Id_Type)
        return ACO.SDO_Sessions.Endpoint_Type is abstract;
 
+   procedure Result_Callback
+     (This    : in out SDO;
+      Session : in     ACO.SDO_Sessions.SDO_Session;
+      Result  : in     ACO.SDO_Sessions.SDO_Result) is abstract;
+
    overriding
    function Is_Valid
       (This : in out SDO;
@@ -50,16 +55,6 @@ package ACO.Protocols.Service_Data is
    procedure Periodic_Actions
       (This  : in out SDO;
        T_Now : in     Ada.Real_Time.Time);
-
-   function Get_Status
-      (This : SDO;
-       Id   : ACO.SDO_Sessions.Valid_Endpoint_Nr)
-       return ACO.SDO_Sessions.SDO_Status;
-
-   function Is_Complete
-      (This : SDO;
-       Id   : ACO.SDO_Sessions.Valid_Endpoint_Nr)
-       return Boolean;
 
    procedure Clear
       (This : in out SDO;
@@ -124,6 +119,11 @@ private
       Alarms   : Alarm_Array :=
          (others => (SDO'Access, ACO.SDO_Sessions.No_Endpoint_Id));
    end record;
+
+   procedure Indicate_Status
+     (This    : in out SDO'Class;
+      Session : in     ACO.SDO_Sessions.SDO_Session;
+      Status  : in     ACO.SDO_Sessions.SDO_Status);
 
    overriding
    procedure On_State_Change

@@ -30,8 +30,7 @@ package ACO.Protocols.Service_Data.Clients is
    procedure Get_Read_Entry
       (This        : in out Client;
        Endpoint_Id : in     ACO.SDO_Sessions.Valid_Endpoint_Nr;
-       Read_Entry  : in out ACO.OD_Types.Entry_Base'Class)
-      with Pre => This.Is_Complete (Endpoint_Id);
+       Read_Entry  : in out ACO.OD_Types.Entry_Base'Class);
 
 private
 

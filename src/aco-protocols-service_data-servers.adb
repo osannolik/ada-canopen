@@ -70,6 +70,7 @@ package body ACO.Protocols.Service_Data.Servers is
 
       Index : constant ACO.OD_Types.Entry_Index := Get_Index (Msg);
       Error : Error_Type := Nothing;
+      Session : ACO.SDO_Sessions.SDO_Session;
    begin
       if not This.Od.Entry_Exist (Index.Object, Index.Sub) then
          Error := Object_Does_Not_Exist_In_The_Object_Dictionary;
@@ -77,8 +78,12 @@ package body ACO.Protocols.Service_Data.Servers is
          Error := Attempt_To_Read_A_Write_Only_Object;
       end if;
 
+      Session := ACO.SDO_Sessions.Create_Upload (Endpoint, Index);
+
       if Error /= Nothing then
          This.Send_Abort (Endpoint, Error, Index);
+         This.Indicate_Status (Session, ACO.SDO_Sessions.Error);
+
          return;
       end if;
 
@@ -92,11 +97,15 @@ package body ACO.Protocols.Service_Data.Servers is
 
          if Size > ACO.Configuration.Max_SDO_Transfer_Size then
             This.Send_Abort (Endpoint, General_Error, Index);
+            This.Indicate_Status (Session, ACO.SDO_Sessions.Error);
+
             return;
          end if;
 
          if Size <= Expedited_Data'Length then
             Resp := Create (Index, ACO.Messages.Data_Array (Ety.Read));
+
+            This.Indicate_Status (Session, ACO.SDO_Sessions.Complete);
          else
             Resp := Create (Index, Size);
 
@@ -105,9 +114,9 @@ package body ACO.Protocols.Service_Data.Servers is
             This.Sessions.Put_Buffer
                (Endpoint.Id, ACO.Messages.Data_Array (Ety.Read));
 
-            This.Sessions.Put (ACO.SDO_Sessions.Create_Upload (Endpoint, Index));
-
             This.Start_Alarm (Endpoint.Id);
+
+            This.Indicate_Status (Session, ACO.SDO_Sessions.Pending);
          end if;
 
          This.Send_SDO (Endpoint, Resp.Raw);
@@ -140,7 +149,7 @@ package body ACO.Protocols.Service_Data.Servers is
                           Error    => Error,
                           Index    => Session.Index);
          This.Stop_Alarm (Id);
-         This.Sessions.Clear (Id);
+         This.Indicate_Status (Session, ACO.SDO_Sessions.Error);
 
          return;
       end if;
@@ -150,31 +159,26 @@ package body ACO.Protocols.Service_Data.Servers is
             Natural'Min (Bytes_Remain, Segment_Data'Length);
          Data : ACO.Messages.Data_Array (0 .. Bytes_To_Send - 1);
          Resp : Upload_Segment_Resp;
+         Is_Complete : constant Boolean := (Bytes_To_Send = Bytes_Remain);
       begin
-         if Bytes_To_Send = Bytes_Remain then
-            Session.Status := ACO.SDO_Sessions.Complete;
-         end if;
-
          This.Sessions.Get_Buffer (Endpoint.Id, Data);
          Resp := Create (Toggle      => Session.Toggle,
-                         Is_Complete => ACO.SDO_Sessions.Is_Complete (Session),
+                         Is_Complete => Is_Complete,
                          Data        => Data);
          This.Send_SDO (Endpoint => Endpoint,
                         Raw_Data => Resp.Raw);
          This.SDO_Log
             (ACO.Log.Debug, "Server: Sent data of length" & Bytes_To_Send'Img);
+
+         if Is_Complete then
+            This.Stop_Alarm (Id);
+            This.Indicate_Status (Session, ACO.SDO_Sessions.Complete);
+         else
+            Session.Toggle := not Session.Toggle;
+            This.Start_Alarm (Id);
+            This.Indicate_Status (Session, ACO.SDO_Sessions.Pending);
+         end if;
       end;
-
-      if ACO.SDO_Sessions.Is_Complete (Session) then
-         This.Stop_Alarm (Id);
-         This.Sessions.Clear (Id);
-      else
-         This.Start_Alarm (Id);
-
-         Session.Toggle := not Session.Toggle;
-
-         This.Sessions.Put (Session);
-      end if;
    end Upload_Segment;
 
    procedure Download_Init
@@ -184,9 +188,11 @@ package body ACO.Protocols.Service_Data.Servers is
    is
       use ACO.SDO_Commands;
 
-      Cmd   : constant Download_Initiate_Cmd := Convert (Msg);
-      Index : constant ACO.OD_Types.Entry_Index := Get_Index (Msg);
-      Error : Error_Type := Nothing;
+      Cmd     : constant Download_Initiate_Cmd := Convert (Msg);
+      Index   : constant ACO.OD_Types.Entry_Index := Get_Index (Msg);
+      Error   : Error_Type := Nothing;
+      Session : ACO.SDO_Sessions.SDO_Session;
+      Resp    : Download_Initiate_Resp;
    begin
       if not This.Od.Entry_Exist (Index.Object, Index.Sub) then
          Error := Object_Does_Not_Exist_In_The_Object_Dictionary;
@@ -198,8 +204,12 @@ package body ACO.Protocols.Service_Data.Servers is
          Error := General_Error;
       end if;
 
+      Session := ACO.SDO_Sessions.Create_Download (Endpoint, Index);
+
       if Error /= Nothing then
          This.Send_Abort (Endpoint, Error, Index);
+         This.Indicate_Status (Session, ACO.SDO_Sessions.Error);
+
          return;
       end if;
 
@@ -208,24 +218,20 @@ package body ACO.Protocols.Service_Data.Servers is
             (Index => Index,
              Data  => Cmd.Data (0 .. 3 - Natural (Cmd.Nof_No_Data)),
              Error => Error);
-      else
-         declare
-            Session : constant ACO.SDO_Sessions.SDO_Session :=
-               ACO.SDO_Sessions.Create_Download (Endpoint, Index);
-         begin
-            This.Sessions.Put (Session);
-            This.Start_Alarm (Endpoint.Id);
-         end;
-      end if;
 
-      if Error = Nothing then
-         declare
-            Resp : constant Download_Initiate_Resp := Create (Index);
-         begin
+         if Error = Nothing then
+            Resp := Create (Index);
             This.Send_SDO (Endpoint, Resp.Raw);
-         end;
+            This.Indicate_Status (Session, ACO.SDO_Sessions.Complete);
+         else
+            This.Send_Abort (Endpoint, Error, Index);
+            This.Indicate_Status (Session, ACO.SDO_Sessions.Error);
+         end if;
       else
-         This.Send_Abort (Endpoint, Error, Index);
+         Resp := Create (Index);
+         This.Send_SDO (Endpoint, Resp.Raw);
+         This.Start_Alarm (Endpoint.Id);
+         This.Indicate_Status (Session, ACO.SDO_Sessions.Pending);
       end if;
    end Download_Init;
 
@@ -238,15 +244,17 @@ package body ACO.Protocols.Service_Data.Servers is
 
       Cmd     : constant Download_Segment_Cmd := Convert (Msg);
       Id      : constant ACO.SDO_Sessions.Valid_Endpoint_Nr := Endpoint.Id;
-      Session :ACO.SDO_Sessions. SDO_Session := This.Sessions.Get (Id);
+      Session : ACO.SDO_Sessions. SDO_Session := This.Sessions.Get (Id);
       Error   : Error_Type := Nothing;
+      Resp    : Download_Segment_Resp;
    begin
       if Cmd.Toggle /= Session.Toggle then
          This.Send_Abort (Endpoint => Endpoint,
                           Error    => Toggle_Bit_Not_Altered,
                           Index    => Session.Index);
          This.Stop_Alarm (Id);
-         This.Sessions.Clear (Id);
+         This.Indicate_Status (Session, ACO.SDO_Sessions.Error);
+
          return;
       end if;
 
@@ -263,22 +271,20 @@ package body ACO.Protocols.Service_Data.Servers is
              Error => Error);
 
          This.Stop_Alarm (Id);
-         This.Sessions.Clear (Id);
-      else
-         This.Sessions.Put (Session);
-         This.Start_Alarm (Id);
-      end if;
 
-      if Error = Nothing then
-         declare
-            Resp : constant Download_Segment_Resp := Create (Cmd.Toggle);
-         begin
+         if Error = Nothing then
+            Resp := Create (Cmd.Toggle);
             This.Send_SDO (Endpoint, Resp.Raw);
-         end;
+            This.Indicate_Status (Session, ACO.SDO_Sessions.Complete);
+         else
+            This.Send_Abort (Endpoint => Endpoint,
+                             Error    => Failed_To_Transfer_Or_Store_Data,
+                             Index    => Session.Index);
+            This.Indicate_Status (Session, ACO.SDO_Sessions.Error);
+         end if;
       else
-         This.Send_Abort (Endpoint => Endpoint,
-                          Error    => Failed_To_Transfer_Or_Store_Data,
-                          Index    => Session.Index);
+         This.Start_Alarm (Id);
+         This.Indicate_Status (Session, ACO.SDO_Sessions.Pending);
       end if;
    end Download_Segment;
 

@@ -14,6 +14,19 @@ package body ACO.Protocols.Service_Data is
       null;
    end On_State_Change;
 
+   procedure Indicate_Status
+     (This    : in out SDO'Class;
+      Session : in     ACO.SDO_Sessions.SDO_Session;
+      Status  : in     ACO.SDO_Sessions.SDO_Status)
+   is
+   begin
+      This.Sessions.Put (Session);
+
+      if Status in ACO.SDO_Sessions.SDO_Result'Range then
+         This.Result_Callback (Session, Status);
+      end if;
+   end Indicate_Status;
+
    overriding
    procedure Signal
       (This  : access Alarm;
@@ -21,7 +34,7 @@ package body ACO.Protocols.Service_Data is
    is
       pragma Unreferenced (T_Now);
 
-      Session : ACO.SDO_Sessions.SDO_Session :=
+      Session : constant ACO.SDO_Sessions.SDO_Session :=
          This.SDO_Ref.Sessions.Get (This.Id);
    begin
       This.SDO_Ref.SDO_Log
@@ -33,8 +46,7 @@ package body ACO.Protocols.Service_Data is
           Error    => SDO_Protocol_Timed_Out,
           Index    => Session.Index);
 
-      Session.Status := ACO.SDO_Sessions.Error;
-      This.SDO_Ref.Sessions.Put (Session);
+      This.SDO_Ref.Indicate_Status (Session, ACO.SDO_Sessions.Error);
    end Signal;
 
    procedure Start_Alarm
@@ -138,9 +150,8 @@ package body ACO.Protocols.Service_Data is
    is
       use ACO.SDO_Commands;
       use type ACO.SDO_Commands.Abort_Code_Type;
-      use type ACO.SDO_Sessions.Endpoint_Role;
 
-      Resp : constant Abort_Cmd := Convert (Msg);
+      Resp  : constant Abort_Cmd := Convert (Msg);
       Error : Error_Type := Unknown;
    begin
       for E in Error_Type'Range loop
@@ -155,21 +166,11 @@ package body ACO.Protocols.Service_Data is
           Error'Img & " (" & Hex_Str (Code (Resp)) & ") on " &
           ACO.SDO_Sessions.Image (Endpoint));
 
-      case Endpoint.Role is
-         when ACO.SDO_Sessions.Server =>
-            This.Sessions.Clear (Endpoint.Id);
-
-         when ACO.SDO_Sessions.Client =>
-            declare
-               Session : ACO.SDO_Sessions.SDO_Session :=
-                  This.Sessions.Get (Endpoint.Id);
-            begin
-               Session.Status := ACO.SDO_Sessions.Error;
-               This.Sessions.Put (Session);
-            end;
-      end case;
-
       This.Stop_Alarm (Endpoint.Id);
+
+      This.Indicate_Status
+        (Session => This.Sessions.Get (Endpoint.Id),
+         Status  => ACO.SDO_Sessions.Error);
    end Abort_All;
 
    overriding
@@ -204,24 +205,6 @@ package body ACO.Protocols.Service_Data is
          This.Handle_Message (Msg, Endpoint);
       end;
    end Message_Received;
-
-   function Get_Status
-      (This : SDO;
-       Id   : ACO.SDO_Sessions.Valid_Endpoint_Nr)
-       return ACO.SDO_Sessions.SDO_Status
-   is
-   begin
-      return This.Sessions.Get (Id).Status;
-   end Get_Status;
-
-   function Is_Complete
-      (This : SDO;
-       Id   : ACO.SDO_Sessions.Valid_Endpoint_Nr)
-       return Boolean
-   is
-   begin
-      return ACO.SDO_Sessions.Is_Complete (This.Sessions.Get (Id));
-   end Is_Complete;
 
    procedure Clear
       (This : in out SDO;
