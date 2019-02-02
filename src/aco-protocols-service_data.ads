@@ -4,12 +4,12 @@ with ACO.Messages;
 with ACO.OD;
 with ACO.SDO_Sessions;
 
+private with Interfaces;
 private with ACO.Log;
 private with ACO.Utils.Generic_Alarms;
 private with ACO.Configuration;
 private with ACO.SDO_Commands;
 private with ACO.OD_Types;
-private with ACO.States;
 
 package ACO.Protocols.Service_Data is
 
@@ -125,12 +125,6 @@ private
       Session : in     ACO.SDO_Sessions.SDO_Session;
       Status  : in     ACO.SDO_Sessions.SDO_Status);
 
-   overriding
-   procedure On_State_Change
-     (This     : in out SDO;
-      Previous : in     ACO.States.State;
-      Current  : in     ACO.States.State);
-
    procedure Handle_Message
       (This     : in out SDO;
        Msg      : in     ACO.Messages.Message;
@@ -170,5 +164,10 @@ private
        Endpoint : in     ACO.SDO_Sessions.Endpoint_Type;
        Error    : in     Error_Type;
        Index    : in     ACO.OD_Types.Entry_Index := (0,0));
+
+   function Hex_Str
+      (X    : Interfaces.Unsigned_32;
+       Trim : Boolean := True)
+       return String;
 
 end ACO.Protocols.Service_Data;

@@ -99,10 +99,9 @@ package body ACO.Protocols.Synchronization is
    end Sync_Producer_Stop;
 
    overriding
-   procedure On_State_Change
-     (This     : in out SYNC;
-      Previous : in     ACO.States.State;
-      Current  : in     ACO.States.State)
+   procedure Update
+      (This : access Node_State_Change_Subscriber;
+       Data : in     ACO.States.State_Transition)
    is
       use ACO.States;
 
@@ -111,20 +110,24 @@ package body ACO.Protocols.Synchronization is
           Pre_Operational | Operational          => True);
 
    begin
-      if Previous = Initializing and Current = Pre_Operational then
+      if Data.Previous = Initializing and Data.Current = Pre_Operational then
          --  Bootup
-         This.Counter_Reset;
+         This.Sync_Ref.Counter_Reset;
       end if;
 
-      if Active_In_State (Current) and not Active_In_State (Previous) then
-         if Previous = Stopped then
-            This.Counter_Reset;
+      if Active_In_State (Data.Current) and
+         not Active_In_State (Data.Previous)
+      then
+         if Data.Previous = Stopped then
+            This.Sync_Ref.Counter_Reset;
          end if;
-         This.Sync_Producer_Start;
-      elsif not Active_In_State (Current) and Active_In_State (Previous) then
-         This.Sync_Producer_Stop;
+         This.Sync_Ref.Sync_Producer_Start;
+      elsif not Active_In_State (Data.Current) and
+         Active_In_State (Data.Previous)
+      then
+         This.Sync_Ref.Sync_Producer_Stop;
       end if;
-   end On_State_Change;
+   end Update;
 
    overriding
    procedure Update
@@ -182,7 +185,10 @@ package body ACO.Protocols.Synchronization is
    begin
       Protocol (This).Initialize;
 
-      This.Od.Events.Entry_Updated.Attach (This.Entry_Update'Unchecked_Access);
+      This.Od.Events.Entry_Updated.Attach
+         (This.Entry_Update'Unchecked_Access);
+      This.Od.Events.Node_State_Modified.Attach
+         (This.State_Change'Unchecked_Access);
    end Initialize;
 
    overriding
@@ -192,7 +198,10 @@ package body ACO.Protocols.Synchronization is
    begin
       Protocol (This).Finalize;
 
-      This.Od.Events.Entry_Updated.Detach (This.Entry_Update'Unchecked_Access);
+      This.Od.Events.Entry_Updated.Detach
+         (This.Entry_Update'Unchecked_Access);
+      This.Od.Events.Node_State_Modified.Detach
+         (This.State_Change'Unchecked_Access);
    end Finalize;
 
    procedure SYNC_Log

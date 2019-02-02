@@ -1,18 +1,7 @@
 with Ada.Exceptions;
-with Interfaces;
+with ACO.States;
 
 package body ACO.Protocols.Service_Data is
-
-   overriding
-   procedure On_State_Change
-     (This     : in out SDO;
-      Previous : in     ACO.States.State;
-      Current  : in     ACO.States.State)
-   is
-      pragma Unreferenced (This, Previous, Current);
-   begin
-      null;
-   end On_State_Change;
 
    procedure Indicate_Status
      (This    : in out SDO'Class;
@@ -120,18 +109,23 @@ package body ACO.Protocols.Service_Data is
              RTR    => False,
              DLC    => 8,
              Data   => Raw_Data);
+      CS : constant Interfaces.Unsigned_32 :=
+         Interfaces.Unsigned_32 (SDO_Commands.Get_CS (Msg));
    begin
-      This.SDO_Log (ACO.Log.Debug, "Sending " & ACO.Messages.Image (Msg));
+      This.SDO_Log (ACO.Log.Debug, "Sending response cs = " & Hex_Str (CS));
       This.Handler.Put (Msg);
    end Send_SDO;
 
-   function Hex_Str (X : Interfaces.Unsigned_32) return String
+   function Hex_Str
+      (X    : Interfaces.Unsigned_32;
+       Trim : Boolean := True)
+       return String
    is
       use type Interfaces.Unsigned_32;
 
       Chars : constant String := "0123456789abcdef";
       N     : Interfaces.Unsigned_32 := X;
-      Res   : String (1 .. 10) := "0x00000000";
+      Res   : String (1 .. 10) := "0000000000";
       I     : Natural := Res'Last;
    begin
       loop
@@ -140,7 +134,14 @@ package body ACO.Protocols.Service_Data is
          exit when N = 0;
          I := I - 1;
       end loop;
-      return Res;
+
+      if Trim then
+         Res (I - 1) := 'x';
+         return Res (I - 2 .. Res'Last);
+      else
+         Res (2) := 'x';
+         return Res;
+      end if;
    end Hex_Str;
 
    procedure Abort_All
@@ -163,7 +164,7 @@ package body ACO.Protocols.Service_Data is
 
       This.SDO_Log
          (ACO.Log.Error,
-          Error'Img & " (" & Hex_Str (Code (Resp)) & ") on " &
+          Error'Img & " (" & Hex_Str (Code (Resp), Trim => False) & ") on" &
           ACO.SDO_Sessions.Image (Endpoint));
 
       This.Stop_Alarm (Endpoint.Id);

@@ -79,27 +79,28 @@ package body ACO.Protocols.Error_Control.Masters is
       This.Timers.Cancel (This.Producer_Alarm'Unchecked_Access);
    end Heartbeat_Producer_Stop;
 
-   procedure On_State_Change
-      (This     : in out Master;
-       Previous : in     ACO.States.State;
-       Current  : in     ACO.States.State)
+   overriding
+   procedure Update
+      (This : access Node_State_Change_Subscriber;
+       Data : in     ACO.States.State_Transition)
    is
       use ACO.States;
+      Ref : access Master renames This.Ref;
    begin
-      case Current is
+      case Data.Current is
          when Initializing | Unknown_State =>
-            This.Heartbeat_Producer_Stop;
+            Ref.Heartbeat_Producer_Stop;
 
          when Pre_Operational =>
-            if Previous = Initializing then
-               This.Send_Bootup;
-               This.Heartbeat_Producer_Start;
+            if Data.Previous = Initializing then
+               Ref.Send_Bootup;
+               Ref.Heartbeat_Producer_Start;
             end if;
 
          when Operational | Stopped =>
             null;
       end case;
-   end On_State_Change;
+   end Update;
 
    procedure On_Heartbeat
       (This      : in out Master;
@@ -143,7 +144,10 @@ package body ACO.Protocols.Error_Control.Masters is
    begin
       EC (This).Initialize;
 
-      This.Od.Events.Entry_Updated.Attach (This.Entry_Update'Unchecked_Access);
+      This.Od.Events.Entry_Updated.Attach
+         (This.Entry_Update'Unchecked_Access);
+      This.Od.Events.Node_State_Modified.Attach
+         (This.State_Change'Unchecked_Access);
    end Initialize;
 
    overriding
@@ -153,7 +157,10 @@ package body ACO.Protocols.Error_Control.Masters is
    begin
       EC (This).Finalize;
 
-      This.Od.Events.Entry_Updated.Detach (This.Entry_Update'Unchecked_Access);
+      This.Od.Events.Entry_Updated.Detach
+         (This.Entry_Update'Unchecked_Access);
+      This.Od.Events.Node_State_Modified.Detach
+         (This.State_Change'Unchecked_Access);
    end Finalize;
 
 end ACO.Protocols.Error_Control.Masters;

@@ -22,15 +22,17 @@ package body ACO.Protocols.Network_Management is
    is
       use ACO.States;
    begin
-      This.Od.Set_Node_State (State);
+      if This.Od.Get_Node_State /= State then
+         This.Od.Set_Node_State (State);
 
-      case State is
-         when Initializing =>
-            This.Od.Set_Node_State (Pre_Operational);
+         case State is
+            when Initializing =>
+               This.Od.Set_Node_State (Pre_Operational);
 
-         when Pre_Operational | Operational | Stopped | Unknown_State =>
-            null;
-      end case;
+            when Pre_Operational | Operational | Stopped | Unknown_State =>
+               null;
+         end case;
+      end if;
    end Set;
 
    function Get
@@ -104,6 +106,38 @@ package body ACO.Protocols.Network_Management is
          This.On_NMT_Command (Msg);
       end if;
    end Message_Received;
+
+   overriding
+   procedure Update
+      (This : access Node_State_Change_Subscriber;
+       Data : in     ACO.States.State_Transition)
+   is
+   begin
+      This.Ref.NMT_Log
+         (ACO.Log.Info, Data.Previous'Img & " => " & Data.Current'Img);
+   end Update;
+
+   overriding
+   procedure Initialize
+      (This : in out NMT)
+   is
+   begin
+      Protocol (This).Initialize;
+
+      This.Od.Events.Node_State_Modified.Attach
+         (This.State_Change'Unchecked_Access);
+   end Initialize;
+
+   overriding
+   procedure Finalize
+      (This : in out NMT)
+   is
+   begin
+      Protocol (This).Finalize;
+
+      This.Od.Events.Node_State_Modified.Detach
+         (This.State_Change'Unchecked_Access);
+   end Finalize;
 
    procedure NMT_Log
      (This    : in out NMT;

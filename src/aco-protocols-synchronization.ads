@@ -7,6 +7,7 @@ private with Interfaces;
 private with ACO.Log;
 private with ACO.Utils.Generic_Alarms;
 private with ACO.OD_Types;
+private with ACO.Events;
 
 package ACO.Protocols.Synchronization is
 
@@ -64,6 +65,15 @@ private
       (This : access Entry_Update_Subscriber;
        Data : in     ACO.OD_Types.Entry_Index);
 
+   type Node_State_Change_Subscriber
+      (Sync_Ref : not null access SYNC)
+   is new ACO.Events.Node_State.Subscriber with null record;
+
+   overriding
+   procedure Update
+      (This : access Node_State_Change_Subscriber;
+       Data : in     ACO.States.State_Transition);
+
    type SYNC
       (Handler : not null access ACO.CANopen.Handler;
        Od      : not null access ACO.OD.Object_Dictionary'Class)
@@ -72,13 +82,8 @@ private
       Producer_Alarm : aliased Sync_Producer_Alarm (SYNC'Access);
       Counter : Counter_Type := Counter_Type'First;
       Entry_Update : aliased Entry_Update_Subscriber (SYNC'Access);
+      State_Change : aliased Node_State_Change_Subscriber (SYNC'Access);
    end record;
-
-   overriding
-   procedure On_State_Change
-     (This     : in out SYNC;
-      Previous : in     ACO.States.State;
-      Current  : in     ACO.States.State);
 
    procedure SYNC_Log
      (This    : in out SYNC;

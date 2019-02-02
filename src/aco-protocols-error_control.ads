@@ -1,7 +1,7 @@
 with ACO.Messages;
 with ACO.OD;
+with ACO.States;
 
-private with ACO.States;
 private with ACO.Log;
 private with Interfaces;
 
@@ -12,7 +12,7 @@ package ACO.Protocols.Error_Control is
    type EC
       (Id : ACO.Messages.Node_Nr;
        Od : not null access ACO.OD.Object_Dictionary'Class)
-   is new Protocol with private;
+   is abstract new Protocol with private;
 
    overriding
    function Is_Valid
@@ -79,13 +79,7 @@ private
    type EC
       (Id : ACO.Messages.Node_Nr;
        Od : not null access ACO.OD.Object_Dictionary'Class)
-   is new Protocol (Od) with null record;
-
-   overriding
-   procedure On_State_Change
-      (This     : in out EC;
-       Previous : in     ACO.States.State;
-       Current  : in     ACO.States.State) is null;
+   is abstract new Protocol (Od) with null record;
 
    procedure On_Heartbeat
       (This      : in out EC;

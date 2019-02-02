@@ -1,6 +1,7 @@
 with ACO.OD;
 with ACO.States;
 
+private with ACO.Events;
 private with ACO.Log;
 private with Interfaces;
 
@@ -11,7 +12,7 @@ package ACO.Protocols.Network_Management is
    type NMT
       (Id : ACO.Messages.Node_Nr;
        Od : not null access ACO.OD.Object_Dictionary'Class)
-   is abstract new Protocol (Od) with null record;
+   is abstract new Protocol with private;
 
    overriding
    function Is_Valid
@@ -39,11 +40,6 @@ package ACO.Protocols.Network_Management is
        return ACO.States.State;
 
 private
-
-   procedure On_State_Change
-      (This     : in out NMT;
-       Previous : in     ACO.States.State;
-       Current  : in     ACO.States.State) is null;
 
    procedure NMT_Log
      (This    : in out NMT;
@@ -103,6 +99,28 @@ private
           Is_Valid_Cmd_Spec (To_NMT_Command (Msg).Command_Specifier));
 
    end NMT_Commands;
+
+   type Node_State_Change_Subscriber
+      (Ref : not null access NMT)
+   is new ACO.Events.Node_State.Subscriber with null record;
+
+   overriding
+   procedure Update
+      (This : access Node_State_Change_Subscriber;
+       Data : in     ACO.States.State_Transition);
+
+   type NMT
+      (Id : ACO.Messages.Node_Nr;
+       Od : not null access ACO.OD.Object_Dictionary'Class)
+   is abstract new Protocol (Od) with record
+      State_Change : aliased Node_State_Change_Subscriber (NMT'Access);
+   end record;
+
+   overriding
+   procedure Initialize (This : in out NMT);
+
+   overriding
+   procedure Finalize (This : in out NMT);
 
    procedure On_NMT_Command
       (This : in out NMT;
