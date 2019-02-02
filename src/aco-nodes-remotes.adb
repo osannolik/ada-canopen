@@ -202,11 +202,11 @@ package body ACO.Nodes.Remotes is
           Result      => Result));
 
       Request.Status := Result;
-      Ada.Synchronous_Task_Control.Set_True (Request.Suspension);
 
       case Request.Operation is
          when Write =>
             This.Clear (Session.Endpoint.Id);
+            Ada.Synchronous_Task_Control.Set_True (Request.Suspension);
 
          when Read =>
             null;
