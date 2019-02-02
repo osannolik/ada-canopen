@@ -5,6 +5,7 @@ with ACO.Configuration;
 with ACO.Events;
 with ACO.Drivers;
 
+private with Ada.Synchronous_Task_Control;
 private with ACO.Messages.Buffer;
 
 package ACO.CANopen is
@@ -17,6 +18,9 @@ package ACO.CANopen is
    type Handler
       (Driver : not null access ACO.Drivers.Driver'Class)
    is new Handler_Base with private;
+
+   procedure Start
+      (This : in out Handler);
 
    procedure Put
       (This : in out Handler;
@@ -37,8 +41,8 @@ private
       (Driver : not null access ACO.Drivers.Driver'Class)
    is new Handler_Base with record
       Messages : ACO.Messages.Buffer.Protected_Queue
-         (Max_Nof_Items => ACO.Configuration.Messages_Buffer_Size,
-          Ceiling       => ACO.Configuration.Messages_Buffer_Ceiling);
+         (Ceiling => ACO.Configuration.Messages_Buffer_Ceiling);
+      Suspension : Ada.Synchronous_Task_Control.Suspension_Object;
    end record;
 
 end ACO.CANopen;

@@ -37,6 +37,13 @@ package body ACO.CANopen is
       end loop;
    end Periodic_Actions;
 
+   procedure Start
+      (This : in out Handler)
+   is
+   begin
+      Ada.Synchronous_Task_Control.Set_True (This.Suspension);
+   end Start;
+
    task body Periodic_Task
    is
       use type Ada.Real_Time.Time;
@@ -45,6 +52,8 @@ package body ACO.CANopen is
       Period : constant Ada.Real_Time.Time_Span :=
          Ada.Real_Time.Milliseconds (Period_Ms);
    begin
+      Ada.Synchronous_Task_Control.Suspend_Until_True (This.Suspension);
+
       ACO.Log.Put_Line (ACO.Log.Debug, "Starting periodic worker task...");
 
       Next_Release := Ada.Real_Time.Clock;
