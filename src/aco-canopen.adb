@@ -24,8 +24,8 @@ package body ACO.CANopen is
    begin
       while This.Driver.Is_Message_Pending loop
          This.Driver.Receive_Message_Blocking (Msg);
-         ACO.Log.Put_Line
-            (ACO.Log.Debug, "Handling " & ACO.Messages.Image (Msg));
+         --  ACO.Log.Put_Line
+         --     (ACO.Log.Debug, "Handling " & ACO.Messages.Image (Msg));
          This.Events.Received_Message.Update (Data => Msg);
       end loop;
 

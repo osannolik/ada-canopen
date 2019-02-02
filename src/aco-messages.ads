@@ -89,6 +89,8 @@ package ACO.Messages is
 
    function Image (Msg : Message) return String;
 
+   function Image (CAN_Id : CAN_Id_Type) return String;
+
 private
 
    Fill_Data : constant Data_Type := 0;

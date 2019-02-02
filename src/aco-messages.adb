@@ -50,11 +50,11 @@ package body ACO.Messages is
                      Data   => Data);
    end Create;
 
-   function Image (Msg : in Message) return String is
-      function Trim (S : String) return String is
-         (if S'Length > 1 and then S (S'First) = ' ' then
-                S (S'First + 1 .. S'Last) else S);
+   function Trim (S : String) return String is
+      (if S'Length > 1 and then S (S'First) = ' ' then
+             S (S'First + 1 .. S'Last) else S);
 
+   function Image (Msg : in Message) return String is
       --  Yuck, but avoids Unbounded_String
       Data : constant String := "[" &
          Trim (Msg.Data (0)'Img) & "," & Msg.Data (1)'Img & "," &
@@ -68,6 +68,13 @@ package body ACO.Messages is
              " rtr="""  & Trim (Msg.RTR'Img)         & """" &
              " dlc="""  & Trim (Msg.Length'Img)      & """" &
              ">" & Data & "</message>";
+   end Image;
+
+   function Image (CAN_Id : CAN_Id_Type) return String is
+   begin
+      return Trim (CAN_Id.Id'Img) &
+         " (Node=" & Trim (CAN_Id.Node'Img) &
+         ", Code=" & Trim (CAN_Id.Code'Img) & ")";
    end Image;
 
    procedure Print
