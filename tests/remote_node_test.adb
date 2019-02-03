@@ -135,7 +135,7 @@ package body Remote_Node_Test is
 
          Value : constant := 1000;
          E     : constant Entry_Base'Class := Entry_U16'(Create (RW, Value));
-         Request : ACO.Nodes.Remotes.SDO_Request (R'Access);
+         Request : ACO.Nodes.Remotes.SDO_Write_Request (R'Access);
       begin
          --  Test normal case that should succeed
          L.Set_State (ACO.States.Pre_Operational);
@@ -147,12 +147,12 @@ package body Remote_Node_Test is
              Subindex => 0,
              An_Entry => E);
 
-         Assert (Request.Request_Status = ACO.SDO_Sessions.Pending,
+         Assert (Request.Status = ACO.SDO_Sessions.Pending,
                  "Expected request status to be Pending initially");
 
          Let_Time_Pass (HL, HR, DL, DR, Time_Ms => 2);
 
-         Assert (Request.Request_Status = ACO.SDO_Sessions.Complete,
+         Assert (Request.Status = ACO.SDO_Sessions.Complete,
                  "Expected request status to be Completed");
 
          --  Test write to an entry that is not in the OD
@@ -162,12 +162,12 @@ package body Remote_Node_Test is
              Subindex => 0,
              An_Entry => E);
 
-         Assert (Request.Request_Status = ACO.SDO_Sessions.Pending,
+         Assert (Request.Status = ACO.SDO_Sessions.Pending,
                  "Expected request status to be Pending initially");
 
          Let_Time_Pass (HL, HR, DL, DR, Time_Ms => 2);
 
-         Assert (Request.Request_Status = ACO.SDO_Sessions.Error,
+         Assert (Request.Status = ACO.SDO_Sessions.Error,
                  "Expected status to be Error, since the entry does not exist");
 
          --  Test write to node that is stopped, will time-out
@@ -180,13 +180,13 @@ package body Remote_Node_Test is
              Subindex => 0,
              An_Entry => E);
 
-         Assert (Request.Request_Status = ACO.SDO_Sessions.Pending,
+         Assert (Request.Status = ACO.SDO_Sessions.Pending,
                  "Expected request status to be Pending initially");
 
          Let_Time_Pass (HL, HR, DL, DR,
                         Time_Ms => ACO.Configuration.SDO_Session_Timeout_Ms);
 
-         Assert (Request.Request_Status = ACO.SDO_Sessions.Error,
+         Assert (Request.Status = ACO.SDO_Sessions.Error,
                  "Expected status to be Error, since the request timed out");
       end;
    end Run_Test;

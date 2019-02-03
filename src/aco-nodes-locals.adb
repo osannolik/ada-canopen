@@ -41,7 +41,17 @@ package body ACO.Nodes.Locals is
           Subindex  => Subindex);
    end Write;
 
-   --  overriding
+   overriding
+   procedure Read
+      (This     : in out Local;
+       Index    : in     ACO.OD_Types.Object_Index;
+       Subindex : in     ACO.OD_Types.Object_Subindex;
+       To_Entry :    out ACO.OD_Types.Entry_Base'Class)
+   is
+   begin
+      To_Entry := This.Read (Index, Subindex);
+   end Read;
+
    function Read
       (This     : Local;
        Index    : ACO.OD_Types.Object_Index;

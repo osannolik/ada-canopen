@@ -34,6 +34,14 @@ package body ACO.Nodes.Remotes is
       This.Handler.Start;
    end Start;
 
+   function Is_Complete
+      (This : SDO_Request)
+       return Boolean
+   is
+   begin
+      return ACO.SDO_Sessions.Is_Complete (This.Status);
+   end Is_Complete;
+
    procedure Suspend_Until_Result
      (This   : in out SDO_Request;
       Result :    out SDO_Result)
@@ -51,7 +59,31 @@ package body ACO.Nodes.Remotes is
       end if;
    end Suspend_Until_Result;
 
-   function Request_Status
+   procedure Suspend_Until_Result
+      (This   : in out SDO_Read_Request;
+       Result :    out SDO_Result)
+   is
+   begin
+      SDO_Request (This).Suspend_Until_Result (Result);
+
+      case Result is
+         when ACO.SDO_Sessions.Complete =>
+            This.Get_Entry;
+
+         when ACO.SDO_Sessions.Error =>
+            This.Node.SDO.Clear (This.Id);
+      end case;
+   end Suspend_Until_Result;
+
+   procedure Get_Entry
+      (This : in out SDO_Read_Request)
+   is
+   begin
+      This.Node.SDO.Get_Read_Entry (This.Id, This.To_Entry.all);
+      This.Node.SDO.Clear (This.Id);
+   end Get_Entry;
+
+   function Status
      (This : SDO_Request)
       return SDO_Status
    is
@@ -61,11 +93,11 @@ package body ACO.Nodes.Remotes is
       else
          return ACO.SDO_Sessions.Error;
       end if;
-   end Request_Status;
+   end Status;
 
    procedure Write
       (This     : in out Remote;
-       Request  : in out SDO_Request'Class;
+       Request  : in out SDO_Write_Request'Class;
        Index    : in     ACO.OD_Types.Object_Index;
        Subindex : in     ACO.OD_Types.Object_Subindex;
        An_Entry : in     ACO.OD_Types.Entry_Base'Class)
@@ -96,67 +128,111 @@ package body ACO.Nodes.Remotes is
        Subindex   : in     ACO.OD_Types.Object_Subindex;
        An_Entry   : in     ACO.OD_Types.Entry_Base'Class)
    is
-      pragma Unreferenced (This, Index, Subindex, An_Entry);
+      Request : SDO_Write_Request (This'Access);
    begin
-      null;
+      This.Write (Request  => Request,
+                  Index    => Index,
+                  Subindex => Subindex,
+                  An_Entry => An_Entry);
+      declare
+         Result : SDO_Result;
+      begin
+         Request.Suspend_Until_Result (Result);
+      end;
    end Write;
 
---     procedure Write
---        (This       : in out Remote;
---         Index      : in     ACO.OD_Types.Object_Index;
---         Subindex   : in     ACO.OD_Types.Object_Subindex;
---         An_Entry   : in     ACO.OD_Types.Entry_Base'Class)
---     is
---        use type ACO.SDO_Sessions.SDO_Status;
---        use type Ada.Real_Time.Time;
---
---        Status : ACO.SDO_Sessions.SDO_Status;
---        Endpoint_Id : ACO.SDO_Sessions.Endpoint_Nr;
---     begin
---        This.SDO.Write_Remote_Entry
---           (Node        => This.Id,
---            Index       => Index,
---            Subindex    => Subindex,
---            An_Entry    => An_Entry,
---            Endpoint_Id => Endpoint_Id);
---
---
---        if Timeout_Ms > 0 then
---           delay until Ada.Real_Time.Clock + Ada.Real_Time.Milliseconds (Timeout_Ms);
---        end if;
---
---
---
---
---
---        if Endpoint_Id in ACO.SDO_Sessions.Valid_Endpoint_Nr then
---           loop
---              This.Handler.Periodic_Actions (T_Now => Ada.Real_Time.Clock);
---
---              Status := This.SDO.Get_Status (Endpoint_Id);
---
---              exit when Status /= ACO.SDO_Sessions.Pending;
---           end loop;
---           This.SDO.Clear (Endpoint_Id);
---
---           Success := (Status = ACO.SDO_Sessions.Complete);
---        else
---           Success := False;
---        end if;
---     end Write;
+   overriding
+   procedure Read
+      (This     : in out Remote;
+       Index    : in     ACO.OD_Types.Object_Index;
+       Subindex : in     ACO.OD_Types.Object_Subindex;
+       To_Entry :    out ACO.OD_Types.Entry_Base'Class)
+   is
+      Result : ACO.Nodes.Remotes.SDO_Result;
+   begin
+      This.Read
+         (Index    => Index,
+          Subindex => Subindex,
+          Result   => Result,
+          To_Entry => To_Entry);
 
---     overriding
---     function Read
---        (This     : Remote;
---         Index    : ACO.OD_Types.Object_Index;
---         Subindex : ACO.OD_Types.Object_Subindex)
---         return ACO.OD_Types.Entry_Base'Class
---     is
---        pragma Unreferenced (This, Index, Subindex);
---     begin
---        null;
---     end Read;
+      case Result is
+         when ACO.SDO_Sessions.Complete =>
+            null;
 
+         when ACO.SDO_Sessions.Error =>
+            raise Failed_To_Read_Entry_Of_Node
+               with Result'Img & " index =" & Index'Img;
+      end case;
+   end Read;
+
+   procedure Read
+      (This     : in out Remote;
+       Index    : in     ACO.OD_Types.Object_Index;
+       Subindex : in     ACO.OD_Types.Object_Subindex;
+       Result   :    out ACO.Nodes.Remotes.SDO_Result;
+       To_Entry :    out ACO.OD_Types.Entry_Base'Class)
+   is
+      Request : ACO.Nodes.Remotes.SDO_Read_Request
+         (This'Access, To_Entry'Access);
+   begin
+      This.Read
+         (Request  => Request,
+          Index    => Index,
+          Subindex => Subindex);
+
+      Request.Suspend_Until_Result (Result);
+   end Read;
+
+   procedure Read
+      (This     : in out Remote;
+       Request  : in out SDO_Read_Request'Class;
+       Index    : in     ACO.OD_Types.Object_Index;
+       Subindex : in     ACO.OD_Types.Object_Subindex)
+   is
+   begin
+      This.SDO.Read_Remote_Entry
+         (Node        => This.Id,
+          Index       => Index,
+          Subindex    => Subindex,
+          Endpoint_Id => Request.Id);
+
+      if Request.Id in ACO.SDO_Sessions.Valid_Endpoint_Nr'Range then
+         declare
+            Req_Data : Request_Data renames This.SDO.Requests (Request.Id);
+         begin
+            Req_Data.Status := ACO.SDO_Sessions.Pending;
+            Req_Data.Operation := Read;
+            Ada.Synchronous_Task_Control.Set_False (Req_Data.Suspension);
+         end;
+      end if;
+   end Read;
+
+   function Generic_Read
+      (This     : in out Remote;
+       Index    : ACO.OD_Types.Object_Index;
+       Subindex : ACO.OD_Types.Object_Subindex)
+       return Entry_T
+   is
+      An_Entry : aliased Entry_T;
+      Request  : ACO.Nodes.Remotes.SDO_Read_Request
+         (This'Access, An_Entry'Access);
+      Result   : ACO.Nodes.Remotes.SDO_Result;
+   begin
+      This.Read
+         (Request  => Request,
+          Index    => Index,
+          Subindex => Subindex);
+
+      Request.Suspend_Until_Result (Result);
+
+      if not Request.Is_Complete then
+         raise Failed_To_Read_Entry_Of_Node
+            with Result'Img & " index =" & Index'Img;
+      end if;
+
+      return An_Entry;
+   end Generic_Read;
 
    procedure Set_Heartbeat_Timeout
       (This    : in out Remote;
@@ -197,21 +273,21 @@ package body ACO.Nodes.Remotes is
    is
       Request : Request_Data renames This.Requests (Session.Endpoint.Id);
    begin
-      This.Od.Events.SDO_Status_Update.Put
-        ((Endpoint_Id => Session.Endpoint.Id,
-          Result      => Result));
-
       Request.Status := Result;
 
       case Request.Operation is
          when Write =>
             This.Clear (Session.Endpoint.Id);
-            Ada.Synchronous_Task_Control.Set_True (Request.Suspension);
 
          when Read =>
             null;
-
       end case;
+
+      Ada.Synchronous_Task_Control.Set_True (Request.Suspension);
+
+      This.Od.Events.SDO_Status_Update.Put
+         ((Endpoint_Id => Session.Endpoint.Id,
+           Result      => Result));
    end Result_Callback;
 
    overriding

@@ -29,18 +29,39 @@ package ACO.Nodes.Remotes is
 
    type SDO_Request
      (Node : not null access Remote)
-   is tagged private;
+   is abstract tagged private;
 
    subtype SDO_Status is ACO.SDO_Sessions.SDO_Status;
    subtype SDO_Result is ACO.SDO_Sessions.SDO_Result;
+
+   function Is_Complete
+      (This : SDO_Request)
+       return Boolean;
 
    procedure Suspend_Until_Result
      (This   : in out SDO_Request;
       Result :    out SDO_Result);
 
-   function Request_Status
+   function Status
      (This : SDO_Request)
       return SDO_Status;
+
+   type SDO_Read_Request
+      (Node     : not null access Remote;
+       To_Entry : not null access ACO.OD_Types.Entry_Base'Class)
+   is new SDO_Request with private;
+
+   procedure Suspend_Until_Result
+      (This   : in out SDO_Read_Request;
+       Result :    out SDO_Result);
+
+   procedure Get_Entry
+      (This : in out SDO_Read_Request)
+      with Pre => This.Is_Complete;
+
+   type SDO_Write_Request
+      (Node : not null access Remote)
+   is new SDO_Request with private;
 
    overriding
    procedure Write
@@ -53,14 +74,50 @@ package ACO.Nodes.Remotes is
 
    procedure Write
       (This     : in out Remote;
-       Request  : in out SDO_Request'Class;
+       Request  : in out SDO_Write_Request'Class;
        Index    : in     ACO.OD_Types.Object_Index;
        Subindex : in     ACO.OD_Types.Object_Subindex;
        An_Entry : in     ACO.OD_Types.Entry_Base'Class);
 
+   overriding
+   procedure Read
+      (This     : in out Remote;
+       Index    : in     ACO.OD_Types.Object_Index;
+       Subindex : in     ACO.OD_Types.Object_Subindex;
+       To_Entry :    out ACO.OD_Types.Entry_Base'Class)
+      with Pre => This.Od.Entry_Exist (Index, Subindex) and then
+                  This.Od.Is_Entry_Compatible (To_Entry, Index, Subindex);
+
+   procedure Read
+      (This     : in out Remote;
+       Index    : in     ACO.OD_Types.Object_Index;
+       Subindex : in     ACO.OD_Types.Object_Subindex;
+       Result   :    out ACO.Nodes.Remotes.SDO_Result;
+       To_Entry :    out ACO.OD_Types.Entry_Base'Class)
+      with Pre => This.Od.Entry_Exist (Index, Subindex) and then
+                  This.Od.Is_Entry_Compatible (To_Entry, Index, Subindex);
+
+   procedure Read
+      (This     : in out Remote;
+       Request  : in out SDO_Read_Request'Class;
+       Index    : in     ACO.OD_Types.Object_Index;
+       Subindex : in     ACO.OD_Types.Object_Subindex);
+
+   generic
+      type Entry_T is new ACO.OD_Types.Entry_Base with private;
+   function Generic_Read
+      (This     : in out Remote;
+       Index    : ACO.OD_Types.Object_Index;
+       Subindex : ACO.OD_Types.Object_Subindex)
+       return Entry_T;
+--     with Pre => This.Od.Entry_Exist (Index, Subindex);
+--      Above precondition causes compiler error during instantiation. Bug?
+
    procedure Set_Heartbeat_Timeout
       (This    : in out Remote;
        Timeout : in     Natural);
+
+   Failed_To_Read_Entry_Of_Node : exception;
 
 private
 
@@ -68,9 +125,18 @@ private
 
    type SDO_Request
      (Node : not null access Remote)
-   is tagged record
+   is abstract tagged record
       Id : ACO.SDO_Sessions.Endpoint_Nr := ACO.SDO_Sessions.No_Endpoint_Id;
    end record;
+
+   type SDO_Read_Request
+      (Node     : not null access Remote;
+       To_Entry : not null access ACO.OD_Types.Entry_Base'Class)
+   is new SDO_Request (Node) with null record;
+
+   type SDO_Write_Request
+      (Node : not null access Remote)
+   is new SDO_Request (Node) with null record;
 
    type Request_Data is record
       Suspension  : Ada.Synchronous_Task_Control.Suspension_Object;

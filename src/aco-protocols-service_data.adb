@@ -112,7 +112,7 @@ package body ACO.Protocols.Service_Data is
       CS : constant Interfaces.Unsigned_32 :=
          Interfaces.Unsigned_32 (SDO_Commands.Get_CS (Msg));
    begin
-      This.SDO_Log (ACO.Log.Debug, "Sending response cs = " & Hex_Str (CS));
+      This.SDO_Log (ACO.Log.Debug, "Sending command with cs = " & Hex_Str (CS));
       This.Handler.Put (Msg);
    end Send_SDO;
 

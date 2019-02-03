@@ -35,7 +35,15 @@ package ACO.Nodes.Locals is
       with Pre => This.Od.Entry_Exist (Index, Subindex) and then
                   This.Od.Is_Entry_Compatible (An_Entry, Index, Subindex);
 
-   --  overriding
+   overriding
+   procedure Read
+      (This     : in out Local;
+       Index    : in     ACO.OD_Types.Object_Index;
+       Subindex : in     ACO.OD_Types.Object_Subindex;
+       To_Entry :    out ACO.OD_Types.Entry_Base'Class)
+      with Pre => This.Od.Entry_Exist (Index, Subindex) and then
+                  This.Od.Is_Entry_Compatible (To_Entry, Index, Subindex);
+
    function Read
       (This     : Local;
        Index    : ACO.OD_Types.Object_Index;

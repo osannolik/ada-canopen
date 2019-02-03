@@ -51,6 +51,10 @@ package ACO.SDO_Sessions is
        Complete,
        Error);
 
+   Is_Complete : constant array (SDO_Status) of Boolean :=
+      (Pending | Error => False,
+       Complete        => True);
+
    subtype SDO_Result is SDO_Status range Complete .. Error;
 
    type SDO_Session (Service : Services := None) is record

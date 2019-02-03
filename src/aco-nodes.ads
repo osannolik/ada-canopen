@@ -37,6 +37,12 @@ package ACO.Nodes is
        Subindex : in     ACO.OD_Types.Object_Subindex;
        An_Entry : in     ACO.OD_Types.Entry_Base'Class) is abstract;
 
+   procedure Read
+      (This     : in out Node_Base;
+       Index    : in     ACO.OD_Types.Object_Index;
+       Subindex : in     ACO.OD_Types.Object_Subindex;
+       To_Entry :    out ACO.OD_Types.Entry_Base'Class) is abstract;
+
 private
 
    procedure On_Message_Dispatch

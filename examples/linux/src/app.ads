@@ -1,5 +1,7 @@
 package App is
 
-   procedure Run;
+   procedure Run_Local;
+
+   procedure Run_Remote;
 
 end App;
