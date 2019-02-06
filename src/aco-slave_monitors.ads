@@ -25,18 +25,21 @@ package ACO.Slave_Monitors is
       with Pre => This.Is_Monitored (Node_Id);
 
    procedure Restart
-      (This : in out Slave_Monitor);
+     (This  : in out Slave_Monitor;
+      T_Now : in     Ada.Real_Time.Time);
 
    procedure Start
       (This        : in out Slave_Monitor;
        Node_Id     : in     ACO.Messages.Slave_Node_Nr;
-       Slave_State : in     ACO.States.State)
+       Slave_State : in     ACO.States.State;
+       T_Now       : in     Ada.Real_Time.Time)
       with Pre => not This.Is_Monitored (Node_Id);
 
    procedure Update_State
       (This        : in out Slave_Monitor;
        Node_Id     : in     ACO.Messages.Slave_Node_Nr;
-       Slave_State : in     ACO.States.State)
+       Slave_State : in     ACO.States.State;
+       T_Now       : in     Ada.Real_Time.Time)
       with Pre => This.Is_Monitored (Node_Id);
 
    procedure Update_Alarms

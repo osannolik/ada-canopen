@@ -30,6 +30,10 @@ package ACO.CANopen is
       (This  : in out Handler;
        T_Now : in     Ada.Real_Time.Time);
 
+   function Current_Time
+     (This : Handler)
+      return Ada.Real_Time.Time;
+
    task type Periodic_Task
       (This      : not null access Handler;
        Period_Ms : Positive)

@@ -77,4 +77,14 @@ package body ACO.Drivers.Socket is
       return SocketCAN.Is_Frame_Pending (This.Socket);
    end Is_Message_Pending;
 
+   overriding
+   function Current_Time
+      (This : CAN_Driver)
+       return Ada.Real_Time.Time
+   is
+      pragma Unreferenced (This);
+   begin
+      return Ada.Real_Time.Clock;
+   end Current_Time;
+
 end ACO.Drivers.Socket;

@@ -1,8 +1,7 @@
 with ACO.Messages;
+with Ada.Real_Time;
 
 package ACO.Drivers is
-
-   pragma Preelaborate;
 
    type Driver is abstract tagged limited null record;
 
@@ -25,5 +24,9 @@ package ACO.Drivers is
    function Is_Message_Pending
       (This : Driver)
        return Boolean is abstract;
+
+   function Current_Time
+      (This : Driver)
+       return Ada.Real_Time.Time is abstract;
 
 end ACO.Drivers;

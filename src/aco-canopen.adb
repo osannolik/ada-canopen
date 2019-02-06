@@ -37,6 +37,12 @@ package body ACO.CANopen is
       end loop;
    end Periodic_Actions;
 
+   function Current_Time
+     (This : Handler)
+      return Ada.Real_Time.Time
+   is
+     (This.Driver.Current_Time);
+
    procedure Start
       (This : in out Handler)
    is
@@ -56,7 +62,7 @@ package body ACO.CANopen is
 
       ACO.Log.Put_Line (ACO.Log.Debug, "Starting periodic worker task...");
 
-      Next_Release := Ada.Real_Time.Clock;
+      Next_Release := This.Current_Time;
 
       loop
          begin

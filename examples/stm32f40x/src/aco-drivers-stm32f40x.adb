@@ -130,6 +130,17 @@ package body ACO.Drivers.Stm32f40x is
       return This.Controller.Is_Message_Pending;
    end Is_Message_Pending;
 
+
+   overriding
+   function Current_Time
+     (This : CAN_Driver)
+      return Ada.Real_Time.Time
+   is
+      pragma Unreferenced (This);
+   begin
+      return Ada.Real_Time.Clock;
+   end Current_Time;
+
    package body CAN_ISR is
       function Tx_Interrupt_Id
          (Device : not null access CAN_Controller)

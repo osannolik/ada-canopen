@@ -59,4 +59,19 @@ package body ACO.Drivers.Dummy is
    function Nof_Sent (This : Dummy_Driver) return Natural is
      (Natural (This.Tx_Buffer.Length));
 
+   overriding
+   function Current_Time
+      (This : Dummy_Driver)
+       return Ada.Real_Time.Time
+   is
+      (This.T_Now);
+
+   procedure Set_Time
+      (This : in out Dummy_Driver;
+       T    : in     Ada.Real_Time.Time)
+   is
+   begin
+      This.T_Now := T;
+   end Set_Time;
+
 end ACO.Drivers.Dummy;

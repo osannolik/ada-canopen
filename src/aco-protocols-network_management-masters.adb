@@ -53,7 +53,7 @@ package body ACO.Protocols.Network_Management.Masters is
    begin
       --  TODO: Should really use timestamp of CAN message instead since this
       --        event probably is delayed from the time of reception.
-      This.Ref.T_Heartbeat_Update := Ada.Real_Time.Clock;
+      This.Ref.T_Heartbeat_Update := This.Ref.Handler.Current_Time;
       This.Ref.Set (Data.State);
    end Update;
 

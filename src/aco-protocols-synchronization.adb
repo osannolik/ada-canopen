@@ -87,7 +87,8 @@ package body ACO.Protocols.Synchronization is
       if Period > 0 then
          This.Timers.Set
             (Alarm       => This.Producer_Alarm'Unchecked_Access,
-             Signal_Time => Clock + Milliseconds (Period));
+             Signal_Time =>
+               This.Handler.Current_Time + Milliseconds (Period));
       end if;
    end Sync_Producer_Start;
 

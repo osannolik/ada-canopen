@@ -32,6 +32,13 @@ package ACO.Drivers.Dummy is
 
    function Nof_Sent (This : Dummy_Driver) return Natural;
 
+   overriding
+   function Current_Time (This : Dummy_Driver) return Ada.Real_Time.Time;
+
+   procedure Set_Time
+      (This : in out Dummy_Driver;
+       T    : in     Ada.Real_Time.Time);
+
 private
 
    use type ACO.Messages.Message;
@@ -42,6 +49,7 @@ private
    subtype Message_Vec is V_Message.Vector;
 
    type Dummy_Driver is new Driver with record
+      T_Now     : Ada.Real_Time.Time := Ada.Real_Time.Time_First;
       Tx_Buffer : Message_Vec;
    end record;
 

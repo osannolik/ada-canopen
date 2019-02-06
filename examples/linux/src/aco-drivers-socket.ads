@@ -28,6 +28,11 @@ package ACO.Drivers.Socket is
       (This : CAN_Driver)
        return Boolean;
 
+   overriding
+   function Current_Time
+      (This : CAN_Driver)
+       return Ada.Real_Time.Time;
+
 private
 
    type CAN_Driver is new Driver with record

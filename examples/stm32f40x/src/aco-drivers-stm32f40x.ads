@@ -32,6 +32,11 @@ package ACO.Drivers.Stm32f40x is
      (This : CAN_Driver)
       return Boolean;
 
+   overriding
+   function Current_Time
+     (This : CAN_Driver)
+      return Ada.Real_Time.Time;
+
    package CAN_ISR is
       function Tx_Interrupt_Id (Device : not null access CAN_Controller)
                                 return Ada.Interrupts.Interrupt_ID;

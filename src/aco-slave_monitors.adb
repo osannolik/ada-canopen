@@ -50,7 +50,8 @@ package body ACO.Slave_Monitors is
    end Signal;
 
    procedure Restart
-      (This : in out Slave_Monitor)
+     (This  : in out Slave_Monitor;
+      T_Now : in     Ada.Real_Time.Time)
    is
       use type Ada.Real_Time.Time;
       use type ACO.Messages.Node_Nr;
@@ -65,7 +66,7 @@ package body ACO.Slave_Monitors is
             if Period > 0 then
                This.Manager.Set
                   (Alarm'Unchecked_Access,
-                   Ada.Real_Time.Clock + Ada.Real_Time.Milliseconds (Period));
+                   T_Now + Ada.Real_Time.Milliseconds (Period));
             else
                Alarm.Node_Id := ACO.Messages.Not_A_Slave;
             end if;
@@ -76,7 +77,8 @@ package body ACO.Slave_Monitors is
    procedure Start
       (This        : in out Slave_Monitor;
        Node_Id     : in     ACO.Messages.Slave_Node_Nr;
-       Slave_State : in     ACO.States.State)
+       Slave_State : in     ACO.States.State;
+       T_Now       : in     Ada.Real_Time.Time)
    is
       use type Ada.Real_Time.Time;
       use type ACO.Messages.Node_Nr;
@@ -91,7 +93,7 @@ package body ACO.Slave_Monitors is
                                      Current  => Slave_State);
                This.Manager.Set
                   (Alarm'Unchecked_Access,
-                   Ada.Real_Time.Clock + Ada.Real_Time.Milliseconds (Period));
+                   T_Now + Ada.Real_Time.Milliseconds (Period));
                This.Od.Events.Slave_State_Change.Put (Alarm.Slave_State);
 
                exit;
@@ -103,7 +105,8 @@ package body ACO.Slave_Monitors is
    procedure Update_State
       (This        : in out Slave_Monitor;
        Node_Id     : in     ACO.Messages.Slave_Node_Nr;
-       Slave_State : in     ACO.States.State)
+       Slave_State : in     ACO.States.State;
+       T_Now       : in     Ada.Real_Time.Time)
    is
       use type Ada.Real_Time.Time;
       use type ACO.Messages.Node_Nr;
@@ -119,7 +122,7 @@ package body ACO.Slave_Monitors is
                                      Current  => Slave_State);
                This.Manager.Set
                   (Alarm'Unchecked_Access,
-                   Ada.Real_Time.Clock + Ada.Real_Time.Milliseconds (Period));
+                   T_Now + Ada.Real_Time.Milliseconds (Period));
                This.Od.Events.Slave_State_Change.Put (Alarm.Slave_State);
             else
                Alarm.Node_Id := ACO.Messages.Not_A_Slave;

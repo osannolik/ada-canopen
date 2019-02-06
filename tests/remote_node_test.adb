@@ -56,6 +56,8 @@ package body Remote_Node_Test is
       begin
          for DT in 1 .. Time_Ms loop
             T_Now := T_Now + Milliseconds (1);
+            D1.Set_Time (T_Now);
+            D2.Set_Time (T_Now);
 
             H1.Periodic_Actions (T_Now);
             Bus_Propagate (D1, D2);
@@ -118,7 +120,7 @@ package body Remote_Node_Test is
       Assert (L.Get_State = ACO.States.Stopped,
               "Expected Local to report Stopped");
 
-      Let_Time_Pass (HL, HR, DL, DR, Time_Ms => Heartbeat_Period + 1);
+      Let_Time_Pass (HL, HR, DL, DR, Time_Ms => Heartbeat_Period);
 
       Assert (L.Get_State = ACO.States.Stopped,
               "Expected Local to report Stopped");
@@ -133,13 +135,13 @@ package body Remote_Node_Test is
          use ACO.OD_Types;
          use type ACO.Nodes.Remotes.SDO_Status;
 
-         Value : constant := 1000;
-         E     : constant Entry_Base'Class := Entry_U16'(Create (RW, Value));
+         Value   : constant := 1000;
+         E       : constant Entry_Base'Class := Entry_U16'(Create (RW, Value));
          Request : ACO.Nodes.Remotes.SDO_Write_Request (R'Access);
       begin
          --  Test normal case that should succeed
          L.Set_State (ACO.States.Pre_Operational);
-         Let_Time_Pass (HL, HR, DL, DR, Time_Ms => Heartbeat_Period + 1);
+         Let_Time_Pass (HL, HR, DL, DR, Time_Ms => Heartbeat_Period);
 
          R.Write
             (Request  => Request,
@@ -172,7 +174,7 @@ package body Remote_Node_Test is
 
          --  Test write to node that is stopped, will time-out
          L.Set_State (ACO.States.Stopped);
-         Let_Time_Pass (HL, HR, DL, DR, Time_Ms => Heartbeat_Period + 1);
+         Let_Time_Pass (HL, HR, DL, DR, Time_Ms => Heartbeat_Period);
 
          R.Write
             (Request  => Request,
@@ -188,6 +190,42 @@ package body Remote_Node_Test is
 
          Assert (Request.Status = ACO.SDO_Sessions.Error,
                  "Expected status to be Error, since the request timed out");
+      end;
+
+      -------------------------------------------------------------------------
+      --  Read (Upload) entry from local node via remote node object
+      -------------------------------------------------------------------------
+      declare
+         use ACO.OD_Types.Entries;
+         use ACO.OD_Types;
+         use type ACO.Nodes.Remotes.SDO_Status;
+
+         Value   : constant := 1337;
+         E       : aliased Entry_U16;
+         Request : ACO.Nodes.Remotes.SDO_Read_Request (R'Access, E'Access);
+      begin
+         OLoc.Set_Heartbeat_Producer_Period (Period => Value);
+         Let_Time_Pass (HL, HR, DL, DR, Time_Ms => Value);
+         L.Set_State (ACO.States.Pre_Operational);
+         Let_Time_Pass (HL, HR, DL, DR, Time_Ms => Value);
+
+         R.Read
+            (Request  => Request,
+             Index    => ACO.OD.Heartbeat_Producer_Index,
+             Subindex => 0);
+
+         Assert (Request.Status = ACO.SDO_Sessions.Pending,
+                 "Expected request status to be Pending initially");
+
+         Let_Time_Pass (HL, HR, DL, DR, Time_Ms => 2);
+
+         Assert (Request.Status = ACO.SDO_Sessions.Complete,
+                 "Expected request status to be Completed");
+
+         Request.Get_Entry;
+
+         Assert (E.Read = Value,
+                 "Expected read value to be as written:" & Value'Img);
       end;
    end Run_Test;
 

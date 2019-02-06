@@ -63,7 +63,7 @@ package body ACO.Protocols.Error_Control.Masters is
       (This : in out Master)
    is
       Period : constant Natural := This.Od.Get_Heartbeat_Producer_Period;
-      Immediately : constant Ada.Real_Time.Time := Ada.Real_Time.Clock;
+      Immediately : constant Ada.Real_Time.Time := This.Handler.Current_Time;
    begin
       if Period > 0 then
          This.Timers.Set
@@ -108,11 +108,12 @@ package body ACO.Protocols.Error_Control.Masters is
        Hbt_State : in     EC_Commands.EC_State)
    is
       State : constant ACO.States.State := EC_Commands.To_State (Hbt_State);
+      T_Now : constant Ada.Real_Time.Time := This.Handler.Current_Time;
    begin
       if This.Monitor.Is_Monitored (Id) then
-         This.Monitor.Update_State (Id, State);
+         This.Monitor.Update_State (Id, State, T_Now);
       elsif EC_Commands.Is_Bootup (Hbt_State) then
-         This.Monitor.Start (Id, State);
+         This.Monitor.Start (Id, State, T_Now);
       end if;
    end On_Heartbeat;
 
@@ -125,7 +126,7 @@ package body ACO.Protocols.Error_Control.Masters is
    begin
       case Data.Object is
          when ACO.OD.Heartbeat_Consumer_Index =>
-            Ref.Monitor.Restart;
+            Ref.Monitor.Restart (Ref.Handler.Current_Time);
 
          when ACO.OD.Heartbeat_Producer_Index =>
             if Ref.Timers.Is_Pending (Ref.Producer_Alarm'Access) then

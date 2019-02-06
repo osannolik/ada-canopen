@@ -53,7 +53,8 @@ package body ACO.Protocols.Service_Data is
       Timeout_Alarm.Id := Id;
       This.Timers.Set
          (Alarm       => Timeout_Alarm'Unchecked_Access,
-          Signal_Time => Clock + Milliseconds (SDO_Session_Timeout_Ms));
+          Signal_Time =>
+            This.Handler.Current_Time + Milliseconds (SDO_Session_Timeout_Ms));
    end Start_Alarm;
 
    procedure Stop_Alarm
