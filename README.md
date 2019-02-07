@@ -1,3 +1,3 @@
-Aims to have basic master and slave functionality. 
+Aims to have basic master and slave functionality with Ravenscar support.
 
 Work in progress...
