@@ -4,7 +4,6 @@ with ACO.CANopen;
 private with ACO.Events;
 private with ACO.Utils.Generic_Alarms;
 private with ACO.Slave_Monitors;
-private with ACO.OD_Types;
 
 package ACO.Protocols.Error_Control.Masters is
 
@@ -33,21 +32,23 @@ private
 
    type Entry_Update_Subscriber
       (Ref : not null access Master)
-   is new ACO.Events.Entry_Update.Subscriber with null record;
+   is new ACO.Events.Event_Listener (ACO.Events.OD_Entry_Update)
+   with null record;
 
    overriding
-   procedure Update
-      (This : access Entry_Update_Subscriber;
-       Data : in     ACO.OD_Types.Entry_Index);
+   procedure On_Event
+      (This : in out Entry_Update_Subscriber;
+       Data : in     ACO.Events.Event_Data);
 
    type Node_State_Change_Subscriber
       (Ref : not null access Master)
-   is new ACO.Events.Node_State.Subscriber with null record;
+   is new ACO.Events.Event_Listener (ACO.Events.State_Transition)
+   with null record;
 
    overriding
-   procedure Update
-      (This : access Node_State_Change_Subscriber;
-       Data : in     ACO.States.State_Transition);
+   procedure On_Event
+      (This : in out Node_State_Change_Subscriber;
+       Data : in     ACO.Events.Event_Data);
 
    type Master
       (Id      : ACO.Messages.Node_Nr;

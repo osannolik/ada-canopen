@@ -27,12 +27,13 @@ private
 
    type Heartbeat_Subscriber
       (Ref : not null access Master)
-   is new ACO.Events.Node_Heartbeat.Subscriber with null record;
+   is new ACO.Events.Event_Listener (ACO.Events.Heartbeat_Received)
+   with null record;
 
    overriding
-   procedure Update
-      (This : access Heartbeat_Subscriber;
-       Data : in     ACO.Events.Heartbeat_Data);
+   procedure On_Event
+      (This : in out Heartbeat_Subscriber;
+       Data : in     ACO.Events.Event_Data);
 
    type Master
       (Id      : ACO.Messages.Node_Nr;

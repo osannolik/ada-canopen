@@ -80,19 +80,19 @@ package body ACO.Protocols.Error_Control.Masters is
    end Heartbeat_Producer_Stop;
 
    overriding
-   procedure Update
-      (This : access Node_State_Change_Subscriber;
-       Data : in     ACO.States.State_Transition)
+   procedure On_Event
+      (This : in out Node_State_Change_Subscriber;
+       Data : in     ACO.Events.Event_Data)
    is
       use ACO.States;
       Ref : access Master renames This.Ref;
    begin
-      case Data.Current is
+      case Data.State.Current is
          when Initializing | Unknown_State =>
             Ref.Heartbeat_Producer_Stop;
 
          when Pre_Operational =>
-            if Data.Previous = Initializing then
+            if Data.State.Previous = Initializing then
                Ref.Send_Bootup;
                Ref.Heartbeat_Producer_Start;
             end if;
@@ -100,7 +100,7 @@ package body ACO.Protocols.Error_Control.Masters is
          when Operational | Stopped =>
             null;
       end case;
-   end Update;
+   end On_Event;
 
    procedure On_Heartbeat
       (This      : in out Master;
@@ -118,25 +118,25 @@ package body ACO.Protocols.Error_Control.Masters is
    end On_Heartbeat;
 
    overriding
-   procedure Update
-      (This : access Entry_Update_Subscriber;
-       Data : in     ACO.OD_Types.Entry_Index)
+   procedure On_Event
+      (This : in out Entry_Update_Subscriber;
+       Data : in     ACO.Events.Event_Data)
    is
       Ref : access Master renames This.Ref;
    begin
-      case Data.Object is
+      case Data.Index.Object is
          when ACO.OD.Heartbeat_Consumer_Index =>
             Ref.Monitor.Restart (Ref.Handler.Current_Time);
 
          when ACO.OD.Heartbeat_Producer_Index =>
-            if Ref.Timers.Is_Pending (Ref.Producer_Alarm'Access) then
+            if Ref.Timers.Is_Pending (Ref.Producer_Alarm'Unchecked_Access) then
                Ref.Heartbeat_Producer_Stop;
                Ref.Heartbeat_Producer_Start;
             end if;
 
          when others => null;
       end case;
-   end Update;
+   end On_Event;
 
    overriding
    procedure Initialize
@@ -145,9 +145,9 @@ package body ACO.Protocols.Error_Control.Masters is
    begin
       EC (This).Initialize;
 
-      This.Od.Events.Entry_Updated.Attach
+      This.Od.Events.Node_Events.Attach
          (This.Entry_Update'Unchecked_Access);
-      This.Od.Events.Node_State_Modified.Attach
+      This.Od.Events.Node_Events.Attach
          (This.State_Change'Unchecked_Access);
    end Initialize;
 
@@ -158,9 +158,9 @@ package body ACO.Protocols.Error_Control.Masters is
    begin
       EC (This).Finalize;
 
-      This.Od.Events.Entry_Updated.Detach
+      This.Od.Events.Node_Events.Detach
          (This.Entry_Update'Unchecked_Access);
-      This.Od.Events.Node_State_Modified.Detach
+      This.Od.Events.Node_Events.Detach
          (This.State_Change'Unchecked_Access);
    end Finalize;
 

@@ -1,3 +1,4 @@
+with ACO.States;
 package body ACO.Protocols.Synchronization is
 
    function To_Ms_From_100us (T : Natural) return Natural is (T / 10);
@@ -100,9 +101,9 @@ package body ACO.Protocols.Synchronization is
    end Sync_Producer_Stop;
 
    overriding
-   procedure Update
-      (This : access Node_State_Change_Subscriber;
-       Data : in     ACO.States.State_Transition)
+   procedure On_Event
+      (This : in out Node_State_Change_Subscriber;
+       Data : in     ACO.Events.Event_Data)
    is
       use ACO.States;
 
@@ -111,40 +112,41 @@ package body ACO.Protocols.Synchronization is
           Pre_Operational | Operational          => True);
 
    begin
-      if Data.Previous = Initializing and Data.Current = Pre_Operational then
+      if Data.State.Previous = Initializing and Data.State.Current = Pre_Operational then
          --  Bootup
          This.Sync_Ref.Counter_Reset;
       end if;
 
-      if Active_In_State (Data.Current) and
-         not Active_In_State (Data.Previous)
+      if Active_In_State (Data.State.Current) and
+         not Active_In_State (Data.State.Previous)
       then
-         if Data.Previous = Stopped then
+         if Data.State.Previous = Stopped then
             This.Sync_Ref.Counter_Reset;
          end if;
          This.Sync_Ref.Sync_Producer_Start;
-      elsif not Active_In_State (Data.Current) and
-         Active_In_State (Data.Previous)
+      elsif not Active_In_State (Data.State.Current) and
+         Active_In_State (Data.State.Previous)
       then
          This.Sync_Ref.Sync_Producer_Stop;
       end if;
-   end Update;
+   end On_Event;
 
    overriding
-   procedure Update
-      (This : access Entry_Update_Subscriber;
-       Data : in     ACO.OD_Types.Entry_Index)
+   procedure On_Event
+      (This : in out Entry_Update_Subscriber;
+       Data : in     ACO.Events.Event_Data)
    is
       pragma Unreferenced (Data);
 
       SYNC_Ref : access SYNC renames This.SYNC_Ref;
    begin
-      if SYNC_Ref.Timers.Is_Pending (SYNC_Ref.Producer_Alarm'Access) then
+      if SYNC_Ref.Timers.Is_Pending (SYNC_Ref.Producer_Alarm'Unchecked_Access)
+      then
          SYNC_Ref.Sync_Producer_Stop;
          SYNC_Ref.Counter_Reset;
          SYNC_Ref.Sync_Producer_Start;
       end if;
-   end Update;
+   end On_Event;
 
    overriding
    function Is_Valid
@@ -186,9 +188,9 @@ package body ACO.Protocols.Synchronization is
    begin
       Protocol (This).Initialize;
 
-      This.Od.Events.Entry_Updated.Attach
+      This.Od.Events.Node_Events.Attach
          (This.Entry_Update'Unchecked_Access);
-      This.Od.Events.Node_State_Modified.Attach
+      This.Od.Events.Node_Events.Attach
          (This.State_Change'Unchecked_Access);
    end Initialize;
 
@@ -199,9 +201,9 @@ package body ACO.Protocols.Synchronization is
    begin
       Protocol (This).Finalize;
 
-      This.Od.Events.Entry_Updated.Detach
+      This.Od.Events.Node_Events.Detach
          (This.Entry_Update'Unchecked_Access);
-      This.Od.Events.Node_State_Modified.Detach
+      This.Od.Events.Node_Events.Detach
          (This.State_Change'Unchecked_Access);
    end Finalize;
 

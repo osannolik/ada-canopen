@@ -96,9 +96,10 @@ package body ACO.Nodes.Locals is
       Result  : in     ACO.SDO_Sessions.SDO_Result)
    is
    begin
-      This.Od.Events.SDO_Status_Update.Put
-        ((Endpoint_Id => Session.Endpoint.Id,
-          Result      => Result));
+      This.Od.Events.Node_Events.Put
+        ((Event      => ACO.Events.SDO_Status_Update,
+          SDO_Status => (Endpoint_Id => Session.Endpoint.Id,
+                         Result      => Result)));
 
       This.Clear (Session.Endpoint.Id);
    end Result_Callback;

@@ -1,3 +1,5 @@
+with ACO.Events;
+
 package body ACO.Slave_Monitors is
 
    function Is_Monitored
@@ -42,8 +44,12 @@ package body ACO.Slave_Monitors is
       This.Slave_State := (Previous => This.Slave_State.Current,
                            Current  => ACO.States.Unknown_State);
       if This.Ref /= null then
-         This.Ref.Od.Events.Slave_State_Change.Put (This.Slave_State);
-         This.Ref.Od.Events.Heartbeat_Timed_Out.Put (This.Node_Id);
+         This.Ref.Od.Events.Node_Events.Put
+           ((Event => ACO.Events.Slave_State_Transition,
+             Slave => (This.Slave_State, This.Node_Id)));
+         This.Ref.Od.Events.Node_Events.Put
+           ((Event   => ACO.Events.Heartbeat_Timed_Out,
+             Node_Id => This.Node_Id));
       end if;
 
       This.Node_Id := ACO.Messages.Not_A_Slave;
@@ -94,8 +100,9 @@ package body ACO.Slave_Monitors is
                This.Manager.Set
                   (Alarm'Unchecked_Access,
                    T_Now + Ada.Real_Time.Milliseconds (Period));
-               This.Od.Events.Slave_State_Change.Put (Alarm.Slave_State);
-
+               This.Od.Events.Node_Events.Put
+                 ((Event => ACO.Events.Slave_State_Transition,
+                   Slave => (Alarm.Slave_State, Alarm.Node_Id)));
                exit;
             end if;
          end loop;
@@ -123,7 +130,9 @@ package body ACO.Slave_Monitors is
                This.Manager.Set
                   (Alarm'Unchecked_Access,
                    T_Now + Ada.Real_Time.Milliseconds (Period));
-               This.Od.Events.Slave_State_Change.Put (Alarm.Slave_State);
+               This.Od.Events.Node_Events.Put
+                 ((Event => ACO.Events.Slave_State_Transition,
+                   Slave => (Alarm.Slave_State, Alarm.Node_Id)));
             else
                Alarm.Node_Id := ACO.Messages.Not_A_Slave;
             end if;

@@ -37,7 +37,9 @@ package body ACO.Protocols.Network_Management.Masters is
                T_Now >= This.T_Heartbeat_Update + Milliseconds (This.Timeout_Ms)
             then
                This.Set (Unknown_State);
-               This.Od.Events.Heartbeat_Timed_Out.Put (This.Id);
+               This.Od.Events.Node_Events.Put
+                 ((Event   => ACO.Events.Heartbeat_Timed_Out,
+                   Node_Id => This.Id));
             end if;
 
          when Unknown_State =>
@@ -46,16 +48,16 @@ package body ACO.Protocols.Network_Management.Masters is
    end Periodic_Actions;
 
    overriding
-   procedure Update
-      (This : access Heartbeat_Subscriber;
-       Data : in     ACO.Events.Heartbeat_Data)
+   procedure On_Event
+      (This : in out Heartbeat_Subscriber;
+       Data : in     ACO.Events.Event_Data)
    is
    begin
       --  TODO: Should really use timestamp of CAN message instead since this
       --        event probably is delayed from the time of reception.
       This.Ref.T_Heartbeat_Update := This.Ref.Handler.Current_Time;
-      This.Ref.Set (Data.State);
-   end Update;
+      This.Ref.Set (Data.Received_Heartbeat.State);
+   end On_Event;
 
    overriding
    procedure Initialize
@@ -64,7 +66,7 @@ package body ACO.Protocols.Network_Management.Masters is
    begin
       NMT (This).Initialize;
 
-      This.Od.Events.Heartbeat_Received.Attach
+      This.Od.Events.Node_Events.Attach
          (This.Heartbeat_Update'Unchecked_Access);
    end Initialize;
 
@@ -75,7 +77,7 @@ package body ACO.Protocols.Network_Management.Masters is
    begin
       NMT (This).Finalize;
 
-      This.Od.Events.Heartbeat_Received.Detach
+      This.Od.Events.Node_Events.Detach
          (This.Heartbeat_Update'Unchecked_Access);
    end Finalize;
 

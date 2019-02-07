@@ -1,12 +1,10 @@
 with Ada.Real_Time;
 with ACO.CANopen;
 with ACO.OD;
-with ACO.States;
 
 private with Interfaces;
 private with ACO.Log;
 private with ACO.Utils.Generic_Alarms;
-private with ACO.OD_Types;
 private with ACO.Events;
 
 package ACO.Protocols.Synchronization is
@@ -58,21 +56,23 @@ private
 
    type Entry_Update_Subscriber
       (Sync_Ref : not null access SYNC)
-   is new ACO.Events.Entry_Update.Subscriber with null record;
+   is new ACO.Events.Event_Listener (ACO.Events.OD_Entry_Update)
+   with null record;
 
    overriding
-   procedure Update
-      (This : access Entry_Update_Subscriber;
-       Data : in     ACO.OD_Types.Entry_Index);
+   procedure On_Event
+      (This : in out Entry_Update_Subscriber;
+       Data : in     ACO.Events.Event_Data);
 
    type Node_State_Change_Subscriber
       (Sync_Ref : not null access SYNC)
-   is new ACO.Events.Node_State.Subscriber with null record;
+   is new ACO.Events.Event_Listener (ACO.Events.State_Transition)
+   with null record;
 
    overriding
-   procedure Update
-      (This : access Node_State_Change_Subscriber;
-       Data : in     ACO.States.State_Transition);
+   procedure On_Event
+      (This : in out Node_State_Change_Subscriber;
+       Data : in     ACO.Events.Event_Data);
 
    type SYNC
       (Handler : not null access ACO.CANopen.Handler;

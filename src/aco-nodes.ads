@@ -56,21 +56,22 @@ private
 
    type Tick_Subscriber
       (Node_Ref : not null access Node_Base'Class)
-   is new ACO.Events.Periodic_Tick.Subscriber with null record;
+   is new ACO.Events.Handler_Event_Listener (ACO.Events.Tick) with null record;
 
    overriding
-   procedure Update
-      (This : access Tick_Subscriber;
-       Data : in     Ada.Real_Time.Time);
+   procedure On_Event
+      (This : in out Tick_Subscriber;
+       Data : in     ACO.Events.Handler_Event_Data);
 
    type Message_Subscriber
       (Node_Ref : not null access Node_Base'Class)
-   is new ACO.Events.New_Message.Subscriber with null record;
+   is new ACO.Events.Handler_Event_Listener (ACO.Events.Received_Message)
+   with null record;
 
    overriding
-   procedure Update
-      (This : access Message_Subscriber;
-       Data : in     ACO.Messages.Message);
+   procedure On_Event
+      (This : in out Message_Subscriber;
+       Data : in     ACO.Events.Handler_Event_Data);
 
    type Node_Base
       (Id      : ACO.Messages.Node_Nr;

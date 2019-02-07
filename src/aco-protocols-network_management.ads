@@ -102,12 +102,13 @@ private
 
    type Node_State_Change_Subscriber
       (Ref : not null access NMT)
-   is new ACO.Events.Node_State.Subscriber with null record;
+   is new ACO.Events.Event_Listener (ACO.Events.State_Transition)
+   with null record;
 
    overriding
-   procedure Update
-      (This : access Node_State_Change_Subscriber;
-       Data : in     ACO.States.State_Transition);
+   procedure On_Event
+      (This : in out Node_State_Change_Subscriber;
+       Data : in     ACO.Events.Event_Data);
 
    type NMT
       (Id : ACO.Messages.Node_Nr;

@@ -7,10 +7,10 @@ package ACO.Configuration is
 
    Max_Nof_Heartbeat_Slaves : constant := 8;
 
-   Max_Nof_Entry_Update_Subscribers      : constant := 8;
-   Max_Nof_Node_State_Change_Subscribers : constant := 8;
+   Max_Nof_Handler_Event_Subscribers : constant := 16;
+   Max_Nof_Node_Event_Subscribers    : constant := 16;
 
-   Max_Nof_Event_Queue_Data_Items : constant := 4;
+   Max_Nof_Event_Queue_Data_Items : constant := 16;
    Event_Queue_Ceiling : constant System.Priority := System.Max_Priority;
 
    Periodic_Task_Priority  : constant System.Priority := System.Max_Priority;

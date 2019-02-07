@@ -1,32 +1,32 @@
 package body ACO.Nodes is
 
    overriding
-   procedure Update
-      (This : access Tick_Subscriber;
-       Data : in     Ada.Real_Time.Time)
+   procedure On_Event
+      (This : in out Tick_Subscriber;
+       Data : in     ACO.Events.Handler_Event_Data)
    is
    begin
-      This.Node_Ref.Periodic_Actions (T_Now => Data);
+      This.Node_Ref.Periodic_Actions (T_Now => Data.Current_Time);
 
       This.Node_Ref.Od.Events.Process;
-   end Update;
+   end On_Event;
 
    overriding
-   procedure Update
-      (This : access Message_Subscriber;
-       Data : in     ACO.Messages.Message)
+   procedure On_Event
+      (This : in out Message_Subscriber;
+       Data : in     ACO.Events.Handler_Event_Data)
    is
    begin
-      This.Node_Ref.On_Message_Dispatch (Msg => Data);
-   end Update;
+      This.Node_Ref.On_Message_Dispatch (Msg => Data.Msg);
+   end On_Event;
 
    overriding
    procedure Initialize (This : in out Node_Base)
    is
    begin
-      This.Handler.Events.Periodic_Action.Attach
+      This.Handler.Events.Handler_Events.Attach
          (Subscriber => This.Periodic_Action_Indication'Unchecked_Access);
-      This.Handler.Events.Received_Message.Attach
+      This.Handler.Events.Handler_Events.Attach
          (Subscriber => This.New_Message_Indication'Unchecked_Access);
    end Initialize;
 
@@ -34,9 +34,9 @@ package body ACO.Nodes is
    procedure Finalize (This : in out Node_Base)
    is
    begin
-      This.Handler.Events.Periodic_Action.Detach
+      This.Handler.Events.Handler_Events.Detach
          (Subscriber => This.Periodic_Action_Indication'Unchecked_Access);
-      This.Handler.Events.Received_Message.Detach
+      This.Handler.Events.Handler_Events.Detach
          (Subscriber => This.New_Message_Indication'Unchecked_Access);
    end Finalize;
 

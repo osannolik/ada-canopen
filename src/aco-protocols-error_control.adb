@@ -1,3 +1,5 @@
+with ACO.Events;
+
 package body ACO.Protocols.Error_Control is
 
    overriding
@@ -24,9 +26,11 @@ package body ACO.Protocols.Error_Control is
                EC_Commands.Get_EC_State (Msg);
             Id : constant ACO.Messages.Node_Nr := ACO.Messages.Node_Id (Msg);
          begin
-            This.Od.Events.Heartbeat_Received.Put
-               ((Id    => Id,
-                 State => EC_Commands.To_State (Hbt_State)));
+            This.Od.Events.Node_Events.Put
+              ((Event              => ACO.Events.Heartbeat_Received,
+                Received_Heartbeat =>
+                  (Id    => Id,
+                   State => EC_Commands.To_State (Hbt_State))));
             This.On_Heartbeat (Id, Hbt_State);
          end;
       end if;

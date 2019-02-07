@@ -12,7 +12,7 @@ package ACO.CANopen is
 
    type Handler_Base
    is abstract new Ada.Finalization.Limited_Controlled with record
-      Events : ACO.Events.Event_Manager;
+      Events : ACO.Events.Handler_Event_Manager;
    end record;
 
    type Handler

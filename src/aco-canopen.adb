@@ -26,10 +26,14 @@ package body ACO.CANopen is
          This.Driver.Receive_Message_Blocking (Msg);
          --  ACO.Log.Put_Line
          --     (ACO.Log.Debug, "Handling " & ACO.Messages.Image (Msg));
-         This.Events.Received_Message.Update (Data => Msg);
+         This.Events.Handler_Events.Update
+           ((Event => ACO.Events.Received_Message,
+             Msg   => Msg));
       end loop;
 
-      This.Events.Periodic_Action.Update (T_Now);
+      This.Events.Handler_Events.Update
+        ((Event        => ACO.Events.Tick,
+          Current_Time => T_Now));
 
       while not This.Messages.Is_Empty loop
          This.Messages.Get (Msg);

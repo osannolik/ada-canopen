@@ -108,14 +108,14 @@ package body ACO.Protocols.Network_Management is
    end Message_Received;
 
    overriding
-   procedure Update
-      (This : access Node_State_Change_Subscriber;
-       Data : in     ACO.States.State_Transition)
+   procedure On_Event
+      (This : in out Node_State_Change_Subscriber;
+       Data : in     ACO.Events.Event_Data)
    is
    begin
       This.Ref.NMT_Log
-         (ACO.Log.Info, Data.Previous'Img & " => " & Data.Current'Img);
-   end Update;
+         (ACO.Log.Info, Data.State.Previous'Img & " => " & Data.State.Current'Img);
+   end On_Event;
 
    overriding
    procedure Initialize
@@ -124,7 +124,7 @@ package body ACO.Protocols.Network_Management is
    begin
       Protocol (This).Initialize;
 
-      This.Od.Events.Node_State_Modified.Attach
+      This.Od.Events.Node_Events.Attach
          (This.State_Change'Unchecked_Access);
    end Initialize;
 
@@ -135,7 +135,7 @@ package body ACO.Protocols.Network_Management is
    begin
       Protocol (This).Finalize;
 
-      This.Od.Events.Node_State_Modified.Detach
+      This.Od.Events.Node_Events.Detach
          (This.State_Change'Unchecked_Access);
    end Finalize;
 

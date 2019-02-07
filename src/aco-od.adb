@@ -93,7 +93,9 @@ package body ACO.OD is
    begin
       This.Object (Index).Entries (Subindex).all := New_Entry;
       if not Silently then
-         This.Events.Entry_Updated.Put ((Index, Subindex));
+         This.Events.Node_Events.Put
+           ((Event => ACO.Events.OD_Entry_Update,
+             Index =>  (Index, Subindex)));
       end if;
    end Set_Entry;
 
@@ -105,7 +107,9 @@ package body ACO.OD is
    begin
       Prev            := This.Node_State;
       This.Node_State := Node_State;
-      This.Events.Node_State_Modified.Put ((Previous => Prev, Current => Node_State));
+      This.Events.Node_Events.Put
+        ((Event => ACO.Events.State_Transition,
+          State => (Previous => Prev, Current => Node_State)));
    end Set_Node_State;
 
    function Get_Node_State (This : Object_Dictionary) return ACO.States.State is

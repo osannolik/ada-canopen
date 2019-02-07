@@ -285,9 +285,10 @@ package body ACO.Nodes.Remotes is
 
       Ada.Synchronous_Task_Control.Set_True (Request.Suspension);
 
-      This.Od.Events.SDO_Status_Update.Put
-         ((Endpoint_Id => Session.Endpoint.Id,
-           Result      => Result));
+      This.Od.Events.Node_Events.Put
+        ((Event      => ACO.Events.SDO_Status_Update,
+          SDO_Status => (Endpoint_Id => Session.Endpoint.Id,
+                         Result      => Result)));
    end Result_Callback;
 
    overriding
